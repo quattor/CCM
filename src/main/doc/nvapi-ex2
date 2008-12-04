@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+
+#
+# Example of use of the NVA-API library
+#
+# print names and checksum of direct children
+# of the root element
+#
+# in this example exceptions are not handled 
+# explicitely, once any nva-api function
+# rises an exception, the excecution is stopped
+# and the stack trace printed out
+#
+# Piotr Poznanski <Piotr.Poznanski@cern.ch>
+#
+
+# EDG prologue
+
+BEGIN {
+  $ENV{"EDG_LOCATION"} ||= "/opt/edg";
+  $ENV{"EDG_LOCATION_VAR"} ||= $ENV{"EDG_LOCATION"}."/var";
+  unshift (@INC, $ENV{"EDG_LOCATION"}."/lib/perl");
+}
+
+use strict;
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Path;
+
+# empty credentails
+my $cred = 0;
+
+# create new CacheManager (default cache will be used)
+my $cm = EDG::WP4::CCM::CacheManager->new(); 
+
+# get (locked) current configuration
+my $cfg = $cm->getLockedConfiguration($cred);
+
+# get configuration id and print it out
+my $cid = $cfg -> getConfigurationId();
+print "configuration id: $cid\n";
+
+# create root path
+my $rp = EDG::WP4::CCM::Path->new ("/");
+
+# get root element
+my $re = $cfg->getElement($rp);
+# we could also write: my $re = $cfg->getElement("/");
+
+
+# iterate through children elements:
+
+# while root element has next child in iteration
+while ($re->hasNextElement()) {
+#do
+	# get child element
+	my $ce = $re->getNextElement();
+	
+	# get element's name
+	my $cn = $ce->getName();
+	
+	# get element's checksum
+	my $cs = $ce->getChecksum();
+
+	print "name: $cn, checksum: $cs\n";
+}	

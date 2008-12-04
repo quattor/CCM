@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w
+
+#
+# Example of use of the NVA-API library
+#
+# example takes one  paramater - a path of the   element
+# and prints out its  value and some   other information
+#
+# It also fetches a foreign profile   and prints out the 
+# value and other information of given element available
+# in foreign profile.
+
+# EDG prologue
+
+BEGIN {
+  #$ENV{"EDG_LOCATION"} ||= "/opt/edg";
+  $ENV{"EDG_LOCATION"} ||= "/usr";
+  $ENV{"EDG_LOCATION_VAR"} ||= $ENV{"EDG_LOCATION"}."/var";
+  unshift (@INC, $ENV{"EDG_LOCATION"}."/lib/perl");
+}
+
+use strict;
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Fetch;
+
+my $cp = $ARGV[0];
+
+unless ($cp) {
+  die ("usage: $0 element-path\n");
+}
+
+# empty credentails
+my $cred = 0;
+
+#fetch handle for foreign profiles
+#my $fh = EDG::WP4::CCM::Fetch->new({PROFILE=>"https://cdbserv.cern.ch:446/profiles/profile_lxplus005.xml", FOREIGN=>1});
+my $fh = EDG::WP4::CCM::Fetch->new({PROFILE=>"lxplus005", FOREIGN=>1});
+
+my ($retval, $retmsg) = $fh->fetchProfile();
+
+if ($retval == -1){
+	print STDERR "[ERROR] $retmsg\n";
+	exit (-1);
+}
+# create new CacheManager (default cache will be used)
+my $cm          = EDG::WP4::CCM::CacheManager->new(); 
+my $cm_foreign  = EDG::WP4::CCM::CacheManager->new($fh->{"CACHE_ROOT"}); 
+
+# get (locked) current configuration
+my $cfg         = $cm->getLockedConfiguration($cred);
+my $cfg_foreign = $cm_foreign->getLockedConfiguration($cred);
+
+#sleep(60);
+my $el          = $cfg->getElement($cp);
+my $el_foreign  = $cfg_foreign->getElement($cp);
+
+
+if ($el->isResource()) {print "Resource:   ";}
+elsif ($el->isProperty()) {print "Property:   ";}
+else {die ("element is neither resource nor property");}
+
+print $el->getName()."\n";
+print "Path:       ".$el->getPath()->toString()."\n";
+print "Derivation: ".$el->getDerivation()."\n";
+print "Checksum:   ".$el->getChecksum()."\n";
+print "Value:      ".$el->getValue()."\n";
+
+if ($el_foreign->isResource()) {print "Resource_foreign:   ";}
+elsif ($el_foreign->isProperty()) {print "Property_foreign:   ";}
+else {die ("element_foreign is neither resource nor property");}
+
+print $el_foreign->getName()."\n";
+print "Path (foreign):       ".$el_foreign->getPath()->toString()."\n";
+print "Derivation (foreign): ".$el_foreign->getDerivation()."\n";
+print "Checksum (foreign):   ".$el_foreign->getChecksum()."\n";
+print "Value (foreign):      ".$el_foreign->getValue()."\n";
+
+#$fh->destroyForeignProfile();
+
+undef $cfg;
+undef $cfg_foreign;

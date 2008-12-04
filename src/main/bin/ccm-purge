@@ -1,0 +1,431 @@
+#!/usr/bin/perl -w
+
+#
+# ccm-purge
+#
+# $Id: ccm-purge.cin,v 1.4 2006/11/23 14:28:23 gcancio Exp $
+#
+# Copyright (c) 2003 EU DataGrid.
+# For license conditions see http://www.eu-datagrid.org/license.html
+#
+
+#
+# Beginning sequence for EDG initialization
+#
+BEGIN {
+
+    # use perl libs in /usr/lib/perl
+    unshift(@INC, '/usr/lib/perl');
+    unshift(@INC,'/opt/edg/lib/perl');
+
+}
+
+
+use strict;
+use Getopt::Long;
+use Digest::MD5 qw(md5_hex);
+use GDBM_File;
+use Errno qw(ESRCH EPERM);
+use File::Path;
+use EDG::WP4::CCM::CCfg qw(initCfg);
+
+#
+# Global Variables
+#
+# $CacheDir	cache directory path
+# $DataDir	data subdirectory path
+# $TimeAging	time limit for not used profiles and temp files
+# $CurrentCID	content of current.cid file
+# $LatestCID	content of latest.cid file
+# @Profile	all the available profiles
+# %NonactiveURL	list of non active URLs
+# $Tolerant	strict or tolerant behaviour to errors
+#
+
+my ($CacheDir, $DataDir, $TmpDir);
+my ($TimeAging);
+my ($CurrentCID, $LatestCID);
+my (@Profile);
+my (%NonactiveURL);
+my ($Tolerant);
+
+# Perl warnings could be transformed into fatal errors
+$SIG{__WARN__} = sub { $Tolerant ? warn $_[0] :  die $_[0] };
+
+#######################################################################
+sub Warn ($) {
+#######################################################################
+
+    my $msg = $_[0];
+    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
+    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [WARN] %s",
+                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
+    print STDERR $msg . "\n";
+}
+
+#######################################################################
+sub Info ($) {
+#######################################################################
+ 
+    my $msg = shift;
+    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
+    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [INFO] %s",
+                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
+    print $msg . "\n";
+}
+
+
+#
+# read_cid
+#
+# Read from file a configuration ID.
+#
+# Open the file given as parameter and read a profile CID number,
+# checking the proper CID format.
+#
+sub read_cid($) {
+
+    my ($filename) = @_;
+    my ($id);
+
+    open(FILE , "$filename") or die("$filename open failed: $!");
+    $id = join("", <FILE>);
+    $id =~ /^(\d+)\n$/ or die("$filename unknown CID format");
+    $id = $1;
+    close(FILE);
+
+    return($id);
+
+}
+
+#
+# init
+#
+# Initialise global variables.
+#
+# The init() function does the following:
+#   - process command line options
+#   - get current and latest CID
+#   - get list of available profiles
+#   - get list of cached URLs
+#
+sub init() {
+
+    my (@url_list);
+    my ($ccm_conf);
+
+    # Process command line options
+
+    $ccm_conf = "";
+    $TimeAging = 0;
+    $Tolerant  = 0;
+    GetOptions('config=s'  => \$ccm_conf,
+               'time=i'    => \$TimeAging,
+	       'tolerant'  => \$Tolerant )
+        or die("error processing command line: $!");
+
+    if (!$ccm_conf) {
+        initCfg();
+    } else {
+        initCfg($ccm_conf);
+    }
+
+    $CacheDir = EDG::WP4::CCM::CCfg::getCfgValue("cache_root");
+
+    # TODO: time aging should go to file "ccm.conf"
+    if (!$TimeAging) {
+        die("use: $0 --time time_aging [--conf ccm.conf] [--tolerant]\n");
+    }
+
+    $DataDir = $CacheDir . "/data";
+    $TmpDir = $CacheDir . "/tmp";
+
+    # Get currrent and latest CID
+
+    $CurrentCID = read_cid("${CacheDir}/current.cid");
+    $LatestCID  = read_cid("${CacheDir}/latest.cid");
+
+    # Get list of configuration profiles
+
+    opendir(DIR , $CacheDir) or die("$CacheDir open failed: $!");
+    @Profile = grep (/profile\.\d+/, readdir(DIR));
+    close(DIR);
+
+    # Get list of cached URLs in data directory
+
+    opendir(DIR , $DataDir) or die("$DataDir open failed: $!");
+    @url_list = grep { $_ ne '.' and $_ ne '..' } readdir(DIR);
+    @NonactiveURL{@url_list} = ("") x @url_list;
+    close(DIR);
+
+    return;
+
+}
+
+#
+# clean_profile
+#
+# The clean_profile() funtion, given a profile name, removes
+# all dead active.pid files.
+# For each active.pid file, it checks if the processes is
+# running, and if not, remove the file.
+#
+sub clean_profile($) {
+
+    my ($profile) = @_;
+    my ($active_pid, $file);
+
+    if( !opendir(DIR , "${CacheDir}/$profile") ) {
+        Warn("${CacheDir}/$profile open failed: $!");
+	return;
+    }
+
+    while ($file = readdir(DIR)) {
+
+        next unless ($file =~ /ccm-active-$profile-(\d+)/);
+        $active_pid = $1;
+
+        if( kill (0 => $active_pid) ) {
+	    # the process is alive
+	    Info("process ${active_pid} holding CID=$profile is still alive, not cleaning up");
+	    next;
+	} elsif ( $! == EPERM ) {
+	    # it is alive but I am not the owner, that's ok
+	    Warn("process is not owned by me: ${active_pid}, cannot clean up");
+            next;
+        } elsif ( $! == ESRCH ) {
+	    # the process has died
+	    Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
+	    $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
+	    unlink($file) or Warn("error unlinking file ${file}: $!");
+        } else {
+	    # this is an error
+            Warn("error signaling pid ${active_pid}: $!");
+        }
+
+    }
+
+    close(DIR);
+
+    return;
+
+}
+
+#
+# num_active_pids
+#
+# Given a profile, return the number of active.pid files
+#
+sub num_active_pids($) {
+
+    my ($profile) = @_;
+    my (@files, $n_files);
+
+    opendir(DIR , "${CacheDir}/$profile")
+                  or die("${CacheDir}/$profile open failed $!");
+    @files = grep (/ccm-active-profile/, readdir(DIR));
+    $n_files = @files;
+    close(DIR);
+
+    return($n_files);
+
+}
+
+#
+# read_url
+#
+# Read from file an URL.
+#
+sub read_url($) {
+
+    my ($filename) = @_;
+    my $url;
+
+    open(FILE, "$filename") or die("$filename failed to open $!");
+    $url = <FILE>;
+    chomp($url) if ($url);
+    close(FILE);
+
+    return($url);
+
+}
+
+#
+# save_active_urls
+#
+# Delete from NonactiveURL hash those URLs used by the profile.
+#
+# The URL to be deleted are:
+#   - URL stored at profile.url
+#   - URL stored at context.url
+#   - all URLs stored in eid2data.db recods of type 'fetch'
+#
+sub save_active_urls($) {
+
+    my ($profile) = @_;
+
+    my ($url, $md5, %hash, $key, $ukey);
+
+    # remove from NonactiveURL hash those URLs contained
+    # in files profile.url and context.url
+
+    $url = read_url("${CacheDir}/${profile}/profile.url");
+    $md5 = md5_hex($url);
+    delete($NonactiveURL{$md5});
+
+    # TODO: What happens with context?
+    # $url = read_url("${CacheDir}/${profile}/context.url");
+    # $md5 = md5_hex($url);
+    # delete($NonactiveURL{$md5});
+
+    # search URLs in fetch porperties
+
+    tie(%hash, "GDBM_File", "${CacheDir}/${profile}/eid2data.db", GDBM_READER,
+        0640) or die("${CacheDir}/${profile}/eid2data.db failed to open: $!");
+
+    foreach $key ( keys(%hash) ) {
+        $ukey = unpack("L", $key);
+        next unless ($ukey & 0x10000000);
+	next unless ($hash{$key} eq 'fetch');
+	$ukey = $ukey & 0xEFFFFFFF;
+	$key = pack("L", $ukey);
+	$url = $hash{$key};
+        $md5 = md5_hex($url);
+	delete( $NonactiveURL{$md5} );
+    }
+
+    untie(%hash);
+    return;
+
+}
+
+#
+# clean_temp_dir
+#
+# Clean up temporary directory
+#
+sub clean_temp_dir() {
+
+    my ($dir);
+    my ($mod_time, $curr_time);
+
+    $curr_time = time();
+
+    opendir(DIR , "$TmpDir") or die("$TmpDir open failed $!");
+
+    while ($dir = readdir(DIR)) {
+        next if ($dir eq "." or $dir eq "..");
+        $mod_time = (stat("$TmpDir/$dir"))[9];
+        if ($mod_time + $TimeAging >= $curr_time ) {
+	    next;
+	}
+        if( !rmtree("$TmpDir/$dir")  ) {
+            Warn("failed to remove $TmpDir/$dir: $1");
+	}
+    }
+
+    close(DIR);
+    return;
+
+}
+
+#
+# main
+#
+# Purge main() algorithm
+#
+# Remove all dead active.pid files of every profile.
+# If a profile is not the current or latest profiles, and if it is not
+# active, and the last time it was accesed is older than TimeAging,
+# then remove the profile.
+# Finally, remove unused URLs files, and temporary files.
+#
+sub main() {
+
+    my ($profile, $prof_cid);
+    my ($mod_time, $curr_time);
+    my ($url);
+
+    foreach $profile (@Profile) {
+
+        $profile =~ /profile\.(\d+)/;
+	$prof_cid = $1;
+
+        $mod_time = (stat("$CacheDir/$profile"))[9];
+
+        clean_profile($profile);
+
+	$curr_time = time();
+
+        if (($prof_cid eq $CurrentCID)
+	        or ($prof_cid eq $LatestCID)
+	        or num_active_pids($profile)
+		or ($mod_time + $TimeAging >= $curr_time)) {
+	    save_active_urls($profile);
+	    next;
+	}
+
+	if( !rmtree("$CacheDir/$profile")  ) {
+	    Warn("cannot remove directory $CacheDir/$profile: $!");
+	}
+
+    }
+
+    foreach $url (keys(%NonactiveURL)) {
+        unlink( "$DataDir/$url" )
+	    or Warn("error unlinking file $DataDir/$url: $!");
+    }
+
+    clean_temp_dir();
+
+    return;
+
+}
+
+init();
+main();
+exit(0);
+
+=head1 NAME
+
+ccm-purge - Clean up the configuration cache directory
+
+=head1 DESCRIPTION
+
+This program cleans up the configuration cache directory
+removing unused configuration profiles, temporary files, and
+unused cached files.
+
+=head1 SYNOPSIS
+
+ccm-purge --time time_aging [--config ccm.conf] [--tolerant]
+
+=head1 OPTIONS
+
+=item B<--time>
+
+the maximun time (in seconds) before to remove a profile that
+it is not in use and files from tmp directory
+
+=item B<--config>
+
+the absolute PATH of configuration file of the Configuration
+Cache Client
+
+=item B<--tolerant>
+
+Controls how tolerant is the program to errors, the default behaviour
+is strict, that means that the program will stop whenever an error is
+found, if this option is specified, the program will continue even if
+small errors are detected
+
+=head1 AUTHOR
+
+Rafael A. Garcia Leiva <angel.leiva@uam.es>
+Universidad Autonoma de Madrid
+
+=head1 VERSION
+
+$Id: ccm-purge.cin,v 1.4 2006/11/23 14:28:23 gcancio Exp $
+
+=cut

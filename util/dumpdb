@@ -1,0 +1,61 @@
+#!/usr/bin/perl -w
+#
+# dump the content of a GDBM file
+#
+
+# $Id: dumpdb,v 1.1 2003/01/31 14:38:15 poznan Exp $
+
+use strict;
+use GDBM_File;
+
+die("Usage: $0 path...\n") unless @ARGV;
+
+my $p = $ARGV[0];
+print "$p\n";
+my %data;
+my %path;
+
+unless (tie(%path, "GDBM_File", "$p/path2eid.db", &GDBM_WRCREAT, 0644)) {
+  print "could not tie: $!\n"
+}
+
+unless (tie(%data, "GDBM_File", "$p/eid2data.db", &GDBM_READER, 0640)) {
+  print "could not tie: $!\n"
+}
+
+print "\npath2eid.db:\n";
+
+foreach my $key (sort (keys (%path))) {
+  my $_eid = $path{$key};
+  my $eid = unpack ("L", $_eid);
+
+  print ("$key => ");
+  printf ("%x",$eid);
+  print "\n";
+}
+
+print "\neid2data.db:\n";
+
+foreach my $key (sort (keys (%data))) {
+  my $eid = unpack ("L", $key);
+
+  printf ("%x",$eid);
+  print " => " . $data{$key} . "\n";
+}
+
+print "\ncombined:\n";
+
+foreach my $key (sort (keys (%path))) {
+  my $_eid = $path{$key};
+  my $eid = unpack ("L", $_eid);
+
+  print ("$key ($eid) => \n");
+  print ("V: " . $data{pack ("L", $eid |  0x00000000)} ."\n");
+  print ("T: " . $data{pack ("L", $eid |  0x10000000)} ."\n");
+  print ("D: " . $data{pack ("L", $eid |  0x20000000)} ."\n");
+  print ("C: " . $data{pack ("L", $eid |  0x30000000)} ."\n");
+}
+
+untie(%path);
+untie(%data);
+

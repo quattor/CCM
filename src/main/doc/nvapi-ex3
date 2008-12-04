@@ -1,0 +1,58 @@
+#!/usr/bin/perl -w
+
+#
+# Example of use of the NVA-API library
+# 
+# This *very* simple example shows how to intercept exceptions
+# and print their contents out
+#
+# for more information on exceptions please look into
+# man pages of the LC::Exception package
+#
+# Piotr Poznanski <Piotr.Poznanski@cern.ch>
+#
+
+# EDG prologue
+
+BEGIN {
+  $ENV{"EDG_LOCATION"} ||= "/opt/edg";
+  $ENV{"EDG_LOCATION_VAR"} ||= $ENV{"EDG_LOCATION"}."/var";
+  unshift (@INC, $ENV{"EDG_LOCATION"}."/lib/perl");
+}
+
+use strict;
+use EDG::WP4::CCM::CacheManager;
+use LC::Exception;
+
+# create exception context that will store exceptions
+# that we can intercept them and e.g. print their contents out
+
+my $ec = LC::Exception::Context->new->will_store_errors;
+
+# empty credentails
+my $cred = 0;
+
+# create new CacheManager (default cache will be used)
+# check if the new method did not throw an exception
+my $cm;
+
+unless ($cm = EDG::WP4::CCM::CacheManager->new()) {
+  print ("exception caught when calling: EDG::WP4::CCM::CacheManager->new()");
+  print ("exception contents:\n".$ec->error);
+}
+
+# get (locked) current configuration
+my $cfg;
+unless ($cfg = $cm->getLockedConfiguration($cred)) {
+  print ("exception caught when calling: $cm->getLockedConfiguration($cred)");
+  print ("exception contents:\n".$ec->error);
+}
+
+# get element with path "/foo" if the element does not
+# exist, exception will be caught and reported
+
+my $el;
+unless ($el=$cfg->getElement("/foo")) {
+  print ("exception caught when calling:\n$el=$cfg->getElement(/foo)");
+  print ("exception contents:\n".$ec->error);
+}

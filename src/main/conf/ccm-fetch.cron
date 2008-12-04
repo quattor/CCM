@@ -1,0 +1,5 @@
+# run regularly ccm-fetch. To avoid lost notifications
+#
+
+0 * * * * root (perl -e 'sleep rand 3600'; /usr/sbin/ccm-fetch) >>/var/log/ccm-fetch.log 2>&1
+

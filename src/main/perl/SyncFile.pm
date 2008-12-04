@@ -1,0 +1,193 @@
+# ${license-info}
+# ${developer-info
+# ${author-info}
+# ${build-info}
+
+package      EDG::WP4::CCM::SyncFile;
+
+use strict;
+use LC::Exception qw(SUCCESS throw_error);
+use EDG::WP4::CCM::CCfg qw(getCfgValue);
+
+BEGIN{
+ use      Exporter;
+ use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
+
+ @ISA       = qw(Exporter);
+ @EXPORT    = qw();           
+ @EXPORT_OK = qw(new read write);
+ $VERSION   = sprintf("%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/);
+}
+
+=head1 NAME
+
+EDG::WP4::CCM::SyncFile
+
+=head1 SYNOPSIS
+
+  $gl = SyncFile->new ("global.lock");
+  $gl -> write ("yes");
+  $locked  = $file -> read ();
+
+=head1 DESCRIPTION
+
+SyncFile module provides synchronised (exclusive) read/write access to
+cid files and global.lock file. It uses flock (2).
+
+flock non blocking call is used for acquiring the lock in lock
+acquiring subroutine. The subroutine retries several times if lock
+cannot be acquired. If after retries lock is still not acquired, error
+is reported.
+
+
+=over
+
+=cut
+
+# ------------------------------------------------------
+
+my $ec = LC::Exception::Context->new->will_store_errors;
+
+=item read ()
+
+read contents of the file. It reads the first line of the file and
+removes \n.  If the contents of file does not contain "/n" at the end,
+function behaviour is not guaranteed, most likely it chop last
+character.
+
+=cut
+
+sub read { #T
+  my ($self) = @_;
+  my $file_name = $self->{"file_name"};
+  my $contents;
+  open (FH, "<$file_name");
+#  unless (_lock($self)) {
+#    throw_error("_lock()", $ec->error);
+#    return();
+#  }
+  $contents = <FH>;
+  chop ($contents);
+#  unless (_unlock()) {
+#    throw_error("_unlock()", $ec->error);
+#    return();
+#  }
+  close (FH);
+  return $contents;
+}
+
+=item write ($contents)
+
+remove and write contents of the file. It adds \n at the and of the
+contents.
+
+=cut
+
+sub write { #T
+  my ($self, $contents) = @_;
+  my $file_name = $self->{"file_name"};
+ open (FH, ">$file_name");
+# unless (_lock($self)) {
+#   throw_error("_lock()", $ec->error);
+#   return();
+# }
+  print FH "$contents\n";
+#  unless (_unlock()) {
+#    throw_error("_unlock()", $ec->error);
+#    return();
+#  }
+  close (FH);
+  return SUCCESS;
+}
+
+#
+# lock using blocking flock call 
+#
+
+sub _block {
+  unless (flock (FH, 2)) {
+    throw_error ("flock (FH, 2)", $!);
+    return();
+  }
+  return SUCCESS;
+}
+
+#
+# lock using unblocking call with timeout mechanism
+#
+
+
+sub _lock {
+  my ($self) = @_;
+  my $locked = flock (FH, 6);
+  my $i = 1;
+  $locked = flock (FH, 6);
+  while (!$locked && $i++ < $self->{"retries"}) {
+    sleep ($self->{"wait"});
+    $locked = flock (FH, 6);
+  }
+  unless ($locked) {
+    throw_error ("could not get lock (flock (FH, 6))", $!);
+    return();
+  }
+  return SUCCESS;
+}
+
+#
+# unlock using flock call
+#
+
+sub _unlock {
+  unless (flock (FH, 8)) {
+    throw_error ("flock (FH, 8)", $!);
+    return();
+  }
+  return SUCCESS;
+}
+
+=item get_file_name ()
+
+get file name
+
+=cut
+
+sub get_file_name () { #T
+  my ($self) = @_;
+  return $self->{"file_name"};
+}
+
+=item new ($file_name)
+
+create new SyncFile object where $file_name is the name of the sync
+file
+
+=cut
+
+sub new ($$$) { #T
+  my ($class, $file_name, $wait, $retries) = @_;
+  my $self = {
+	      "file_name" => $file_name,
+	      "wait" => getCfgValue("lock_wait"),
+	      "retries" => getCfgValue("retrieve_retries"),
+	     };
+  bless ($self, $class);
+  return $self;
+}
+
+# ------------------------------------------------------
+
+1;
+
+__END__
+
+=back
+
+=head1 AUTHOR
+
+Piotr Poznanski <Piotr.Poznanski@cern.ch>
+
+=head1 VERSION
+
+$Id: SyncFile.pm.cin,v 1.1 2005/01/26 10:09:52 gcancio Exp $
+
+=cut

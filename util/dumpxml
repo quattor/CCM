@@ -1,0 +1,159 @@
+#!/usr/bin/perl -w
+#
+# dump configuration in a form of XML profile
+#
+
+# $Id: dumpxml,v 1.2 2003/02/13 17:31:25 poznan Exp $
+
+use strict;
+
+use LC::Exception qw(SUCCESS throw_error);
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Element;
+use EDG::WP4::CCM::Property;
+use EDG::WP4::CCM::Resource;
+use EDG::WP4::CCM::Path;
+
+my $ec = LC::Exception::Context->new->will_report_all;
+my $cp = $ARGV[0];
+my $cid = $ARGV[1];
+my $g = "  ";
+
+my $pr_checksum = 0;
+my $pr_description = 0;
+
+use constant UNDEFINED =>  -1;
+use constant ELEMENT   =>   0;
+use constant PROPERTY  =>  (1 << 0);
+use constant RESOURCE  =>  (1 << 1);
+use constant STRING    => ((1 << 2) | PROPERTY);
+use constant LONG      => ((1 << 3) | PROPERTY);
+use constant DOUBLE    => ((1 << 4) | PROPERTY);
+use constant BOOLEAN   => ((1 << 5) | PROPERTY);
+use constant LIST      => ((1 << 2) | RESOURCE);
+use constant NLIST     => ((1 << 3) | RESOURCE);
+use constant FETCH     => ((1 << 6) | STRING);
+use constant STREAM    => ((1 << 7) | STRING);
+use constant EMBED     => ((1 << 8) | STRING);
+use constant LINK      => ((1 << 9) | STRING);
+use constant TABLE     => ((1 << 6) | NLIST);
+use constant RECORD    => ((1 << 7) | NLIST);
+
+sub is_a ($$) {
+  my ($u, $d) = @_;
+  return (($u & $d) == $u);
+}
+
+sub get_name ($) {
+  my ($e) = @_;
+  my $t = $e->getType();
+  my $name;
+  if (is_a (STRING, $t)) {$name="string"}
+  elsif (is_a (LONG, $t)) {$name="long"}
+  elsif (is_a (DOUBLE, $t)) {$name="double"}
+  elsif (is_a (BOOLEAN, $t)) {$name="boolean"}
+  elsif (is_a (LIST, $t)) {$name="list"}
+  elsif (is_a (NLIST, $t)) {$name="nlist"}
+  return $name;
+}
+
+sub get_type ($) {
+  my ($e) = @_;
+  my $t = $e->getType();
+  my $type;
+  if ($t == FETCH) {$type="fetch"}
+  elsif ($t == STREAM) {$type="stream"}
+  elsif ($t == EMBED) {$type="embed"}
+  elsif ($t == LINK) {$type="link"}
+  elsif ($t == TABLE) {$type="table"}
+  elsif ($t == RECORD) {$type="record"}
+  return $type;
+}
+
+sub print_common ($$) {
+  my ($e, $p_name) = @_;
+#  print "print_common: $p_name\n";
+  if ($p_name) {
+    my $name = $e->getName();
+    print ' name="'.($name eq "/" ? "profile" : $name).'"';
+  }
+  print ' derivation="'.$e->getDerivation().'"';
+  if ($pr_checksum) {
+    print ' checksum="'.$e->getChecksum().'"';
+  }
+  my $ta = get_type ($e);
+  if ($ta) {
+    print ' type="'.$ta.'"';
+  }
+  if ($pr_description) {
+    my $desc = $e->getDescription();
+    if ($desc) {
+      print ' description="'.$e->getDescription().'"';
+    }
+  }
+  print ">";
+}
+
+sub print_resource ($$$) {
+  my ($r, $s, $p_name) = @_;
+  print_common ($r, $p_name);
+  print "\n";
+  while ($r->hasNextElement()) {
+    my $p_n;
+    if ($r->isType(EDG::WP4::CCM::Element::NLIST)) {
+      $p_n = 1;
+    } elsif ($r->isType(EDG::WP4::CCM::Element::LIST)) {
+      $p_n = 0;
+    } else {
+      die "wrong type";
+    }
+    print_element ($r->getNextElement(), $s.$g, $p_n);
+  }
+  print $s;
+}
+
+sub print_property ($$$) {
+  my ($p, $s, $p_name) = @_;
+  print_common ($p, $p_name);
+  print $p->getValue();
+}
+
+sub print_element ($$$) {
+  my ($e, $s, $p_name) = @_;
+  my $name = get_name ($e);
+  print "$s<$name";
+  if ($e->isResource()) {
+    unless (UNIVERSAL::isa ($e, "EDG::WP4::CCM::Resource")) {
+      print $e->getName() . "\n";
+      die "not a resource!";
+    }
+    print_resource ($e,$s, $p_name);
+  } elsif ($e->isProperty()) {
+    unless (UNIVERSAL::isa ($e, "EDG::WP4::CCM::Property")) {
+      print $e->getName() . "\n";
+      print "element!\n" if (UNIVERSAL::isa ($e, "EDG::WP4::CCM::Element"));
+      die "not a property!";
+    }
+    print_property ($e, $s, $p_name);
+  } else {
+    die "not resource not property!";
+  }
+  print "</$name>\n";
+  return SUCCESS;
+}
+
+
+unless ($cp) {
+  print "usage $0 cache-path [config-id]\n";
+  exit();
+}
+
+my $cm = EDG::WP4::CCM::CacheManager->new($cp);
+my $cred = "";
+my $cfg = $cm->getLockedConfiguration ("",$cid);
+my $tp = EDG::WP4::CCM::Path->new ("/");
+
+my $e = $cfg->getElement ($tp);
+print '<?xml version="1.0" encoding="utf-8"?>'."\n";
+print_element ($e, "", 1);
+

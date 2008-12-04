@@ -1,0 +1,155 @@
+#!/usr/bin/perl -w
+
+#######################################################################
+#
+# Initialise local config cache
+#
+# Copyright (c) 2003 EU DataGrid project.  All rights reserved.
+# For license conditions see file LICENSE or
+# <http://www.eu-datagrid.org/license.html>
+#
+# $Id: ccm-initialise.cin,v 1.1 2004/10/28 09:06:22 rgarcial Exp $
+#
+#######################################################################
+
+#
+# Beginning sequence for EDG initialization
+#
+BEGIN {
+
+    # use perl libs in /usr/lib/perl
+    unshift(@INC, '/usr/lib/perl');
+    unshift(@INC,'/opt/edg/lib/perl');
+
+}
+
+use strict;
+use Getopt::Long;
+use File::Path;
+use EDG::WP4::CCM::CCfg;
+
+#######################################################################
+# Options
+#######################################################################
+
+my $debug = undef;
+my $config = undef;
+my $cache_root = undef;
+my $world_readable = 0;
+
+#######################################################################
+sub Quit (;$) {
+#######################################################################
+
+    if (defined($_[0])) {
+        print STDERR "cache-initialise: " . $_[0] . "\n";
+        exit(1);
+    } else {
+        exit(0);
+    }
+}
+
+#######################################################################
+sub Debug ($) {
+#######################################################################
+ 
+    my $msg = shift;
+    if (defined($debug)) {
+        print $msg . "\n";
+    }
+
+  return 'ok';
+}
+
+#######################################################################
+sub Config ($) {
+#######################################################################
+
+    EDG::WP4::CCM::CCfg::initCfg(shift);
+
+    $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
+    $world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
+
+}
+
+#######################################################################
+# Main program
+#######################################################################
+
+# options
+Quit("usage: cache-initialise [OPTIONS]
+  -d, --debug          turn on debugging
+  --config=FILE        location of fetch config file (for cache root)")
+    unless (GetOptions('debug' => \$debug, 'config=s' => \$config)
+            and scalar @ARGV == 0);
+
+# process config file
+Config($config);
+
+# remove any existing cache
+rmtree($cache_root, 0, 0);
+
+# make directory structure
+if ($world_readable) {
+    my $ok = mkdir $cache_root, 0755;
+    die "Can't create $cache_root: $!\n" unless $ok;
+    mkdir "$cache_root/data", 0755;
+    die "Can't create $cache_root/data: $!\n" unless $ok;
+    mkdir "$cache_root/tmp", 0755;
+    die "Can't create $cache_root/tmp: $!\n" unless $ok;
+} else {
+    my $ok = mkdir $cache_root, 0700;
+    die "Can't create $cache_root: $!\n" unless $ok;
+    mkdir "$cache_root/data", 0700;
+    die "Can't create $cache_root/data: $!\n" unless $ok;
+    mkdir "$cache_root/tmp", 0700;
+    die "Can't create $cache_root/tmp: $!\n" unless $ok;
+    # make sure files are created so only root can see them
+    umask(077);
+}
+
+
+# make lock files
+open TMP, ">$cache_root/global.lock";
+print TMP "no\n";
+close TMP;
+
+open TMP, ">$cache_root/fetch.lock";
+close TMP;
+
+Quit();
+
+__END__
+
+=head1 NAME
+
+cache-initialise - initialise local config cache
+
+=head1 DESCRIPTION
+
+Create an initial directory hierarchy for the local config cache, along
+with the necessary lock files.
+
+=head1 SYNOPSIS
+
+ccm-initialise [I<OPTIONS>]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-d>, B<--debug>
+
+Turn on debugging messages.
+
+=item B<--config>=I<file>
+
+The I<file> is the WP4 local cache configuration file, also used by the
+B<fetch> program; cache-initialise uses it to establish the location of
+the cache root directory.  If no I<file> is specified, the default path
+is /etc/ccm.conf.  If the file is missing or specifies no value
+for the cache root, that defaults to /var/lib/ccm.
+
+=back
+
+=cut
