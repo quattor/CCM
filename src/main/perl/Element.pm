@@ -35,8 +35,9 @@ use constant DOUBLE    => ((1 << 4) | PROPERTY);
 use constant BOOLEAN   => ((1 << 5) | PROPERTY);
 use constant LIST      => ((1 << 2) | RESOURCE);
 use constant NLIST     => ((1 << 3) | RESOURCE);
-use constant TABLE     => ((1 << 6) | NLIST);
-use constant RECORD    => ((1 << 7) | NLIST);
+# TABLE and RECORD are just synonyms for nlist!!
+use constant TABLE     => NLIST;
+use constant RECORD    => NLIST;
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 

@@ -1,3 +1,9 @@
+2009-03-04  Luis Fernando Muñoz Mejías <Luis.Fernando.Munoz.Mejias@cern.ch>
+
+	* Release: 2.2.7
+	- Convert REPORT and TABLE types to actual synonims of NLIST
+	instead of subtypes.
+
 2008-12-12  Marco Emilio Poleggi,<Marco.Poleggi@cnaf.infn.it>
 
 	* Release: 2.2.6
