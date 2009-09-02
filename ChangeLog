@@ -1,3 +1,8 @@
+2009-09-02  Luis Fernando Muñoz Mejías
+
+	* Release: 2.2.8
+	- Relax the dependencies, as per bug #55179.
+
 2009-03-04  Luis Fernando Muñoz Mejías <Luis.Fernando.Munoz.Mejias@cern.ch>
 
 	* Release: 2.2.7
