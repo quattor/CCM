@@ -1,4 +1,4 @@
-2012-01-02  root
+2012-01-02  Christos Triantafyllidis,ctria@grid.auth.gr
 
 	* Release: 2.2.9
 	- LWP::UserAgent 6.x needs additional ssl options.
