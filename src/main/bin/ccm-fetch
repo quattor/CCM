@@ -242,6 +242,10 @@ sub Retrieve ($$;$) {
     }
 
     my $ua = new LWP::UserAgent;
+    if ($LWP::UserAgent::VERSION =~ m/6.*/) {
+        $ua->ssl_opts( SSL_key_file => $key_file );
+        $ua->ssl_opts( SSL_cert_file => $cert_file );
+    };
     my $req = new HTTP::Request( GET=>$url );
 
     # only fetch if changed
