@@ -1,3 +1,11 @@
+2012-01-25  Luis Fernando Muñoz Mejías
+
+	* Release: 2.3.0
+	- Fix the dependencies for Morgan-Stanley's changes.
+
+	The new backend formats and the cleanups associated to them well
+	deserve a new version!
+
 2012-01-02  Christos Triantafyllidis,ctria@grid.auth.gr
 
 	* Release: 2.2.9
