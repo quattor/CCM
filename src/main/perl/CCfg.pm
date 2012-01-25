@@ -65,7 +65,8 @@ my $cfg = {
               "ca_file" => undef,
               "ca_dir" => undef,
               "base_url" => undef,
-              "world_readable" => undef
+              "world_readable" => undef,
+              "dbformat" => "GDBM_File"
 };
 
 sub _resolveTags ($) {
@@ -141,6 +142,8 @@ sub _readConfigFile ($) {
             elsif ($var eq 'ca_dir') {$cfg->{"ca_dir"}=$val;}
             elsif ($var eq 'base_url') {$cfg->{"base_url"}=$val;}
             elsif ($var eq 'world_readable') {$cfg->{"world_readable"}=$val;}
+            elsif ($var eq 'dbformat') {$cfg->{"dbformat"}=$val;}
+            elsif ($var eq 'trust') {$cfg->{"trust"}=$val;}
 	    else { throw_error("unknown config variable: $var"); }
 	    next;
 	}
@@ -173,7 +176,7 @@ sub initCfg {
     } elsif (-f $DEF_EDG_LOC."/etc/$CONFIG_FN") {
       $cp = $DEF_EDG_LOC."/etc/$CONFIG_FN";
     } elsif (defined($ENV{"EDG_LOCATION"})
-	     && -f $ENV{"EDG_LOCATION"}."/etc/$CONFIG_FN") {
+      && -f $ENV{"EDG_LOCATION"}."/etc/$CONFIG_FN") {
       $cp = $ENV{"EDG_LOCATION"}."/etc/$CONFIG_FN";
     } else {
       #no default configuration file exists

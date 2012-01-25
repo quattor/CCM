@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 #
-# dump the content of a GDBM file
+# dump the content of a DB file
 #
 
 # $Id: dumpdb,v 1.1 2003/01/31 14:38:15 poznan Exp $
 
 use strict;
-use GDBM_File;
+use EDG::WP4::CCM::DB;
 
 die("Usage: $0 path...\n") unless @ARGV;
 
@@ -15,12 +15,15 @@ print "$p\n";
 my %data;
 my %path;
 
-unless (tie(%path, "GDBM_File", "$p/path2eid.db", &GDBM_WRCREAT, 0644)) {
-  print "could not tie: $!\n"
+
+my $err = EDG::WP4::CCM::DB::read(\%path, "$p/path2eid");
+if ($err) {
+  print "could not read path2eid: $err\n"
 }
 
-unless (tie(%data, "GDBM_File", "$p/eid2data.db", &GDBM_READER, 0640)) {
-  print "could not tie: $!\n"
+$err = EDG::WP4::CCM::DB::read(\%data, "$p/eid2data");
+if ($err) {
+  print "could not read eid2data: $!\n"
 }
 
 print "\npath2eid.db:\n";

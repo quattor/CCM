@@ -13,7 +13,7 @@ BEGIN {unshift(@INC,'/usr/lib/perl')};
 
 use strict;
 use POSIX qw (getpid);
-use GDBM_File;
+use DB_File;
 use Digest::MD5 qw(md5_hex);
 use Test::Simple tests => 21;
 use LC::Exception qw(SUCCESS throw_error);
@@ -71,15 +71,15 @@ sub gen_dbm ($$) {
     $active = $profile . "/active." . getpid();
    `echo '1' > $cache_dir/$active`;
 
-    tie(%hash, "GDBM_File", "${cache_dir}/${profile}/path2eid.db",
-        GDBM_WRCREAT, 0644) or return();
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
+        &O_RDWR|&O_CREAT, 0644) or return();
     $key = "/path/to/element";
     $val = 0x00000001;
     $hash{$key} = pack("L", $val);
     untie(%hash);
 
-    tie(%hash, "GDBM_File", "${cache_dir}/${profile}/eid2data.db",
-        GDBM_WRCREAT, 0644) or return();
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/eid2data.db",
+        &O_RDWR|&O_CREAT, 0644) or return();
     # value
     $key = 0x00000001;
     $hash{pack("L", $key)} = "a string";

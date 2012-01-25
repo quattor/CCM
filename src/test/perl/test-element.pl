@@ -13,7 +13,7 @@ BEGIN {unshift(@INC,'/usr/lib/perl')};
 
 use strict;
 use POSIX qw (getpid);
-use GDBM_File;
+use DB_File;
 use Digest::MD5 qw(md5_hex);
 use Test::More tests => 22;
 
@@ -53,8 +53,8 @@ sub gen_dbm ($$) {
     $active = $profile . "/active." . getpid();
    `echo '1' > $cache_dir/$active`;
 
-    tie(%hash, "GDBM_File", "${cache_dir}/${profile}/path2eid.db",
-        GDBM_WRCREAT, 0644) or return();
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
+        &O_RDWR|&O_CREAT, 0644) or return();
     $key = "/path/to/property";
     $val = 0x00000001;
     $hash{$key} = pack("L", $val);
@@ -63,8 +63,8 @@ sub gen_dbm ($$) {
     $hash{$key} = pack("L", $val);
     untie(%hash);
 
-    tie(%hash, "GDBM_File", "${cache_dir}/${profile}/eid2data.db",
-        GDBM_WRCREAT, 0644) or return();
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/eid2data.db",
+        &O_RDWR|&O_CREAT, 0644) or return();
     # value
     $key = 0x00000001;
     $hash{pack("L", $key)} = "a string";
@@ -182,7 +182,7 @@ ok($description eq "an example of string", "Element->getDescription()");
 
 # test getValue()
 $value = $element->getValue();
-#ok($value eq "a string", "Element->getValue()");
+ok($value eq "a string", "Element->getValue()");
 
 # test isType()
 ok($element->isType(EDG::WP4::CCM::Element->STRING),

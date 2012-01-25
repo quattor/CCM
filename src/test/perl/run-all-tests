@@ -12,7 +12,7 @@ my @test_files=qw(test-ccfg.pl test-path.pl test-property.pl test-syncfile.pl
 
 # not working tests yet
 
-push(@test_files,qw(test-configuration.pl test-cachemanager.pl));
+#push(@test_files,qw(test-configuration.pl test-cachemanager.pl));
 
 runtests(@test_files);
 

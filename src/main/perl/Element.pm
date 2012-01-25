@@ -6,7 +6,8 @@
 package EDG::WP4::CCM::Element;
 
 use strict;
-use GDBM_File;
+use DB_File;
+use File::Spec;
 use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Configuration;
@@ -18,8 +19,9 @@ use Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
 our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
-		    LONG DOUBLE BOOLEAN LIST NLIST TABLE RECORD);
+		    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD);
 our $VERSION = sprintf("%d.%02d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/);
+use EDG::WP4::CCM::DB;
 
 
 
@@ -35,7 +37,7 @@ use constant DOUBLE    => ((1 << 4) | PROPERTY);
 use constant BOOLEAN   => ((1 << 5) | PROPERTY);
 use constant LIST      => ((1 << 2) | RESOURCE);
 use constant NLIST     => ((1 << 3) | RESOURCE);
-# TABLE and RECORD are just synonyms for nlist!!
+use constant LINK      => ((1 << 9) | STRING);
 use constant TABLE     => NLIST;
 use constant RECORD    => NLIST;
 
@@ -74,6 +76,7 @@ Type constants:
       LONG    
       DOUBLE  
       BOOLEAN
+      LINK
    RESOURCE
       NLIST
         TABLE
@@ -188,6 +191,38 @@ sub new {
 }
 
 
+=item _get_tied_db()
+
+Wrapper around EDG::WP4::CCM::DB::read() to attempt to cache the tied
+hash.  Takes a scalar reference (to be filled in with either a new
+hash ref or the cached hash ref) instead of a hash ref.
+
+The caching mechanism is extremely conservative and will only cache
+the last version of path2eid or eid2path to be accessed.  It makes
+the assumption that these files will never change.  (Instead, new
+profile data goes into a whole new path.)
+
+=cut
+
+# Hide %CACHE from the rest of the class.  Only the code here can touch it.
+{
+    my $CACHE = {};
+    sub _get_tied_db($$) {
+        my ($returnref, $path) = @_;
+        my ($base) = $path =~ /(\w+)$/;
+        if ($CACHE->{$base}->{err} or not $CACHE->{$base}->{path}
+                        or $CACHE->{$base}->{path} ne $path) {
+            my %newhash = ();
+            $CACHE->{$base}->{path} = $path;
+            # Should any old references be untied here?
+            $CACHE->{$base}->{db} = \%newhash;
+            $CACHE->{$base}->{err} = EDG::WP4::CCM::DB::read(\%newhash, $path);
+        }
+        $$returnref = $CACHE->{$base}->{db};
+        return $CACHE->{$base}->{err};
+    }
+}
+
 =item elementExists($config, $ele_path)
 
 Returns true if the element identified by $ele_path exists
@@ -214,13 +249,15 @@ sub elementExists {
         $ele_path = $ele_path->toString();
     }
     $prof_dir  = $config->getConfigPath();
-    my (%hash, $eid);
-    if( !tie(%hash, "GDBM_File", "${prof_dir}/path2eid.db",
-             GDBM_READER, 0640) ) {
-        throw_error("${prof_dir}/path2eid.db failed to open", $!);
+    my ($hashref, $eid);
+
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
+    if ($err) {
+        throw_error($err);
         return();
     }
-    return (exists($hash{$ele_path}));
+
+    return (exists($hashref->{$ele_path}));
 }
 
 =pod
@@ -463,37 +500,37 @@ Note that links cannot be followed.
 
 sub getTree
 {
-    my $self = shift;
-    my ($ret, $el);
+	my $self = shift;
+	my ($ret, $el);
 
- SWITCH:
-    {
-	$self->isType(LIST) && do {
-	    $ret = [];
-	    while ($self->hasNextElement) {
+    SWITCH:
+	{
+		$self->isType(LIST) && do {
+			$ret = [];
+			while ($self->hasNextElement) {
 		$el = $self->getNextElement();
-		push (@$ret, $el->getTree);
-	    }
-	    last SWITCH;
-	};
-	$self->isType(NLIST) && do {
-	    $ret = {};
-	    while ($self->hasNextElement) {
+	 			push (@$ret, $el->getTree);
+			}
+ 			last SWITCH;
+		};
+		$self->isType(NLIST) && do {
+			$ret = {};
+			while ($self->hasNextElement) {
 		$el = $self->getNextElement();
-		$$ret{$el->getName()} = $el->getTree;
-	    }
-	    last SWITCH;
-	};
-	$self->isType(BOOLEAN) && do {
-	    $ret = $self->getValue eq 'true' ? 1:0;
-	    last SWITCH;
-	};
-	# Default clause
-	$ret = $self->getValue;
-	last SWITCH;
-    };
+				$$ret{$el->getName()} = $el->getTree;
+			}
+			last SWITCH;
+		};
+		$self->isType(BOOLEAN) && do {
+			$ret = $self->getValue eq 'true' ? 1:0;
+			last SWITCH;
+		};
+		# Default clause
+		$ret = $self->getValue;
 
-    return $ret;
+		last SWITCH;
+	};
+	return $ret;
 }
 
 
@@ -506,16 +543,15 @@ sub getTree
 sub _resolve_eid($$) {
 
     my ($prof_dir, $ele_path) = @_;
-    my (%hash, $eid);
+    my ($hashref, $eid);
 
-    if( !tie(%hash, "GDBM_File", "${prof_dir}/path2eid.db",
-             GDBM_READER, 0640) ) {
-        throw_error("${prof_dir}/path2eid.db failed to open", $!);
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
+    if ($err) {
+        throw_error($err);
         return();
     }
 
-    $eid = $hash{$ele_path};
-    untie(%hash);
+    $eid = $hashref->{$ele_path};
 
     unless ($eid) {
 	throw_error("cannot resolve element $ele_path");
@@ -539,42 +575,42 @@ sub _type_converter($) {
 
     # type conversion
     # TODO: there must be a better way to do this ...
-    $type = STRING  if ( $type eq "string" );
-    $type = DOUBLE  if ( $type eq "double" );
-    $type = LONG    if ( $type eq "long" );
-    $type = BOOLEAN if ( $type eq "boolean" );
-    $type = LIST    if ( $type eq "list" );
-    $type = NLIST   if ( $type eq "nlist" );
-    $type = TABLE   if ( $type eq "table" );
-    $type = RECORD  if ( $type eq "record" );
+    return(STRING)  if ( $type eq "string" );
+    return(DOUBLE)  if ( $type eq "double" );
+    return(LONG)    if ( $type eq "long" );
+    return(BOOLEAN) if ( $type eq "boolean" );
+    return(LIST)    if ( $type eq "list" );
+    return(NLIST)   if ( $type eq "nlist" );
+    return(LINK)    if ( $type eq "link" );
+    return(TABLE)   if ( $type eq "table" );
+    return(RECORD)  if ( $type eq "record" );
 
-    return($type);
-
+    return(UNDEFINED);
 }
 
 #
 # _read_metadata($self)
 #
-# Private function to read metadata information from DBM file.
+# Private function to read metadata information from DB file.
 # $self if a reference to myself (Element) object
 #
 sub _read_metadata($) {
 
     my $self = shift;
     my ($prof_dir, $eid);
-    my ($key, %hash);
+    my ($key, $hashref);
 
     $prof_dir = $self->{PROF_DIR};
     $eid      = $self->{EID};
 
-    if( !tie(%hash, "GDBM_File", "${prof_dir}/eid2data.db",
-             GDBM_READER, 0640) ) {
-        throw_error("${prof_dir}/eid2data.db failed to open", $!);
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    if ($err) {
+        throw_error($err);
         return();
     }
 
     $key = pack("L", $eid | 0x10000000);
-    $self->{TYPE} = $hash{$key};
+    $self->{TYPE} = $hashref->{$key};
 
     if( !defined($self->{TYPE}) ) {
         throw_error("failed to read element's type");
@@ -583,27 +619,25 @@ sub _read_metadata($) {
     $self->{TYPE} = _type_converter($self->{TYPE});
 
     $key = pack("L", $eid | 0x20000000);
-    $self->{DERIVATION} = $hash{$key};
+    $self->{DERIVATION} = $hashref->{$key};
     # TODO: metadata atribute "derivation" should not be optional
     if( !defined($self->{DERIVATION}) ) {
         $self->{DERIVATION} = "";
     }
 
     $key = pack("L", $eid | 0x30000000);
-    $self->{CHECKSUM} = $hash{$key};
+    $self->{CHECKSUM} = $hashref->{$key};
     if( !defined($self->{CHECKSUM}) ) {
         throw_error("failed to read element's checksum");
         return();
     }
 
     $key = pack("L", $eid | 0x40000000);
-    $self->{DESCRIPTION} = $hash{$key};
+    $self->{DESCRIPTION} = $hashref->{$key};
     # metadata atribute "description" is optional
     if( !defined($self->{DESCRIPTION}) ) {
         $self->{DESCRIPTION} = "";
     }
-
-    untie(%hash);
 
     return(SUCCESS);
 
@@ -612,7 +646,7 @@ sub _read_metadata($) {
 #
 # _read_type($config, $ele_path)
 #
-# Private function to read Type information from DBM file.
+# Private function to read Type information from DB file.
 # You do not need an Element object to use this function.
 # $config is a configuration profile
 # $ele_path is the element path (as string)
@@ -621,7 +655,7 @@ sub _read_type($$) {
 
     my ($config, $ele_path);
     my ($prof_dir, $eid);
-    my ($key, %hash, $type);
+    my ($key, $hashref, $type);
 
     ($config, $ele_path) = @_;
 
@@ -633,14 +667,14 @@ sub _read_type($$) {
         return();
     }
 
-    if( !tie(%hash, "GDBM_File", "${prof_dir}/eid2data.db",
-             GDBM_READER, 0640) ) {
-        throw_error("${prof_dir}/eid2data.db failed to open", $!);
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    if ($err) {
+        throw_error($err);
         return();
     }
 
     $key = pack("L", $eid | 0x10000000);
-    $type = $hash{$key};
+    $type = $hashref->{$key};
 
     if( !defined($type) ) {
         throw_error("failed to read element's type");
@@ -649,8 +683,6 @@ sub _read_type($$) {
 
     $type = _type_converter($type);
 
-    untie(%hash);
-
     return($type);
 
 }
@@ -658,32 +690,30 @@ sub _read_type($$) {
 #
 # _read_value($self)
 #
-# Private function to read element's value from DBM file.
+# Private function to read element's value from DB file.
 # $self if a reference to myself (Element) object
 #
 sub _read_value ($$$) {
 
     my $self = shift;
     my ($prof_dir, $eid);
-    my ($key, %hash);
+    my ($key, $hashref);
 
     $prof_dir = $self->{PROF_DIR};
     $eid      = $self->{EID};
 
-    if( !tie(%hash, "GDBM_File", "${prof_dir}/eid2data.db",
-             GDBM_READER, 0640) ) {
-        throw_error("${prof_dir}/eid2data.db failed to open", $!);
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    if ($err) {
+        throw_error($err);
         return();
     }
 
     $key = pack("L", $eid);
-    $self->{VALUE} = decode_utf8($hash{$key});
+    $self->{VALUE} = decode_utf8($hashref->{$key});
     if( !defined($self->{VALUE}) ) {
         throw_error("failed to read element's value");
         return();
     }
-
-    untie(%hash);
 
     return(SUCCESS);
 

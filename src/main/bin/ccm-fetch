@@ -1,1191 +1,219 @@
 #!/usr/bin/perl -w
 
-#######################################################################
-#
-# Fetch XML profiles and store in local cache
-#
-# Copyright (c) 2003 EU DataGrid project.  All rights reserved.
-# For license conditions see file LICENSE or
-# <http://www.eu-datagrid.org/license.html>
-#
-# $Id: ccm-fetch.cin,v 1.21 2007/11/27 11:21:03 rsharma Exp $
-#
-#######################################################################
+package ccm_fetch;
 
-#
-# Beginning sequence for EDG initialization
-#
+# required for CAF (Common Application Framework)
 BEGIN {
-
-    # use perl libs in /usr/lib/perl
-    unshift(@INC, '/usr/lib/perl');
-    unshift(@INC,'/opt/edg/lib/perl');
-
+    unshift(@INC, '/opt/edg/lib/perl', '/usr/lib/perl');
 }
+
+# modules
+use CAF::Application;
+use CAF::Reporter;
+use LC::Exception qw(SUCCESS throw_error);
 
 use strict;
-use Getopt::Long;
-use EDG::WP4::CCM::CCfg;
-use Fcntl ':flock';
-use MIME::Base64;
-use LWP::UserAgent;
-use XML::Parser;
-use Compress::Zlib;
-use Digest::MD5 qw(md5_hex);
-use Encode qw(encode_utf8);
-use GDBM_File;
+#use diagnostics;
 
-#######################################################################
-# options & config parameters
-#######################################################################
+our @ISA = qw(CAF::Application CAF::Reporter);
 
+# needed for method overriding
+no warnings 'redefine';
+
+
+#
+# application specific options:
+#
+sub app_options {
+
+    # local lexicals
+    my @options;
+
+    # build options
+    push (@options,
+
+	  { NAME    => 'config=s',
+	    DEFAULT => '/etc/ccm.conf',
+	    HELP    => 'configuration file for CCM' },
+
+	  { NAME    => 'profile|p=s',
+	    HELP    => 'URL of profile to fetch' },
+
+	  { NAME    => 'profile_failover=s',
+	    HELP    => 'URL of profile to fetch when --profile is not available' },
+
+	  { NAME    => 'profile-time=s',
+	    HELP    => 'Unix timestamp as modification time of profile' },
+
+	  { NAME    => 'context|c=s',
+	    HELP    => 'URL of context to fetch' },
+
+	  { NAME    => 'context_time=s',
+	    HELP    => 'Unix timestamp as modification time of context' },
+
+	  { NAME    => 'preprocessor=s',
+	    HELP    => 'Path of executable to be used to preprocess a profile with a context' },
+
+	  { NAME    => 'foreign',
+	    HELP    => 'whether a foreign profile or local profile' },
+
+	  { NAME    => 'cache_root=s',
+	    DEFAULT => '/var/lib/ccm',
+	    HELP    => 'Path of executable to be used to preprocess a profile with a context' },
+
+	  { NAME    => 'get_timeout=i',
+	    DEFAULT => '30',
+	    HELP    => 'Timeout in seconds for HTTP GET operation' },
+
+	  { NAME    => 'world_readable=i',
+	    DEFAULT => '1',
+	    HELP    => 'World readable profile flag 1/0' },
+
+	  { NAME    => 'force|f',
+	    HELP    => 'Force fetch to retrieve XML profiles' },
+
+	  { NAME    => 'dbformat=s',
+	    HELP    => 'Format to use for storing profile' },
+
+	  { NAME    => 'debug|d=i',
+	    DEFAULT => '0',
+	    HELP    => 'Turn on dubugging messages' });
+    
+    return \@options;
+}
+
+#
+# initialise
+#
+sub _initialize {
+    
+    # local lexicals
+    my $self = shift;
+
+    # version and usage
+    $self->{'VERSION'} = "2.2.9";
+    $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
+
+    # initialise
+    unless ($self->SUPER::_initialize(@_)) {
+	return undef;
+    }
+    return SUCCESS;
+}
+
+
+#-- Main ---------------------------------------------------------------------------------------------#
+
+package main;
+
+# modules
+use English;
+use LC::Exception qw(SUCCESS throw_error);
+use File::Basename;
+use EDG::WP4::CCM::Fetch;
+use EDG::WP4::CCM::CacheManager;
+use LC::Exception;
+
+use strict;
+#use diagnostics;
+
+use vars qw($this_app $DEBUG);
+
+# local lexicals
+my $fetch   = undef;
+my $profile = undef;
+my $foreign = undef;
+my $config  = undef;
+
+
+# unbuffer STDOUT & STDERR
+autoflush STDOUT 1;
+autoflush STDERR 1;
+
+# initialise main class
+unless ($this_app = ccm_fetch->new($0, @ARGV)) {
+    throw_error("Cannot start application");
+    exit (1);
+}
+
+#my $ec = LC::Exception::Context->new->will_store_all;
+
+# get Config path
 my $opts = {};
-my $debug = undef;
-my $force = undef;
-my $config = undef;
-my $profile_url = undef;
-my $profile_failover_url = undef;
-my $profile_ntime = undef;
-my $context_url = undef;
-my $context_ntime = undef;
-my $preprocessor = undef;
-my $cache_root = undef;
-my $get_timeout = 30;
-my $lock_retries = 3;
-my $lock_wait = 30;
-my $retrieve_retries = 3;
-my $retrieve_wait = 30;
-my $MAXPROFILECOUNTER=9999;
-my $cert_file = undef;
-my $key_file = undef;
-my $ca_file = undef;
-my $ca_dir = undef;
-my $world_readable = 0;
-my $no_quattor = "/etc/noquattor";
-
-#######################################################################
-sub RequestLock ($) {
-#######################################################################
-
-# Try to get a flock(); return filehandle if successful.
-
-    my $lock = shift;
-    local *FH;
-    open(FH, "+<$lock") or Quit("can't open lock file: $lock: $!");
-    Debug("RequestLock: trying for lock: $lock");
-    if (flock(FH, LOCK_EX | LOCK_NB)) {
-        Debug("RequestLock: lock obtained: $lock");
-        return *FH;
-    } else {
-        Debug("RequestLock: lock refused: $lock");
-        return 0;
-    }
+if (defined $this_app->option("config")) {
+    $opts->{CONFIG} = $this_app->option("config");
+}
+if (defined $this_app->option("profile")) {
+    $opts->{CONFIG} = $this_app->option("profile");
+}
+if (defined $this_app->option("foreign")) {
+    $opts->{FOREIGN} = $this_app->option("foreign");
+}
+if (defined $this_app->option("dbformat")) {
+    $opts->{DBFORMAT} = $this_app->option("dbformat");
 }
 
-#######################################################################
-sub ReleaseLock ($$) {
-#######################################################################
-
-# Release flock() on given filehandle (filename for diagnostics).
-
-    my $fh = shift;
-    my $lock = shift;
-    Debug("ReleaseLock: releasing: $lock");
-    flock($fh, LOCK_UN) or Warn("couldn't release lock: $lock: $!");
-    close($fh);
+# initialize Fetch object
+$fetch = EDG::WP4::CCM::Fetch->new($opts);
+if (!$fetch) {
+    throw_error("Initialization failed");
+    exit (1);
 }
 
-#######################################################################
-sub Quit (;$) {
-#######################################################################
+# set debug
+$fetch->setDebug($this_app->option("debug"))
+		 if defined $this_app->option("debug");
 
+# set timeout
+$fetch->setTimeout($this_app->option("get_timeout")) 
+		if defined $this_app->option("get_timeout");
 
-  if (defined($_[0])) {
-	my $msg = $_[0];
-	my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
-	$msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [ERROR] %s",
-		       $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-        print STDERR $msg . "\n";
-        exit(1);
-      } else {
-        exit(0);
-      }
-  }
+# set force
+$fetch->setForce($this_app->option("force")) 
+		if defined $this_app->option("force");
 
-#######################################################################
-sub Warn ($) {
-#######################################################################
+# set failover profile url
+$fetch->setProfileFailover($this_app->option("profile_failover")) 
+		if defined $this_app->option("profile_failover");
 
-    my $msg = $_[0];
-    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
-    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [WARN] %s",
-                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print STDERR $msg . "\n";
+# set preprocessor
+$fetch->setPreprocessor($this_app->option("preprocessor")) 
+		if defined $this_app->option("preprocessor");
+
+# set cache root
+$fetch->setCacheRoot($this_app->option("cache_root")) 
+		if defined $this_app->option("cache_root");
+
+# set world readable flag
+$fetch->setWorldReadable($this_app->option("world_readable")) 
+		if defined $this_app->option("world_readable");
+
+# we no longer set profile notification time
+# since we always want to get something later than what we
+# have on disk
+
+# set context notification time
+$fetch->setContextnTime($this_app->option("context_time")) 
+		if defined $this_app->option("context_time");
+
+# set context URL
+$fetch->setContext($this_app->option("context")) 
+		if defined $this_app->option("context");
+
+#fetch rpofile
+my ($errno, $errmsg) = $fetch->fetchProfile();
+
+if ($errno == -1){
+	$this_app->error($errmsg);
+	exit(1);
 }
 
-#######################################################################
-sub Debug ($) {
-#######################################################################
- 
-    my $msg = shift;
-    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
-    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [DEBUG] %s",
-                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print $msg . "\n"if (defined($debug) && $debug != "0");
-}
+exit (0);
 
-#######################################################################
-sub Base64Encode ($) {
-#######################################################################
-
-# Uses MIME::Base64 -- with no breaking result into lines.    
-# Always returns a value.
-
-    return encode_base64(shift, '');
-}
-
-#######################################################################
-sub Base64Decode ($) {
-#######################################################################
-
-# Need to catch warnings from MIME::Base64's decode function.
-# Returns undef on failure.
-
-    my $data = shift;
-    my $msg = undef;
-    $SIG{__WARN__} = sub { $msg = $_[0]; };
-    my $plain = decode_base64($data);
-    $SIG{__WARN__} = 'DEFAULT';
-    if ($msg) {
-        $msg =~ s/ at.*line [0-9]*.$//;
-        chomp($msg);
-        Warn('base64 decode failed on "'
-             . substr($data, 0, 10)
-             . "\"...: $msg");
-        return undef;
-    } else {
-        return $plain;
-    }
-}
-
-#######################################################################
-sub Gunzip ($) {
-#######################################################################
-
-# Returns undef on failure.
-
-    my $data = shift;
-    my $plain = Compress::Zlib::memGunzip($data);
-    if (not defined $plain) {
-        Warn('gunzip failed on "' . substr($data, 0, 10) . '"...');
-        return undef;
-    } else {
-        return $plain;
-    }
-}
-
-#######################################################################
-sub Base64UscoreEncode ($) {
-#######################################################################
-
-# base64, then with "/" -> "_"
-
-    $_ = Base64Encode(shift);
-    s,/,_,g; # is there a better way to do this?
-
-    return $_;
-}
-
-#######################################################################
-sub Base64UscoreDecode ($) {
-#######################################################################
-
-    $_ = shift;
-    s,_,/,g;
-
-    return Base64Decode($_);
-}
-
-#######################################################################
-sub EncodeURL ($) {
-#######################################################################
-
-    return Base64UscoreEncode(shift);
-}
-
-#######################################################################
-sub DecodeURL ($) {
-#######################################################################
-
-# not currently used; perhaps in the future for debugging cache state?
-
-    return Base64UscoreDecode(shift);
-}
-
-#######################################################################
-sub Retrieve ($$;$) {
-#######################################################################
-
-# If sufficiently new, retrieve a URL and store locally.
-
-    my $url = shift;            # thing to fetch
-    my $dest = shift;           # where to put it
-    my $reftime = shift;        # optional mod time reference
-
-    # logic: if two args, download if $url more recent that $dest;
-    # if three args, instead see if $url at least as recent as $reftime;
-    # either way, if $force is set, download regardless
-    if (defined $reftime) {
-        Debug("Retrieve($url, $dest, [" . scalar localtime($reftime) . '])');
-    } else {
-        Debug("Retrieve($url, $dest)");
-    }
-
-    my $ua = new LWP::UserAgent;
-    if ($LWP::UserAgent::VERSION =~ m/6.*/) {
-        $ua->ssl_opts( SSL_key_file => $key_file );
-        $ua->ssl_opts( SSL_cert_file => $cert_file );
-    };
-    my $req = new HTTP::Request( GET=>$url );
-
-    # only fetch if changed
-    my $mtime = 0;
-    unless ($force) {
-        if (defined $reftime) {
-            Debug("Retrieve: ref time: " . scalar localtime($reftime));
-            $req->if_modified_since($reftime - 1);
-        } elsif (-f $dest) {
-            $mtime = (stat($dest))[9];
-            Debug("Retrieve: $dest: last mod: " . scalar localtime($mtime));
-            $req->if_modified_since($mtime) if (defined($mtime));
-        }
-    }
-
-    # set timeout
-    $ua->timeout($get_timeout);
-
-    # do the GET
-    my $res = $ua->request($req);
-  
-    # no change?
-    if ($res->code() == 304) {
-        Debug("Retrieve: <$url>: no change (304)");
-        return 0;
-    }
-  
-    # timeout, EOF, etc?
-    if ($res->code() == 500) {
-        Warn("Retrieve: <$url>: " .$res->content());
-        return 2;
-    }
-
-    unless($res->is_success()) {
-      Warn("can't get: <$url>: " . $res->message() . " (" . $res->code() . ")");
-      return 3;
-    }
-
-    $mtime = $res->last_modified;
-    Debug("Retrieve: <$url>: last mod: " . scalar localtime($mtime));
-
-    ( open(DEST, ">$dest") &&
-      (print DEST $res->content()) &&
-      close(DEST) ) 
-        or Quit("can't save in $dest: $!");
-  
-    # preserve mtime
-    utime($mtime, $mtime, $dest) or Quit("can't set mtime: $dest: $!");
-
-    return 1;
-}
-
-#######################################################################
-sub Parse ($) {
-#######################################################################
-
-# Parse XML profile and return XML::Parser's tree structure.
-
-    my $xmlfile = shift;
-
-    my $xmlParser = new XML::Parser(Style => 'Tree');
-    my $tree = eval { $xmlParser->parsefile($xmlfile); };
-    Quit("XML parse failed: $xmlfile: $@") if ($@);
-
-    return $tree;
-}
-
-#######################################################################
-sub DecodeValue ($$) {
-#######################################################################
-
-# Decode a property value according to encoding attribute.
-
-    my $data = shift;
-    my $encoding = shift;
-
-    if ($encoding eq '' or $encoding eq 'none') {
-        return $data;
-    } elsif ($encoding eq 'base64') {
-        my $plain = Base64Decode($data);
-        return (defined $plain ? $plain : "invalid data: $data");
-    } elsif ($encoding eq 'base64,gzip') {
-        my $temp = Base64Decode($data);
-        my $plain = (defined $temp ? Gunzip($temp) : undef);
-        return (defined $plain ? $plain : "invalid data: $data");
-    } else {
-        Warn("invalid encoding: $encoding");
-        return "invalid data: $data";
-    }
-}
-
-#######################################################################
-sub ComputeChecksum ($) {
-#######################################################################
-
-# Compute the node profile checksum attribute.
-
-    my $val = shift;
-    my $type = $val->{TYPE};
-    my $value = $val->{VALUE};
-    
-    if ($type eq 'nlist') {
-        # MD5 of concat of children & their checksums, in order
-        my @children = sort keys %$value;
-        return md5_hex(encode_utf8(join('',
-                            map { ($_, $value->{$_}->{CHECKSUM}); }
-                            @children)));
-    } elsif ($type eq 'list') {
-        # ditto
-        my @children = 0..(scalar @$value)-1;
-        return md5_hex(encode_utf8(join('',
-                            map { ($_, $value->[$_]->{CHECKSUM}); }
-                            @children)));
-    } else {
-        # assume property: just MD5 of value
-        unless (defined $value) {
-                return md5_hex("_<undef>_");
-        }
-        return md5_hex(encode_utf8($value));
-     }
-}
-
-#######################################################################
-sub InterpretNode ($$) {
-#######################################################################
-
-# Turn an XML parse node -- a (tag, content) pair -- into a Perl hash
-# representing the corresponding profile data structure.
-
-    my $tag = shift;
-    my $content = shift;
-    my $att = $content->[0];
-    my $val = {};
-
-    # deal with attributes
-    $val->{TYPE} = $tag;
-    foreach my $a (keys %$att) {
-        if ($a eq 'name') {
-            $val->{NAME} = $att->{$a};
-        } elsif ($a eq 'derivation') {
-            $val->{DERIVATION} = $att->{$a};
-        } elsif ($a eq 'checksum') {
-            $val->{CHECKSUM} = $att->{$a};
-        } elsif ($a eq 'acl') {
-            $val->{ACL} = $att->{$a};
-        } elsif ($a eq 'encoding') {
-            $val->{ENCODING} = $att->{$a};
-        } elsif ($a eq 'description') {
-            $val->{DESCRIPTION} = $att->{$a};
-        } elsif ($a eq 'type') {
-            $val->{USERTYPE} = $att->{$a};
-        } else {
-            # unknown attribute
-        }
-    }
-
-    # work out value
-    if ($tag eq 'nlist') {
-        my $nlist = {};
-        my $i = 1;
-        while ($i < scalar @$content) {
-            my $t = $content->[$i++];
-            my $c = $content->[$i++];
-            if ($t ne '0' and $t ne '') {
-                # ignore text between elements
-                my $a = $c->[0];
-                my $n = $a->{name};
-                $nlist->{$n} = &InterpretNode($t, $c);
-            }
-        }
-        $val->{VALUE} = $nlist;
-    } elsif ($tag eq 'list') {
-        my $list = [];
-        my $i = 1;
-        while ($i < scalar @$content) {
-            my $t = $content->[$i++];
-            my $c = $content->[$i++];
-            if ($t ne '0' and $t ne '') {
-                # ignore text between elements
-                push @$list, &InterpretNode($t, $c);
-            }
-        }
-        $val->{VALUE} = $list;
-    } elsif ($tag eq 'string' or
-             $tag eq 'double' or
-             $tag eq 'long' or
-             $tag eq 'boolean') {
-        # decode if required
-        if (defined $val->{ENCODING}) {
-            $val->{VALUE} = DecodeValue($content->[2], $val->{ENCODING});
-        } else {
-            $val->{VALUE} = $content->[2];
-        }
-    } else {
-        # unknown type: should issue warning, at least
-    }
-    # compute checksum if missing
-    if (not defined $val->{CHECKSUM}) {
-        $val->{CHECKSUM} = ComputeChecksum($val);
-    }
-
-    return $val;
-}
-
-#######################################################################
-sub InterpretNodeXMLDB ($$) {
-#######################################################################
-
-# Turn an XML parse node -- a (tag, content) pair -- into a Perl hash
-# representing the corresponding profile data structure.
-
-    my $tag = shift;
-    my $content = shift;
-    my $collapse = shift;
-    my $att = $content->[0];
-    my $val = {};
-
-    # For XMLDB, the tag is the element name (except for special
-    # case below for encoded tags).
-    $val->{NAME} = $tag;
-
-    # Default type if not specified is an nlist.
-    $val->{TYPE} = 'nlist';
-
-    # Deal with all of the attributes.
-    foreach my $a (keys %$att) {
-        if ($a eq 'type') {
-            $val->{TYPE} = $att->{$a};
-        } elsif ($a eq 'derivation') {
-            $val->{DERIVATION} = $att->{$a};
-        } elsif ($a eq 'checksum') {
-            $val->{CHECKSUM} = $att->{$a};
-        } elsif ($a eq 'acl') {
-            $val->{ACL} = $att->{$a};
-        } elsif ($a eq 'encoding') {
-            $val->{ENCODING} = $att->{$a};
-        } elsif ($a eq 'description') {
-            $val->{DESCRIPTION} = $att->{$a};
-        } elsif ($a eq 'utype') {
-            $val->{USERTYPE} = $att->{$a};
-        } elsif ($a eq 'unencoded') {
-	    # Special case for encoded tags.
-            $val->{NAME} = $att->{$a};
-        } else {
-            # ignore unknown attribute
-        }
-    }
-
-    # Pull out the type for convenience and the list depth.  Depth of
-    # zero means it is not a list.  Depth of one or higher gives the
-    # dimensionality of the list. 
-    my $type = $val->{TYPE};
-    my $my_depth = (defined($att->{list})) ? int($att->{list}) : 0;
-
-    if (($type eq 'nlist')) {
-
-	# Flag to see if this node is eligible to be "collapsed".
-	my $collapse = 0;
-
-	# Process nlist and the top-level of lists.
-        my $nlist = {};
-        my $i = 1;
-        while ($i < scalar @$content) {
-            my $t = $content->[$i++];
-            my $c = $content->[$i++];
-
-	    # Ignore all but text nodes.  May also be a list element
-            # which has already been processed before. 
-            if ($t ne '0' and $t ne '') {
-
-		my $a = $c->[0];
-		my $child_depth = (defined($a->{list})) ? int($a->{list}) : 0;
-
-		# Is the child a list? 
-		if ($child_depth==0) {
-
-		    # No, just add the child normally.  Be careful,
-		    # with encoded tags the child's name may change.
-		    my $result = &InterpretNodeXMLDB($t, $c);
-		    $nlist->{$result->{NAME}} = $result;
-
-		} else {
-
-		    # This is the head of a list, create an extra
-		    # level.  This may be removed later.  Check to see
-		    # if this is necessary.
-		    if (($my_depth > 0) and ($child_depth>$my_depth)) {
-			$collapse = 1;
-		    }
-
-		    # First, create a new node to handle the list
-		    # element. 
-		    my $vallist = {};
-		    $vallist->{NAME} = $t;
-		    $vallist->{TYPE} = 'list';
-
-		    # Create a list for the value and process the
-		    # current node to add to it. 
-		    my $list = [];
-		    push @$list, &InterpretNodeXMLDB($t, $c);
-
-		    # Search through the rest of the entries to see if
-		    # there are other list elements from this list. 
-		    my $j = $i;
-		    while ($j < scalar @$content) {
-			my $t2 = $content->[$j++];
-			my $c2 = $content->[$j++];
-
-			# Same name and child is a list.
-			if ($t eq $t2) {
-			    my $child_depth2 = $c2->[0]->{list}; 
-			    $child_depth2 = 0 unless defined($child_depth2);
-			    
-			    # Push the value of this node onto the
-			    # list, but also zero the name so that it
-			    # isn't processed twice. 
-			    if ($child_depth == $child_depth2) {
-				push @$list, &InterpretNodeXMLDB($t2, $c2);
-				$content->[$j-2] = '0';
-			    }
-			}
-		    }
-
-		    # Complete the node and add it the the nlist
-		    # parent. 
-		    $vallist->{VALUE} = $list;
-		    $vallist->{CHECKSUM} = ComputeChecksum($vallist);
-		    $nlist->{$t} = $vallist;
-		    
-		}
-	    }
-        }
-
-	# Normally just give the value of the nlist to val.  However,
-        # if we're embedded into a multidimensional list, cheat the
-        # remove an unnecessary level.  Just switch the $vallist
-	# reference for $val.  
-	if (! $collapse) {
-
-	    # Normal case.  Just set the value to the hash.
-	    $val->{VALUE} = $nlist;
-
-	} else {
-
-	    # Splice and dice.  Remove unnecessary level.
-
-	    # Extra error checking.  The list should have exactly one
-	    # key in it.
-	    my $count = scalar (keys %$nlist);
-	    if ($count!=1) {
-
-		# This is an error.  Recover by essentially doing
-		# nothing.  But print the information.
-		Warn("multidimensional list fixup failed; " .
-		     "hash has multiple values");
-		$val->{VALUE} = $nlist
-	    }
-
-	    # Switch the reference.
-	    $val = $nlist->{(keys %$nlist)[0]};
-	}
-
-    } elsif ($type eq 'string' or
-	     $type eq 'double' or
-	     $type eq 'long' or
-	     $type eq 'boolean' or
-	     $type eq 'fetch' or
-	     $type eq 'stream' or
-	     $type eq 'link') {
-	
-        # decode if required
-        if (defined $val->{ENCODING}) {
-            $val->{VALUE} = DecodeValue($content->[2], $val->{ENCODING});
-        } else {
-	    # CAL # Empty element causes undefined context.  This
-            # shows up with empty strings.  Guard against this. 
-	    if (defined($content->[2])) {
-		$val->{VALUE} = $content->[2];
-	    } elsif ($type eq 'string') {
-		$val->{VALUE} = '';
-	    }
-        }
-
-    } else {
-        # unknown type: should issue warning, at least
-    }
-
-    # compute checksum if missing
-    if (not defined $val->{CHECKSUM}) {
-        $val->{CHECKSUM} = ComputeChecksum($val);
-    }
-
-    return $val;
-}
-
-#######################################################################
-sub Interpret ($) {
-#######################################################################
-
-# Interpret XML parse tree as profile data structure.  Need more sanity
-# checking!
-
-    my $tree = shift;
-
-    # NB: we are being passed element *content*: ref to array
-    # made up of tag-content sequences, one per tree node.
-
-    Quit('parse tree not a reference') unless (ref $tree);
-    Warn('ignoring subsequent top-level elements') unless (scalar @$tree == 2);
-
-    # Check to see what XML style is in the format attribute.  If 
-    # if there is no attribute, then the "pan" style is assumed.
-    # Unsupported styles force an exist.
-    my $t = $tree->[0];
-    my $c = $tree->[1];
-    my $a = $c->[0];
-    my $format = $a->{format};
-    $format = 'pan' unless defined($format);
-    
-    my $v = undef;
-    if ($format eq 'pan') {
-	$v = InterpretNode($t, $c);
-    } elsif ($format eq 'xmldb') {
-	$v = InterpretNodeXMLDB($t, $c);
-    } else {
-	Quit('unsupported xml style: '.$format);
-    }
-
-    # Uncomment this for debugging purposes.
-    #Show($v);
-
-    return $v;
-}
-
-#######################################################################
-sub Show ($;$$) {
-#######################################################################
-
-# For debugging (not currently available from command line options):
-# display a profile data structure.
-
-    my $s = shift;
-    my $indent = shift;
-    $indent = '' if (not defined $indent);
-
-    my $name = shift;
-    $name = $s->{NAME} if (not defined $name and defined $s->{NAME});
-    
-    if (defined $name) {
-        print $indent . $name . ' (';
-    } else {
-        print $indent . '(';
-    }
-    my $first = 1;
-    foreach my $a (sort keys %$s) {
-        if ($a ne 'NAME' and $a ne 'VALUE' and $a ne 'TYPE') {
-            print ',' if (not $first);
-            print "$a=\"" . $s->{$a} . '"';
-            $first = 0;
-        }
-    }
-    print ')';
-    my $v = $s->{VALUE};
-    if ($s->{TYPE} eq 'nlist') {
-        print "\n";
-        foreach my $k (sort keys %$v) {
-            &Show($v->{$k}, $indent . '  ');
-        }
-    } elsif  ($s->{TYPE} eq 'list') {
-        print "\n";
-        my $i = 0;
-        foreach my $el (@$v) {
-            &Show($el, $indent . '  ', '[' . $i++ . ']');
-        }
-    } else {
-        print ' "' . $v . "\"\n";
-    }
-}
-
-#######################################################################
-sub Config ($) {
-#######################################################################
-
-# Interpret the config file.
-
-    EDG::WP4::CCM::CCfg::initCfg(shift);
-
-    $debug = EDG::WP4::CCM::CCfg::getCfgValue('debug');
-    $force = EDG::WP4::CCM::CCfg::getCfgValue('force');
-    $profile_url = EDG::WP4::CCM::CCfg::getCfgValue('profile');
-    $profile_failover_url = EDG::WP4::CCM::CCfg::getCfgValue('profile_failover');
-    $context_url = EDG::WP4::CCM::CCfg::getCfgValue('context');
-    $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
-    $get_timeout = EDG::WP4::CCM::CCfg::getCfgValue('get_timeout');
-    $lock_retries = EDG::WP4::CCM::CCfg::getCfgValue('lock_retries');
-    $lock_wait = EDG::WP4::CCM::CCfg::getCfgValue('lock_wait');
-    $retrieve_retries = EDG::WP4::CCM::CCfg::getCfgValue('retrieve_retries');
-    $retrieve_wait = EDG::WP4::CCM::CCfg::getCfgValue('retrieve_wait');
-    $preprocessor = EDG::WP4::CCM::CCfg::getCfgValue('preprocessor');
-    $cert_file = EDG::WP4::CCM::CCfg::getCfgValue('cert_file');
-    $key_file = EDG::WP4::CCM::CCfg::getCfgValue('key_file');
-    $ca_file = EDG::WP4::CCM::CCfg::getCfgValue('ca_file');
-    $ca_dir = EDG::WP4::CCM::CCfg::getCfgValue('ca_dir');
-}
-
-#######################################################################
-sub FileToString ($) {
-#######################################################################
-
-# Returns first line of file (minus newline) as string.
-
-    my $f = shift;
-
-    open(F, "<$f") or Quit("can't open $f: $!");
-    chomp(my $s = <F>);
-    close(F);
-    return $s;
-}
-
-#######################################################################
-sub StringToFile ($$) {
-#######################################################################
-
-# Creates one-line file consisting of string plus newline.
-
-    my $s = shift;
-    my $f = shift;
-
-    ( open(F, ">$f") &&
-      (print F "$s\n") &&
-      close(F) )
-        or Quit("can't write to $f: $!");
-}
-
-#######################################################################
-sub PreProcess ($$$$) {
-#######################################################################
-
-# Merge profile and context into combined XML; assume this will be
-# eventually be something like this.
-
-    system "$_[0] $_[1] $_[2] >$_[3]";
-}
-
-#######################################################################
-sub FilesDiffer ($$) {
-#######################################################################
-
-# Return 1 if they differ, 0 if the same.
-
-    my $a = shift;
-    my $b = shift;
-
-    # ensure names are defined and exist
-    if ((not defined($a)) || (! -e "$a") ||
-	(not defined($b)) || (! -e "$b")) {
-	return 1;
-    }
-
-    # first compare sizes
-    return 1 if ((stat($a))[7] != (stat($b))[7]);
-
-    # now check line by line
-    open(A, "<$a") or Quit("can't open $a: $!");
-    open(B, "<$b") or Quit("can't open $b: $!");
-    my $aa;
-    my $bb;
-    while ($aa = <A>) {
-        $bb = <B>;
-        (close(A) && close(B) && return 1) if ($aa ne $bb)
-    }
-
-    close(A) && close(B) && return 0;
-}
-
-#######################################################################
-sub AddPath ($$$$$;$) {
-#######################################################################
-
-# Take a profile data structure (subtree) and the path to it, and
-# make all the necessary cache entries.
-
-    my $prefix = shift;
-    my $tree = shift;
-    my $refeid = shift;
-    my $path2eid = shift;
-    my $eid2data = shift;
-    my $listnum = shift;
-
-    # store path
-    my $path = ($prefix eq '/' ? '/' : $prefix . '/')
-        . (defined $listnum ? $listnum : $tree->{NAME});
-    my $eid = $$refeid++;
-    $path2eid->{$path} = pack('L', $eid);
-
-    # store value
-    my $value = $tree->{VALUE};
-    my $type = $tree->{TYPE};
-    if ($type eq 'nlist') {
-        # store NULL-separated list of children's names
-        my @children = sort keys %$value;
-        $eid2data->{pack('L', $eid)} = join(chr(0), @children);
-        Debug("AddPath: $path => $eid => " . join('|', @children));
-        # recurse
-        foreach (@children) {
-            &AddPath($path, $value->{$_}, $refeid, $path2eid, $eid2data);
-        }
-    } elsif ($type eq 'list') {
-        # names are integers
-        my @children = 0..(scalar @$value)-1;
-        $eid2data->{pack('L', $eid)} = join(chr(0), @children);
-        Debug("AddPath: $path => $eid => " . join('|', @children));
-        # recurse
-        foreach (@children) {
-            &AddPath($path, $value->[$_], $refeid, $path2eid, $eid2data,
-                    $_);
-        }
-    } else {
-	# Do this because empty string values arrive here as undefined
-	# values.
-	my $v = (defined $value) ? $value : '';
-        $eid2data->{pack('L', $eid)} = encode_utf8($v);
-        if (defined $value) {
-                Debug("AddPath: $path => $eid => $value");
-        }
-        else {
-                Debug("AddPath: $path => <UNDEF value>");
-        }
-    }
-
-    # store attributes
-    my $t = defined $tree->{USERTYPE} ? $tree->{USERTYPE} : $type;
-    $eid2data->{pack('L', 1<<28 | $eid)} = $t;
-    $eid2data->{pack('L', 2<<28 | $eid)} = $tree->{DERIVATION}
-        if (defined $tree->{DERIVATION});
-    $eid2data->{pack('L', 3<<28 | $eid)} = $tree->{CHECKSUM}
-        if (defined $tree->{CHECKSUM});
-    $eid2data->{pack('L', 4<<28 | $eid)} = $tree->{DESCRIPTION}
-        if (defined $tree->{DESCRIPTION});
-}
-
-#######################################################################
-sub MakeDatabase ($$$) {
-#######################################################################
-
-# Create the cache databases.
-
-    my $profile = shift;
-    my $path2eid_db = shift;
-    my $eid2data_db = shift;
-
-    my %path2eid;
-    my %eid2data;
-    tie(%path2eid, 'GDBM_File', $path2eid_db, &GDBM_WRCREAT, 0644)
-        or Quit("can't tie path2eid DB: $!");
-    tie(%eid2data, 'GDBM_File', $eid2data_db, &GDBM_WRCREAT, 0644)
-        or Quit("can't tie eid2data DB: $!");
-
-    # walk profile
-    my $eid = 0;
-    AddPath('', $profile, \$eid, \%path2eid, \%eid2data, '');
-
-    untie(%path2eid) or Quit("can't untie path2eid DB: $!");
-    untie(%eid2data) or Quit("can't untie eid2data DB: $!");
-}
-
-#######################################################################
-# Main program
-#######################################################################
-
-# options
-Quit("usage: ccm-fetch [OPTIONS]
-  -d, --debug            turn on debugging
-  -f, --force            force fetching of profiles (ignore modification times)
-  --config=FILE          config file location
-  --profile=URL          profile to fetch
-  --profile_failover=URL profile failover URL in case the above is not working
-  --profile-time=TIME    profile timestamp (from notification service)
-  --context=URL          context to fetch
-  --context-time=TIME    context timestamp (from notification service)
-  --preprocessor=PROG    preprocessor executable (combines profile + context)
-  --cert_file=FILE       certificate file to use with HTTPS
-  --key_file=FILE        PEM key file to use with HTTPS
-  --ca_file=FILE         CA bundle certificate file to use with HTTPS
-  --ca_dir=DIR           directory of CA certificates to use with HTTPS")
-    unless (GetOptions($opts, 'debug', 'force', 'config=s', 'profile=s',
-                       'profile_failover=s',
-                       'profile-time=s', 'context=s', 'context-time=s',
-                       'preprocessor=s', 'cert_file=s', 'key_file=s', 
-					   'ca_file=s', 'ca_dir=s')
-            and scalar @ARGV == 0);
-
-# process config file
-$config = $opts->{'config'} if (defined $opts->{'config'});
-Config($config);
-
-# stop if globally disabled
-if (-f $no_quattor){
-  Warn("CCM updates disabled globally ($no_quattor) present");
-  open(FH, "<$no_quattor") or Warn ("Unable to open $no_quattor: $!");
-  while(<FH>){
-    chomp;
-    Warn($_);
-  }
-  close(FH);
-  Quit();
-}
-
-# quit if no profile URL from config file or command line
-$profile_url = $opts->{'profile'} if (defined $opts->{'profile'});
-Quit('no profile URL specified') if (not defined $profile_url);
-
-$profile_failover_url = $opts->{'profile_failover'}
-  if (defined $opts->{'profile_failover'});
-
-$world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
-
-if(!$world_readable) {
-    umask(077);
-}
-
-# deal with remaining options
-$debug = 1 if (defined $opts->{'debug'});
-$force = 1 if (defined $opts->{'force'});
-$profile_ntime = $opts->{'profile-time'} if (defined $opts->{'profile-time'});
-$context_url = $opts->{'context'} if (defined $opts->{'context'});
-$context_ntime = $opts->{'context-time'} if (defined $opts->{'context-time'});
-$preprocessor = $opts->{'preprocessor'} if (defined $opts->{'preprocessor'});
-$cert_file = $opts->{'cert_file'} if (defined $opts->{'cert_file'});
-$key_file = $opts->{'key_file'} if (defined $opts->{'key_file'});
-$ca_file = $opts->{'ca_file'} if (defined $opts->{'ca_file'});
-$ca_dir = $opts->{'ca_dir'} if (defined $opts->{'ca_dir'});
-
-# Setup https environment if necessary.
-$ENV{'HTTPS_CERT_FILE'} = $cert_file if (defined($cert_file));
-$ENV{'HTTPS_KEY_FILE'} = $key_file if (defined($key_file));
-$ENV{'HTTPS_CA_FILE'} = $ca_file if (defined($ca_file));
-$ENV{'HTTPS_CA_DIR'} = $ca_dir if (defined($ca_dir));
-
-# test for presence of lock files
-my $global_lock = "$cache_root/global.lock";
-Quit("lock file absent: $global_lock") unless (-f $global_lock);
-my $fetch_lock = "$cache_root/fetch.lock";
-Quit("lock file absent: $fetch_lock") unless (-f $fetch_lock);
-
-# obtain single-instance-of-fetch lock
-my $fetch_lock_fh;
-my $tries = 1;
-while (not $fetch_lock_fh = RequestLock($fetch_lock)) {
-    Quit("can't get lock: $fetch_lock") if ($tries++ > $lock_retries);
-    sleep($lock_wait);
-}
-
-# core algorithm, part 1: download new versions of profile/context
-
-# first, profile
-my $profile_cache = "$cache_root/data/" . EncodeURL($profile_url);
-my $profile_ctime = (-r $profile_cache ? (stat($profile_cache))[9] : 0);
-my $gotp = undef;
-# if we got a notification time, try for a while to only get a profile
-# that's at least as recent
-if (defined $profile_ntime and $profile_ntime > $profile_ctime) {
-    $tries = 0;
-    while ($tries++ < $retrieve_retries) {
-        $gotp = Retrieve($profile_url, $profile_cache,
-                                   $profile_ntime);
-        last if ($gotp == 1 || $gotp ==3 || $gotp ==0);
-	Debug("$profile_url: try $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
-        sleep($retrieve_wait);
-    }
-    if (($gotp ==2 || $gotp ==3) && defined $profile_failover_url) {
-      Warn("primary URL failed, trying failover: ".$profile_failover_url);
-      # primary URL failed.
-      # try now failover URL
-      $tries = 0;
-      while ($tries++ < $retrieve_retries) {
-        $gotp = Retrieve($profile_url, $profile_cache,
-                                   $profile_ntime);
-        last if ($gotp == 1 || $gotp ==3 || $gotp ==0);
-	Debug("$profile_url: $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
-        sleep($retrieve_wait);
-      }
-    }
-}
-# otherwise, just rely on modification time of cached profile
-# and retry in case of read timeouts
-if (((not defined($gotp)) || ($gotp != 1))              # didn't download yet,
-    and not                   # (and we didn't get a notify <= cache time)
-    (defined $profile_ntime and $profile_ntime <= $profile_ctime)) {
-    $tries = 0;
-    while ($tries++ < $retrieve_retries) {
-        $gotp = Retrieve($profile_url, $profile_cache,
-                                   $profile_ntime);
-        last if ($gotp == 1 || $gotp ==3 || $gotp ==0 );
-	Debug("$profile_url: $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
-        sleep($retrieve_wait);
-    }
-    if (($gotp ==2 || $gotp ==3) && defined $profile_failover_url) {
-      # primary URL failed.
-      # try now failover URL
-      Warn("primary URL failed, trying failover: ".$profile_failover_url);
-      $tries = 0;
-      while ($tries++ < $retrieve_retries) {
-        last if (($gotp = Retrieve($profile_failover_url, $profile_cache)) != 2);
-	Debug("$profile_url: $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
-        sleep($retrieve_wait);
-      }
-    }
-}
-if ($gotp != 1 && $gotp != 0 ) {
-  my $failed_urls = defined $profile_failover_url ?
-    "<$profile_url> or <$profile_failover_url>": "<$profile_url>";
-  Quit("can't get: $failed_urls");
-}
-
-# second, context
-my $gotc = undef;
-my $context_cache = undef;
-my $context_ctime = undef;
-if (defined $context_url) {
-    $context_cache = "$cache_root/data/" . EncodeURL($context_url);
-    $context_ctime = (-r $context_cache ? (stat($context_cache))[9] : 0);
-    # if we got a notification time, try for a while to only get a context
-    # that's at least as recent
-    if (defined $context_ntime and $context_ntime > $context_ctime) {
-        $tries = 0;
-        while ($tries++ < $retrieve_retries) {
-            last if (($gotc = Retrieve($context_url, $context_cache,
-                                       $context_ntime)) == 1);
-            sleep($retrieve_wait);
-        }
-    }
-    # otherwise, just rely on modification time of cached context
-    # and retry in case of read timeouts
-    if (($gotc != 1)              # didn't download yet,
-        and not                   # (and we didn't get a notify <= cache time)
-        (defined $context_ntime and $context_ntime <= $context_ctime)) {
-        $tries = 0;
-        while ($tries++ < $retrieve_retries) {
-            last if (($gotc = Retrieve($context_url, $context_cache)) != 2);
-        }
-    }
-    Quit("can't get: <$context_url>") if ($gotc != 1);
-}
-
-# core algorithm, part 2: update configuration state
-
-# get latest.cid & current.cid values
-my $latest_cid = "$cache_root/latest.cid";
-my $latest = (-f $latest_cid ? FileToString($latest_cid) : undef);
-
-# if we have a latest config cached, retrieve its profile & context URLs
-my $latest_dir = (defined $latest ? "$cache_root/profile.$latest" : undef);
-my $latest_profile_url =
-    (defined $latest_dir and -f "$latest_dir/profile.url" ?
-    FileToString("$latest_dir/profile.url") : undef);
-my $latest_context_url =
-    (defined $latest_dir and -f "$latest_dir/context.url" ?
-    FileToString("$latest_dir/context.url") : undef);
-# and the XML
-my $latest_profile_xml =
-    (defined $latest_dir and -f "$latest_dir/profile.xml" ?
-     "$latest_dir/profile.xml" : undef);
-
-# if we downloaded a profile or a context -- or we didn't, but have been
-# given different URLs from those in the latest config (in which case their
-# content must already be cached in the data dir) -- call the preprocessor
-# prior to making a new config
-my $tmp_profile_xml = "$cache_root/tmp/profile.xml";
-if ($gotp
-    or $gotc
-    or (defined $latest_profile_url and $profile_url ne $latest_profile_url)
-    or (defined $latest_context_url and $context_url ne $latest_context_url))
-{
-    # preprocess (if we can)
-    if (defined $context_url and defined $preprocessor) {
-        PreProcess($preprocessor, $profile_cache, $context_cache,
-                   $tmp_profile_xml);
-    } else {
-        system "cp -p $profile_cache $tmp_profile_xml";
-    }
-
-    # is the resulting XML different from what we had before?
-    Debug("Main: comparing $tmp_profile_xml, $latest_profile_xml");
-    if (not defined $latest_profile_xml
-        or FilesDiffer($tmp_profile_xml, $latest_profile_xml)
-        or $force) {
-
-        # yes: parse & interpret new XML
-        Debug("Main: parsing & interpreting $tmp_profile_xml");
-        my $profile = Interpret(Parse($tmp_profile_xml));
-
-        # create new profile directory in tmp space
-        my $profdir = "$cache_root/tmp/profile.new";
-        system "rm -rf $profdir"; # in case an earlier run got aborted...
-        if($world_readable) {
-            mkdir($profdir, 0755)
-                or Quit("can't make profile dir: $profdir: $!");
-        } else {
-            mkdir($profdir, 0700)
-                or Quit("can't make profile dir: $profdir: $!");
-        }
-        rename($tmp_profile_xml, "$profdir/profile.xml")
-            or Quit("can't move $tmp_profile_xml to $profdir/profile.xml: $!");
-        StringToFile($profile_url, "$profdir/profile.url");
-        StringToFile($context_url, "$profdir/context.url")
-            if (defined $context_url);
-        MakeDatabase($profile, "$profdir/path2eid.db", "$profdir/eid2data.db");
-        
-        # increment $latest and move profile dir to final location
-        $latest = (defined $latest ? $latest + 1 : 0);
-        # restart from 0 if $latest > max profile counter
-        $latest = 0 if ($latest > $MAXPROFILECOUNTER);
-        rename($profdir, "$cache_root/profile.$latest")
-            or Quit("can't move $profdir to $cache_root/profile.$latest: $!");
-        StringToFile($latest, $latest_cid);
-        
-        # update current.cid if not globally locked
-        if (my $lock = RequestLock($global_lock)) {
-            if (FileToString($global_lock) eq 'no') {
-                Debug('Main: global.lock is "no"');
-                my $current_cid = "$cache_root/current.cid";
-                my $tmp_current_cid = "$cache_root/tmp/current.cid";
-                StringToFile($latest, $tmp_current_cid);
-                rename($tmp_current_cid, $current_cid);
-            }
-            ReleaseLock($lock, $global_lock);
-        }
-    }
-}
-
-ReleaseLock($fetch_lock_fh, $fetch_lock);
-
-Quit();
-
-__END__
 
 =head1 NAME
 
-fetch - fetch XML profiles and store in local cache
+ccm-fetch-new - fetch XML profiles and store in local cache
 
 =head1 DESCRIPTION
 
@@ -1193,12 +221,9 @@ This program retrieves XML profiles and contexts from specified URLs,
 subject to modification time constraints, validates them, and stores the
 contents in the local configuration cache.
 
-This will not fetch the profile if updates are disabled i.e. I</etc/noquattor> 
-file is present and prints the content of the file. 
-
 =head1 SYNOPSIS
 
-ccm-fetch [I<OPTIONS>]
+ccm-fetch-new [I<OPTIONS>]
 
 =head1 OPTIONS
 
@@ -1236,7 +261,9 @@ based) which can be enabled for emergency situations.
 =item B<--profile-time>=I<time>
 
 UNIX timestamp to expect as the modification time of the new profile.
-This will normally be provided by the notification service.
+This will normally be provided by the notification service. This
+argument is supported for compatability reasons, but has no effect.
+
 
 =item B<--context>=I<URL>
 
@@ -1251,6 +278,11 @@ This will normally be provided by the notification service.
 
 The executable to be called when preprocessing a profile with
 a context file.
+
+=item B<--foreign>=I<1/0>
+
+The profile being fetched is a foreign profile and will be stored at
+different location (cache_root/foreign)
 
 =back
 
@@ -1322,4 +354,3 @@ stored on local disk with 755 permissions, if false with 700.
 
 =back
 
-=cut

@@ -114,9 +114,6 @@ open TMP, ">$cache_root/global.lock";
 print TMP "no\n";
 close TMP;
 
-open TMP, ">$cache_root/fetch.lock";
-close TMP;
-
 Quit();
 
 __END__
