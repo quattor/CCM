@@ -9,7 +9,7 @@
   <artifactId>ccm</artifactId>
 
   <packaging>pom</packaging>
-  <version>2.3.0</version>
+  <version>3.0.0</version>
   <name>Configuration Cache Manager for Quattor</name>
 
   <repositories>
@@ -165,6 +165,8 @@
 	      </execution>
 	    </executions>
 	  </plugin>
+	  <!-- Ok, so the build tools *really* want to have a bunch of
+	       .pod files under doc/pod. We just rename them. -->
 	  <plugin>
 	    <groupId>org.codehaus.mojo</groupId>
 	    <artifactId>exec-maven-plugin</artifactId>
