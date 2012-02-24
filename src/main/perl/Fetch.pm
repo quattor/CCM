@@ -135,9 +135,11 @@ sub new {
     $param->{PROFILE_FORMAT} ||= 'xml';
 
     $self->{"FOREIGN"} = $foreign_profile;
-    foreach my $pm (qw(DBFORMAT PROFILE_FORMAT)) {
-	$self->{$pm} = $param->{$pm} if $param->{$pm};
+    if ($param->{DBFORMAT}) {
+	$self->{DBFORMAT} = $param->{DBFORMAT};
     }
+
+    $self->setProfileFormat($param->{DBFORMAT});
 
     # Return the object
     return $self;
@@ -1467,6 +1469,39 @@ sub setWorldReadable($){
     throw_error("World readable option should be natural number: $val") 
       unless ($val =~m/^\d+$/) ;
     $self->{"WORLD_READABLE"} = $val;
+    return SUCCESS;
+}
+
+=item setProfileFormat
+
+Define the profile format. If receives an argument, it will use it
+with no further questions. If not, it will try to derive it from the
+URL, being:
+
+=over
+
+=item * URLs ending in C<xml> are for XML profiles.
+
+=item * URLs ending in C<json> are for JSON profiles.
+
+=back
+
+and their gzipped equivalents.
+
+=cut
+
+sub setProfileFormat {
+    my ($self, $format) = @_;
+
+    if ($format) {
+	$self->{PROFILE_FORMAT} = uc($format);
+    } elsif ($self->{PROFILE_URL} =~ m{.xml(?:\.gz)?$}) {
+	$self->{PROFILE_FORMAT} = "XML";
+    } elsif ($self->{PROFILE_URL} =~ m{.json(?:\.gz)?$}) {
+	$self->{PROFILE_FORMAT} = "JSON";
+    } else {
+	return ERROR;
+    }
     return SUCCESS;
 }
 
