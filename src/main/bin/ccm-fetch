@@ -1,4 +1,8 @@
 #!/usr/bin/perl -w
+# ${license-info}
+# ${developer-info
+# ${author-info}
+# ${build-info}
 
 package ccm_fetch;
 
