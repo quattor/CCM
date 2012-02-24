@@ -32,7 +32,7 @@ EDG::WP4::CCM::Fetch
 
 use strict;
 use Getopt::Long;
-use EDG::WP4::CCM::CCfg;
+use EDG::WP4::CCM::CCfg qw(getCfgValue);
 use EDG::WP4::CCM::DB;
 use CAF::Lock qw(FORCE_IF_STALE);
 use MIME::Base64;
@@ -109,13 +109,13 @@ sub new {
 
     my ($class, $param) = @_;
     my $self = {};
+    bless ($self, $class);
 
     my $foreign_profile = ($param->{"FOREIGN"}) ? 1 : 0;
 
     # remove starting and trailing spaces
     $param->{"PROFILE_URL"} = trim($param->{"PROFILE_URL"}) if $param->{"PROFILE_URL"};
 
-    bless ($self, $class);
     if (!$param->{CONFIG} && $param->{CFGFILE}) {
 	# backwards compatability
 	$param->{CONFIG} = $param->{CFGFILE};
@@ -132,9 +132,11 @@ sub new {
         $self->setProfileURL($param->{"PROFILE_URL"});
     }
 
+    $param->{PROFILE_FORMAT} ||= 'xml';
+
     $self->{"FOREIGN"} = $foreign_profile;
-    if ($param->{DBFORMAT}) {
-        $self->{"DBFORMAT"}  = $param->{"DBFORMAT"};
+    foreach my $pm (qw(DBFORMAT PROFILE_FORMAT)) {
+	$self->{$pm} = $param->{$pm} if $param->{$pm};
     }
 
     # Return the object
@@ -149,29 +151,29 @@ sub _config($){
     }
 
     # Global Variables
-    $debug                      = EDG::WP4::CCM::CCfg::getCfgValue('debug');
-    $get_timeout                = EDG::WP4::CCM::CCfg::getCfgValue('get_timeout');
-    $cert_file                  = EDG::WP4::CCM::CCfg::getCfgValue('cert_file');
-    $key_file                   = EDG::WP4::CCM::CCfg::getCfgValue('key_file');
-    $ca_file                    = EDG::WP4::CCM::CCfg::getCfgValue('ca_file');
-    $ca_dir                     = EDG::WP4::CCM::CCfg::getCfgValue('ca_dir');
+    $debug                      = getCfgValue('debug');
+    $get_timeout                = getCfgValue('get_timeout');
+    $cert_file                  = getCfgValue('cert_file');
+    $key_file                   = getCfgValue('key_file');
+    $ca_file                    = getCfgValue('ca_file');
+    $ca_dir                     = getCfgValue('ca_dir');
 
 
     # Local Variables to the object
-    $self->{"FORCE"}            = EDG::WP4::CCM::CCfg::getCfgValue('force');
-    $self->{"BASE_URL"}         = EDG::WP4::CCM::CCfg::getCfgValue('base_url');
-    $self->{"PROFILE_URL"}      = EDG::WP4::CCM::CCfg::getCfgValue('profile');
-    $self->{"PROFILE_FAILOVER"} = EDG::WP4::CCM::CCfg::getCfgValue('profile_failover');
-    $self->{"CONTEXT_URL"}      = EDG::WP4::CCM::CCfg::getCfgValue('context');
-    $self->{"CACHE_ROOT"}       = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
-    $self->{"LOCK_RETRIES"}     = EDG::WP4::CCM::CCfg::getCfgValue('lock_retries');
-    $self->{"LOCK_WAIT"}        = EDG::WP4::CCM::CCfg::getCfgValue('lock_wait');
-    $self->{"RETRIEVE_RETRIES"} = EDG::WP4::CCM::CCfg::getCfgValue('retrieve_retries');
-    $self->{"RETRIEVE_WAIT"}    = EDG::WP4::CCM::CCfg::getCfgValue('retrieve_wait');
-    $self->{"PREPROCESSOR"}     = EDG::WP4::CCM::CCfg::getCfgValue('preprocessor');
-    $self->{"WORLD_READABLE"}   = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
-    $self->{"TMP_DIR"}          = EDG::WP4::CCM::CCfg::getCfgValue('tmp_dir');
-    $self->{"DBFORMAT"}         = EDG::WP4::CCM::CCfg::getCfgValue('dbformat');
+    $self->{"FORCE"}            = getCfgValue('force');
+    $self->{"BASE_URL"}         = getCfgValue('base_url');
+    $self->{"PROFILE_URL"}      = getCfgValue('profile');
+    $self->{"PROFILE_FAILOVER"} = getCfgValue('profile_failover');
+    $self->{"CONTEXT_URL"}      = getCfgValue('context');
+    $self->{"CACHE_ROOT"}       = getCfgValue('cache_root');
+    $self->{"LOCK_RETRIES"}     = getCfgValue('lock_retries');
+    $self->{"LOCK_WAIT"}        = getCfgValue('lock_wait');
+    $self->{"RETRIEVE_RETRIES"} = getCfgValue('retrieve_retries');
+    $self->{"RETRIEVE_WAIT"}    = getCfgValue('retrieve_wait');
+    $self->{"PREPROCESSOR"}     = getCfgValue('preprocessor');
+    $self->{"WORLD_READABLE"}   = getCfgValue('world_readable');
+    $self->{"TMP_DIR"}          = getCfgValue('tmp_dir');
+    $self->{"DBFORMAT"}         = getCfgValue('dbformat');
     if (EDG::WP4::CCM::CCfg::getCfgValue('trust')) {
         $self->{"TRUST"} = [split(/\,\s*/, EDG::WP4::CCM::CCfg::getCfgValue('trust'))];
     } else {
