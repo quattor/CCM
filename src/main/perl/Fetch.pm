@@ -48,6 +48,8 @@ use File::Path;
 use Encode qw(encode_utf8);
 use GSSAPI;
 
+use constant DEFAULT_GET_TIMEOUT => 30;
+
 # Which do we support, DB, CDB, GDBM?
 our @db_backends;
 BEGIN {
@@ -73,19 +75,6 @@ BEGIN{
 
 
 my $ec = LC::Exception::Context->new->will_store_errors;
-
-# Global Variables
-my $debug ;
-my $context_time = 0;
-my $get_timeout  = 30;		# Default timeout
-my $ca_dir;
-my $ca_file;
-my $key_file;
-my $cert_file;
-my $notification_time = 0;
-
-my $profile_ntime     = undef;
-my $context_ntime     = undef;
 
 my $GLOBAL_LOCK_FN = "global.lock";
 my $FETCH_LOCK_FN  = "fetch.lock";
@@ -152,13 +141,12 @@ sub _config($){
         return();
     }
 
-    # Global Variables
-    $debug                      = getCfgValue('debug');
-    $get_timeout                = getCfgValue('get_timeout');
-    $cert_file                  = getCfgValue('cert_file');
-    $key_file                   = getCfgValue('key_file');
-    $ca_file                    = getCfgValue('ca_file');
-    $ca_dir                     = getCfgValue('ca_dir');
+    $self->{DEBUG}             = getCfgValue('debug');
+    $self->{GET_TIMEOUT}       = getCfgValue('get_timeout') || DEFAULT_GET_TIMEOUT;
+    $self->{CERT_FILE}         = getCfgValue('cert_file');
+    $self->{KEY_FILE}          = getCfgValue('key_file');
+    $self->{CA_FILE}           = getCfgValue('ca_file');
+    $self->{CA_DIR}            = getCfgValue('ca_dir');
 
 
     # Local Variables to the object
@@ -203,6 +191,16 @@ Returns -1 and error_msg on failure
 
 =cut
 
+sub setupHttps
+{
+    my ($self) = @_;
+
+    $ENV{'HTTPS_CERT_FILE'}   = $self->{CERT_FILE} if (defined($self->{CERT_FILE}));
+    $ENV{'HTTPS_KEY_FILE'}    = $self->{KEY_FILE} if (defined($self->{KEY_FILE}));
+    $ENV{'HTTPS_CA_FILE'}     = $self->{CA_FILE} if (defined($self->{CA_FILE}));
+    $ENV{'HTTPS_CA_DIR'}      = $self->{CA_DIR} if (defined($self->{CA_DIR}));
+}
+
 sub fetchProfile {
 
     my ($class) = @_;
@@ -223,11 +221,8 @@ sub fetchProfile {
     my $world_readable        = $class->{"WORLD_READABLE"};
     my $default_format        = $class->{"DBFORMAT"};
 
-    # Setup https environment if necessary.
-    $ENV{'HTTPS_CERT_FILE'}   = $cert_file if (defined($cert_file));
-    $ENV{'HTTPS_KEY_FILE'}    = $key_file if (defined($key_file));
-    $ENV{'HTTPS_CA_FILE'}     = $ca_file if (defined($ca_file));
-    $ENV{'HTTPS_CA_DIR'}      = $ca_dir if (defined($ca_dir));
+    $self->setupHttps();
+
 
     if ($foreign_profile) {
         ($errno, $errmsg) = $class->enableForeignProfile();
@@ -263,11 +258,11 @@ sub fetchProfile {
     my $gotp = undef;
     # if we got a notification time, try for a while to only get a profile
     # that's at least as recent
-    if (defined $profile_ntime and $profile_ntime > $profile_ctime) {
+    if (defined $self->{PROFILE_NTIME} and $self->{PROFILE_NTIME} > $profile_ctime) {
 	my $tries = 0;
 	while ($tries++ < $retrieve_retries) {
 	    $gotp = $class->Retrieve($profile_url, $profile_cache,
-				     $profile_ntime);
+				     $self->{PROFILE_NTIME});
 	    last if ($gotp == 1 || $gotp ==3 || $gotp ==0);
             Debug("$profile_url: try $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
 	    sleep($retrieve_wait);
@@ -280,7 +275,7 @@ sub fetchProfile {
 	    $tries = 0;
 	    while ($tries++ < $retrieve_retries) {
 		$gotp = $class->Retrieve($profile_failover, $profile_cache,
-					 $profile_ntime);
+					 $self->{PROFILE_NTIME});
 		last if ($gotp == 1 || $gotp == 3 || $gotp == 0);
                 Debug("$profile_url: $tries out of $retrieve_retries: "
 		      . "sleeping for $retrieve_wait seconds ...");
@@ -292,11 +287,11 @@ sub fetchProfile {
     # and retry in case of read timeouts
     if (((!defined($gotp)) || ($gotp != 1)) # didn't download yet,
         && !		  # (and we didn't get a notify <= cache time)
-        (defined $profile_ntime && $profile_ntime <= $profile_ctime)) {
+        (defined $self->{PROFILE_NTIME} && $self->{PROFILE_NTIME} <= $profile_ctime)) {
 	my $tries = 0;
 	while ($tries++ < $retrieve_retries) {
 	    $gotp = $class->Retrieve($profile_url, $profile_cache,
-				     $profile_ntime);
+				     $self->{PROFILE_NTIME});
 	    last if ($gotp == 1 || $gotp ==3 || $gotp ==0 );
             Debug("$profile_url: $tries out of $retrieve_retries: sleeping for $retrieve_wait seconds ...");
 	    sleep($retrieve_wait);
@@ -330,11 +325,11 @@ sub fetchProfile {
 	$context_ctime = (-r $context_cache ? (stat($context_cache))[9] : 0);
 	# if we got a notification time, try for a while to only get a context
 	# that's at least as recent
-	if (defined $context_ntime and $context_ntime > $context_ctime) {
+	if (defined $self->{CONTEXT_NTIME} and $self->{CONTEXT_NTIME} > $context_ctime) {
 	    my $tries = 0;
 	    while ($tries++ < $retrieve_retries) {
 		last if (($gotc = $class->Retrieve($context_url, $context_cache,
-						   $context_ntime)) == 1);
+						   $self->{CONTEXT_NTIME})) == 1);
 		sleep($retrieve_wait);
 	    }
 	}
@@ -342,7 +337,7 @@ sub fetchProfile {
 	# and retry in case of read timeouts
 	if (($gotc != 1)	# didn't download yet,
             and not	  # (and we didn't get a notify <= cache time)
-            (defined $context_ntime and $context_ntime <= $context_ctime)) {
+            (defined $self->{CONTEXT_NTIME} and $self->{CONTEXT_NTIME} <= $context_ctime)) {
 	    my $tries = 0;
 	    while ($tries++ < $retrieve_retries) {
 		last if (($gotc = $class->Retrieve($context_url, $context_cache)) != 2);
@@ -520,7 +515,7 @@ sub Debug ($) {
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [DEBUG] %s",
                    $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print $msg . "\n"if (defined($debug) && $debug != "0");
+    print $msg . "\n"if (defined($self->{DEBUG}) && $self->{DEBUG} != "0");
 }
 
 #######################################################################
@@ -648,7 +643,7 @@ sub Retrieve ($$;$) {
     }
 
     # set timeout
-    $ua->timeout($get_timeout);
+    $ua->timeout($self->{GET_TIMEOUT});
 
     # do the GET
     my $res = $ua->request($req);
@@ -1390,7 +1385,7 @@ sub setPreprocessor($){
 sub setCADir($){
     my ($self, $val) = @_;
     throw_error ("CA directory does not exist: $val") unless (-d $val);
-    $ca_dir = $val;
+    $self->{CA_DIR} = $val;
     return SUCCESS;
 }
 
@@ -1398,7 +1393,7 @@ sub setCADir($){
 sub setCAFile($){
     my ($self, $val) = @_;
     throw_error ("CA file does not exist: $val") unless (-r $val);
-    $ca_file = $val;
+    $self->{CA_FILE} = $val;
     return SUCCESS;
 }
 
@@ -1406,14 +1401,14 @@ sub setCAFile($){
 sub setKeyFile($){
     my ($self, $val) = @_;
     throw_error ("Key file does not exist: $val") unless (-r $val);
-    $key_file = $val;
+    $self->{KEY_FILE} = $val;
     return SUCCESS;
 }
 
 sub setCertFile($){
     my ($self, $val) = @_;
     throw_error ("cert_file does not exist: $val") unless (-r $val);
-    $cert_file = $val;
+    $self->{CERT_FILE} = $val;
     return SUCCESS;
 }
 
@@ -1444,7 +1439,7 @@ sub setContext($){
 sub setContextTime($){
     my ($self, $val) = @_;
     throw_error("Context time should be natural number: $val") unless ($val =~m/^\d+$/) ;
-    $context_time = $val;
+    $self->{CONTEXT_TIME} = $val;
     return SUCCESS;
 }
 
@@ -1452,7 +1447,7 @@ sub setContextnTime($){
     my ($self, $val) = @_;
     throw_error("Context time should be natural number: $val") 
       unless ($val =~m/^\d+$/) ;
-    $context_ntime = $val;
+    $self->{CONTEXT_NTIME} = $val;
     return SUCCESS;
 }
 
@@ -1460,7 +1455,7 @@ sub setProfilenTime($){
     my ($self, $val) = @_;
     throw_error("Profile time should be natural number: $val") 
       unless ($val =~m/^\d+$/) ;
-    $profile_ntime = $val;
+    $self->{PROFILE_NTIME} = $val;
     return SUCCESS;
 }
 
@@ -1515,7 +1510,7 @@ notification time then only the profile will be downloaded
 sub setNotificationTime($){
     my ($self, $val) = @_;
     throw_error("Notification time should be natural number: $val") unless ($val =~m/^\d+$/ ) ;
-    $notification_time = $val;
+    $self->{NOTIFICATION_TIME} = $val;
     return SUCCESS;
 }
 
@@ -1529,7 +1524,7 @@ sub setTimeout($){
     my ($self, $val) = @_;
     throw_error("Timeout should be natural number: $val") 
       unless ($val =~m/^\d+$/) ;
-    $get_timeout = $val;
+    $self->{GET_TIMEOUT} = $val;
     return SUCCESS;
 }
 
@@ -1563,7 +1558,7 @@ sub setDebug($){
     my ($self, $val) = @_;
     throw_error("debug level should be a number : $val") 
       unless ($val =~m/^\d+$/) ;
-    $debug = $val;
+    $self->{DEBUG} = $val;
     return SUCCESS;
 }
 
