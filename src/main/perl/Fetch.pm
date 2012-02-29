@@ -36,6 +36,7 @@ use EDG::WP4::CCM::CCfg qw(getCfgValue);
 use EDG::WP4::CCM::DB;
 use CAF::Lock qw(FORCE_IF_STALE);
 use CAF::FileEditor;
+use CAF::FileWriter;
 use MIME::Base64;
 use LWP::UserAgent;
 use XML::Parser;
