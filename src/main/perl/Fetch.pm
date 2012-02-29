@@ -469,7 +469,7 @@ sub fetchProfile {
 
 	    # update current.cid if not globally locked
 	    if (FileToString($global_lock) eq 'no') {
-		Debug('Main: global.lock is "no"');
+		$self->debug(5, 'Main: global.lock is "no"');
 		my $current_cid = "$cache_root/current.cid";
 		my $tmp_current_cid = "$cache_root/tmp/current.cid";
 		StringToFile($latest, $tmp_current_cid);
@@ -512,7 +512,7 @@ sub ReleaseLock ($$) {
 
     # Release lock on given object (filename for diagnostics).
     my ($obj, $lock) = @_;
-    Debug("ReleaseLock: releasing: $lock");
+    $self->debug(5, "ReleaseLock: releasing: $lock");
     $obj->unlock();
 }
 
@@ -541,7 +541,7 @@ sub Base64Decode ($) {
     if ($msg) {
         $msg =~ s/ at.*line [0-9]*.$//;
         chomp($msg);
-        Warn('base64 decode failed on "'
+        $self->warn('base64 decode failed on "'
              . substr($data, 0, 10)
              . "\"...: $msg");
         return undef;
@@ -559,7 +559,7 @@ sub Gunzip ($) {
     my ($data) = @_;
     my $plain = Compress::Zlib::memGunzip($data);
     if (not defined $plain) {
-        Warn('gunzip failed on "' . substr($data, 0, 10) . '"...');
+        $self->warn('gunzip failed on "' . substr($data, 0, 10) . '"...');
         return undef;
     } else {
         return $plain;
@@ -620,9 +620,9 @@ sub Retrieve ($$;$) {
     # if three args, instead see if $url at least as recent as $reftime;
     # either way, if $force is set, download regardless
     if (defined $reftime) {
-        Debug("Retrieve($url, $dest, [" . scalar localtime($reftime) . '])');
+        $self->debug(5, "Retrieve($url, $dest, [" . scalar localtime($reftime) . '])');
     } else {
-        Debug("Retrieve($url, $dest)");
+        $self->debug(5, "Retrieve($url, $dest)");
     }
 
     my $ua = new LWP::UserAgent;
@@ -632,11 +632,11 @@ sub Retrieve ($$;$) {
     my $mtime = 0;
     unless ($force) {
         if (defined $reftime) {
-            Debug("Retrieve: ref time: " . scalar localtime($reftime));
+            $self->debug(5, "Retrieve: ref time: " . scalar localtime($reftime));
             $req->if_modified_since($reftime - 1);
         } elsif (-f $dest) {
             $mtime = (stat($dest))[9];
-            Debug("Retrieve: $dest: last mod: " . scalar localtime($mtime));
+            $self->debug(5, "Retrieve: $dest: last mod: " . scalar localtime($mtime));
             $req->if_modified_since($mtime) if (defined($mtime));
         }
     }
@@ -649,23 +649,23 @@ sub Retrieve ($$;$) {
   
     # no change?
     if ($res->code() == 304) {
-        Debug("Retrieve: <$url>: no change (304)");
+        $self->debug(5, "Retrieve: <$url>: no change (304)");
         return 0;
     }
   
     # timeout, EOF, etc?
     if ($res->code() == 500) {
-        Warn("Retrieve: <$url>: " .$res->content());
+        $self->warn("Retrieve: <$url>: " .$res->content());
         return 2;
     }
 
     unless($res->is_success()) {
-	Warn("can't get: <$url>: " . $res->message() . " (" . $res->code() . ")");
+	$self->warn("can't get: <$url>: " . $res->message() . " (" . $res->code() . ")");
 	return 3;
     }
 
     $mtime = $res->last_modified;
-    Debug("Retrieve: <$url>: last mod: " . scalar localtime($mtime));
+    $self->debug(5, "Retrieve: <$url>: last mod: " . scalar localtime($mtime));
     my $content = $res->content();
     if ($res->content_encoding && $res->content_encoding eq 'krbencrypt') {
         my ($author, $payload) = _gss_decrypt($content);
@@ -754,7 +754,7 @@ sub DecodeValue ($$) {
         my $plain = (defined $temp ? Gunzip($temp) : undef);
         return (defined $plain ? $plain : "invalid data: $data");
     } else {
-        Warn("invalid encoding: $encoding");
+        $self->warn("invalid encoding: $encoding");
         return "invalid data: $data";
     }
 }
@@ -1018,8 +1018,8 @@ sub InterpretNodeXMLDB ($$) {
 
 		# This is an error.  Recover by essentially doing
 		# nothing.  But print the information.
-		Warn("multidimensional list fixup failed; " .
-		     "hash has multiple values");
+		$self->warn("multidimensional list fixup failed; " .
+			    "hash has multiple values");
 		$val->{VALUE} = $nlist
 	    }
 
@@ -1073,7 +1073,7 @@ sub Interpret ($) {
     # made up of tag-content sequences, one per tree node.
 
     die('profile parse tree not a reference') unless (ref $tree);
-    Warn('ignoring subsequent top-level elements') unless (scalar @$tree == 2);
+    $self->warn('ignoring subsequent top-level elements') unless (scalar @$tree == 2);
 
     # Check to see what XML style is in the format attribute.  If 
     # if there is no attribute, then the "pan" style is assumed.
@@ -1232,7 +1232,7 @@ sub AddPath ($$$$$;$) {
         # store NULL-separated list of children's names
         my @children = sort keys %$value;
         $eid2data->{pack('L', $eid)} = join(chr(0), @children);
-        Debug("AddPath: $path => $eid => " . join('|', @children));
+        $self->debug(5, "AddPath: $path => $eid => " . join('|', @children));
         # recurse
         foreach (@children) {
             &AddPath($path, $value->{$_}, $refeid, $path2eid, $eid2data);
@@ -1241,7 +1241,7 @@ sub AddPath ($$$$$;$) {
         # names are integers
         my @children = 0..(scalar @$value)-1;
         $eid2data->{pack('L', $eid)} = join(chr(0), @children);
-        Debug("AddPath: $path => $eid => " . join('|', @children));
+        $self->debug(5, "AddPath: $path => $eid => " . join('|', @children));
         # recurse
         foreach (@children) {
             &AddPath($path, $value->[$_], $refeid, $path2eid, $eid2data,
@@ -1252,9 +1252,9 @@ sub AddPath ($$$$$;$) {
         my $v = (defined $value) ? $value : '';
         $eid2data->{pack('L', $eid)} = encode_utf8($v);
         if (defined $value) {
-	    Debug("AddPath: $path => $eid => $value");
+	    $self->debug(5, "AddPath: $path => $eid => $value");
         } else {
-	    Debug("AddPath: $path => <UNDEF value>");
+	    $self->debug(5, "AddPath: $path => <UNDEF value>");
         }
     }
 
@@ -1303,7 +1303,7 @@ sub MakeDatabase ($$$$) {
 #    my ($self) = @_;
 #    if ($self->{"FOREIGN"}){
 #        if (-d $self->{"CACHE_ROOT"}){
-#            Debug("Destroying foreign profile $self->{'CACHE_ROOT'}");
+#            $self->debug(5, "Destroying foreign profile $self->{'CACHE_ROOT'}");
 #            rmtree ($self->{"CACHE_ROOT"}, 0, 1);
 #        } else {
 #            return (ERROR, "Foreign Profile $self->{'CACHE_ROOT'} not present");
@@ -1316,7 +1316,7 @@ sub MakeDatabase ($$$$) {
 sub enableForeignProfile(){
     my ($self) = @_;
 
-    Debug("Enabling foreign profile ");
+    $self->debug(5, "Enabling foreign profile ");
 
     # Keeping old configuration
     my $cache_root      = $self->{"CACHE_ROOT"};
@@ -1331,7 +1331,7 @@ sub enableForeignProfile(){
 
     # Check existance of required directories in temporary foreign directory
     if (!(-d $cache_root)) {
-        Debug("Creating directory: $cache_root");
+        $self->debug(5, "Creating directory: $cache_root");
 	mkdir($cache_root, 0755)
 	  or return(ERROR, "can't make foreign profile dir: $cache_root: $!");
 	mkdir("$cache_root/data", 0755)
@@ -1340,13 +1340,13 @@ sub enableForeignProfile(){
 	  or return(ERROR, "can't make foreign profile tmp dir: $cache_root/tmp: $!");
     } else {
 	unless ((-d "$cache_root/data")) { 
-            Debug("Creating $cache_root/data directory "); 
+            $self->debug(5, "Creating $cache_root/data directory "); 
 	    mkdir("$cache_root/data", 0755)
 	      or return(ERROR, 
 			"can't make foreign profile data dir: $cache_root/data: $!");
         }
 	unless ((-d "$cache_root/tmp")) {
-            Debug("Creating $cache_root/tmp directory ");
+            $self->debug(5, "Creating $cache_root/tmp directory ");
 	    mkdir("$cache_root/tmp", 0755)
 	      or return(ERROR, 
 			"can't make foreign profile tmp dir: $cache_root/tmp: $!");
@@ -1355,7 +1355,7 @@ sub enableForeignProfile(){
 
     # Create global lock file
     if (!(-f "$cache_root/$GLOBAL_LOCK_FN")) {
-        Debug("Creating lock file in foreign cache root"); 
+        $self->debug(5, "Creating lock file in foreign cache root"); 
         StringToFile("no", "$cache_root/$GLOBAL_LOCK_FN");
     }
 }
@@ -1544,20 +1544,6 @@ Define failover profile url
 sub setProfileFailover($){
     my ($self, $val) = @_;
     $self->{"PROFILE_FAILOVER"} = $val;
-    return SUCCESS;
-}
-
-=item setDebug()
-
-set debug level
-
-=cut
-
-sub setDebug($){
-    my ($self, $val) = @_;
-    throw_error("debug level should be a number : $val") 
-      unless ($val =~m/^\d+$/) ;
-    $self->{DEBUG} = $val;
     return SUCCESS;
 }
 
