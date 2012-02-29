@@ -515,27 +515,6 @@ sub ReleaseLock ($$) {
     $obj->unlock();
 }
 
-#######################################################################
-sub Warn ($) {
-    #######################################################################
-
-    my $msg = $_[0];
-    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
-    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [WARN] %s",
-                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print STDERR $msg . "\n";
-}
-
-#######################################################################
-sub Debug ($) {
-    #######################################################################
- 
-    my ($msg) = @_;
-    my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
-    $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [DEBUG] %s",
-                   $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print $msg . "\n"if (defined($self->{DEBUG}) && $self->{DEBUG} != "0");
-}
 
 #######################################################################
 sub Base64Encode ($) {
