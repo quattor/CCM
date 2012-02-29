@@ -35,6 +35,7 @@ use Getopt::Long;
 use EDG::WP4::CCM::CCfg qw(getCfgValue);
 use EDG::WP4::CCM::DB;
 use CAF::Lock qw(FORCE_IF_STALE);
+use CAF::FileEditor;
 use MIME::Base64;
 use LWP::UserAgent;
 use XML::Parser;
@@ -276,15 +277,35 @@ sub download
 
     my @st = stat($cache) or die "Unable to stat $type cache: $cache";
 
+    my $rt;
+
     foreach my $u ($url $self->{uc($type) . "_FAILOVER"}) {
 	for my $i (1..$self->{RETRIEVE_RETRIES}) {
-	    $self->retrieve($u, $cache, $time) and return 1;
+	    $rt = $self->retrieve($u, $cache, $time);
+	    return $rt if defined($rt);
 	    $self->debug(1, "$u: try $i of $self->{RETRIEVE_RETRIES}: ",
 			 "sleeping for $self->{RETRIEVE_WAIT} seconds");
 	    sleep($self->{RETRIEVE_WAIT});
 	}
     }
-    return 0;
+}
+
+sub latest
+{
+    my ($self) = @_;
+
+    my ($dir, %ret);
+
+    $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/latest.cid",
+				     log => $self);
+
+    $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
+    $ret{url} = CAF::FileEditor->new("$dir/profile_url", log => $self);
+    $ret{context_url} = CAF::FileEditor->new("$dir/context.url",
+					     log => $self);
+    $ret{profile} = CAF::FileEditor->new("$dir/profile.xml",
+					 log => $self);
+    return %ret;
 }
 
 =pod
