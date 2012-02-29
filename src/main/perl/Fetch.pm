@@ -192,6 +192,20 @@ sub getLocks
     
 }
 
+=pod
+
+=item retrieve
+
+Stores $url into $cache if it's newer than $time, or if $self->{FORCE}
+is set.
+
+It returns -1 in case of error, 0 if it there were no changes (the
+server returned a 304 code) and 1 if there were any changes.
+
+Should be called ony by C<download>
+
+=cut
+
 sub retrieve
 {
     my ($self, $url, $cache, $time) = @_;
@@ -236,6 +250,21 @@ sub retrieve
 
     return 1;
 }
+
+=pod
+
+=item download
+
+Downloads the files associated with $type (profile or context). In
+case of error it retries $self->{RETRIEVE_RETRIES} times, falling back
+to a failover URL if necessary (thus up to 2*$self->{RETRIEVE_RETRIES}
+may happen.
+
+Returns -1 in case of error, 0 if nothing had to be retrieved (files
+in the server were older than our local cache) and 1 if something was
+actually downloaded.
+
+=cut
 
 sub download
 {
