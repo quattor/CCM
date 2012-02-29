@@ -24,9 +24,10 @@ EDG::WP4::CCM::Fetch
   contexts from specified URLs. It allows users to retrieve local, as well 
   as foreign node profiles.
 
-=over
 
 =head1 Functions
+
+=over
 
 =cut
 
@@ -47,7 +48,7 @@ use File::Basename;
 use LC::Exception qw(SUCCESS throw_error);
 use LC::Stat qw(:ST);
 use File::Temp qw /tempfile tempdir/;
-use File::Path;
+use File::Path qw(make_path);
 use Encode qw(encode_utf8);
 use GSSAPI;
 
@@ -85,12 +86,12 @@ my $FETCH_LOCK_FN  = "fetch.lock";
        CONFIG  => "path of config file", 
        FOREIGN => "1/0"});
 
-  Creates new Fetch object. Full url of the profile can be provided as 
-  parameter  PROFILE_URL,  if  it  is  not  a  url  a  profile url will be 
-  calculated using 'base_url' config option in /etc/ccm.conf.  Path of 
-  alternative configuration file can be given as CONFIG. 
+Creates new Fetch object. Full url of the profile can be provided as
+parameter PROFILE_URL, if it is not a url a profile url will be
+calculated using 'base_url' config option in /etc/ccm.conf.  Path of
+alternative configuration file can be given as CONFIG.
 
-  Returns undef in case of error.
+Returns undef in case of error.
 
 =cut
 
@@ -291,7 +292,7 @@ sub download
     }
 }
 
-sub latest
+sub previous
 {
     my ($self) = @_;
 
@@ -306,7 +307,30 @@ sub latest
 					     log => $self);
     $ret{profile} = CAF::FileEditor->new("$dir/profile.xml",
 					 log => $self);
+
     return %ret;
+}
+
+sub current
+{
+    my ($self, $profile, %previous) = @_;
+
+    my $cid = "$previous{cid}" + 1;
+    $cid %= MAXPROFILECOUNTER;
+
+    my $dir = "$self->{CACHE_ROOT}/profile.$cid";
+
+    make_path($dir, { mode => ($self->{WORLD_READABLE} ? 0755:0700)});
+
+    my %current = (url => CAF::FileWriter->new("$dir/profile.url", log => $self),
+		   cid => CAF::FileWriter->new("$self->{cache_root}/current.cid",
+					       log => $self),
+		   profile => CAF::FileWriter->new("$dir/profile.xml"),
+		   eiddata => "eid2data.db",
+		   eidpath => "path2eid.db");
+    print $current{cid} $cid;
+    print $current{url} $self->{PROFILE_URL}, "\n";
+    return %current;
 }
 
 =pod
@@ -337,148 +361,43 @@ sub fetchProfile {
 
     $self->setupHttps();
 
-
     if ($self->{FOREIGN_PROFILE}) {
         ($errno, $errmsg) = $self->enableForeignProfile();
         return (ERROR, $errmsg) if ($errno == ERROR);
     }
 
-    # Get the cache root (It changes if it is foreign profile)
-    my $cache_root            = $self->{"CACHE_ROOT"};
-
     $self->getLocks();
 
-    # the global lock is an indicator if CIDs are locked (no pivots allowed)
-    my $global_lock = "$cache_root/$GLOBAL_LOCK_FN";
-    return(ERROR, "lock file absent or non-writable: $global_lock") unless (-w $global_lock);
+    my %previous = $self->previous();
 
-    # first, profile
-    my $profile_cache = "$cache_root/data/" . EncodeURL($self->{PROFILE_URL});
-    my $profile_ctime = (-r $profile_cache ? (stat($profile_cache))[ST_CTIME] : 0);
-    my $gotp = undef;
-    # if we got a notification time, try for a while to only get a profile
-    # that's at least as recent
-    if (!$self->download("profile")) {
+    $self->{FORCE} ||=  ("$previous{url}" ne $self->{PROFILE_URL});
+    # the global lock is an indicator if CIDs are locked (no pivots allowed)
+
+    my $profile = $self->download("profile");
+    if (!defined($profile)) {
 	$self->error("Failed to fetch profile $self->{PROFILE_URL}");
 	return ERROR;
     }
 
-    if (exists($self->{CONTEXT_URL}) && !$self->download("context")) {
-	$self->error("Failed to fetch contedt $self->{CONTEXT}");
+    return SUCCESS unless $profile;
+
+    $self->verbose("Downloaded new profile");
+
+    my %current = $self->current($profile, %previous);
+
+    my $pf = $self->Interpret($self->Parse($profile));
+
+    if ($self->MakeDatabase($pf, $current{eidpath}, $current{eiddata},
+			    $self->{DBFORMAT}) == ERROR) {
+	$self->error("Failed to create cache databases");
+	$current{cid}->cancel();
+	$current{profile}->cancel();
 	return ERROR;
     }
 
-    # core algorithm, part 2: update configuration state
-
-    # get latest.cid & current.cid values
-    my $latest_cid = "$cache_root/latest.cid";
-    my $latest = (-f $latest_cid ? FileToString($latest_cid) : undef);
-
-    # if we have a latest config cached, retrieve its profile & context URLs
-    my $latest_dir = (defined $latest ? "$cache_root/profile.$latest" : undef);
-    my $latest_profile_url =
-      (defined $latest_dir and -f "$latest_dir/profile.url" ?
-       FileToString("$latest_dir/profile.url") : undef);
-    my $latest_context_url =
-      (defined $latest_dir and -f "$latest_dir/context.url" ?
-       FileToString("$latest_dir/context.url") : undef);
-    # and the XML
-    my $latest_profile_xml =
-      (defined $latest_dir and -f "$latest_dir/profile.xml" ?
-       "$latest_dir/profile.xml" : undef);
-
-    # if we downloaded a profile or a context -- or we didn't, but have been
-    # given different URLs from those in the latest config (in which case their
-    # content must already be cached in the data dir) -- call the preprocessor
-    # prior to making a new config
-    my $tmp_profile_xml = "$cache_root/tmp/profile.xml";
-    if ($gotp || $gotc
-        || (defined $latest_profile_url &&
-	    $profile_url ne $latest_profile_url)
-        || (defined $latest_context_url &&
-	    $context_url ne $latest_context_url)) {
-	# preprocess (if we can)
-	if (defined $context_url and defined $preprocessor) {
-	    PreProcess($preprocessor, $profile_cache, $context_cache,
-                       $tmp_profile_xml);
-	} else {
-	    system "cp -p $profile_cache $tmp_profile_xml";
-	}
-
-	# is the resulting XML different from what we had before?
-	Debug("Main: comparing $tmp_profile_xml, $latest_profile_xml");
-	if (!defined $latest_profile_xml
-            or FilesDiffer($tmp_profile_xml, $latest_profile_xml)
-            or $force) {
-	    # yes: parse & interpret new XML
-	    Debug("Main: parsing & interpreting $tmp_profile_xml");
-	    my $profile = Interpret(Parse($tmp_profile_xml));
-
-	    # create new profile directory in tmp space
-	    my $profdir = "$cache_root/tmp/profile.new";
-	    system "rm -rf $profdir"; # in case an earlier run got aborted...
-	    if ($world_readable) {
-		if (!mkdir($profdir, 0755)) {
-		    return(ERROR, "can't make profile dir: $profdir: $!");
-		}
-	    } else {
-		if (!mkdir($profdir, 0700)) {
-		    return(ERROR, "can't make profile dir: $profdir: $!");
-		}
-	    }
-	    if (!rename($tmp_profile_xml, "$profdir/profile.xml")) {
-		return(ERROR, "can't move $tmp_profile_xml to $profdir/profile.xml: $!");
-	    }
-	    ($errno, $errmsg) = StringToFile($profile_url,
-					     "$profdir/profile.url");
-	    if ($errno == ERROR) {
-		return (ERROR, $errmsg);
-	    }
-
-	    if (defined $context_url) {
-		($errno, $errmsg) = StringToFile($context_url, "$profdir/context.url");
-		if ($errno == ERROR) {
-		    return (ERROR, $errmsg);
-		}
-	    }
-	    ($errno, $errmsg) = MakeDatabase($profile, 
-					     "$profdir/path2eid",
-					     "$profdir/eid2data",
-					     $default_format);
-	    if ($errno == ERROR) {
-		return (ERROR, $errmsg);
-	    }
-
-	    # increment $latest and move profile dir to final location
-	    $latest = (defined $latest ? $latest + 1 : 0);
-	    # restart from 0 if $latest > max profile counter
-	    $latest = 0 if ($latest > MAXPROFILECOUNTER);
-            # don't keep multiple copies of foreign profiles
-	    if ($foreign_profile) {
-		$latest = 0;
-		system "rm -rf $cache_root/profile.$latest";
-	    }
-	    if (!rename($profdir, "$cache_root/profile.$latest")) {
-		return(ERROR, "can't move $profdir to $cache_root/profile.$latest: $!");
-	    }
-	    StringToFile($latest, $latest_cid);
-	    ($errno, $errmsg) = StringToFile($latest, $latest_cid);
-	    if ($errno == ERROR) {
-                return (ERROR, $errmsg);
-	    }
-
-	    # update current.cid if not globally locked
-	    if (FileToString($global_lock) eq 'no') {
-		$self->debug(5, 'Main: global.lock is "no"');
-		my $current_cid = "$cache_root/current.cid";
-		my $tmp_current_cid = "$cache_root/tmp/current.cid";
-		StringToFile($latest, $tmp_current_cid);
-		rename($tmp_current_cid, $current_cid);
-            }
-        }
-    }
-
-    return(SUCCESS);
+    $previous{cid}->set_contents("$current{cid}");
+	
+    return SUCCESS;
 
 }
 
@@ -721,13 +640,10 @@ sub _gss_decrypt {
 
 
 
-#######################################################################
-sub Parse ($) {
-    #######################################################################
-
+sub Parse {
     # Parse XML profile and return XML::Parser's tree structure.
 
-    my ($xmlfile) = @_;
+    my ($self, $xmlfile) = @_;
 
     my $xmlParser = new XML::Parser(Style => 'Tree');
     my $tree = eval { $xmlParser->parsefile($xmlfile); };
@@ -1060,14 +976,12 @@ sub InterpretNodeXMLDB ($$) {
     return $val;
 }
 
-#######################################################################
-sub Interpret ($) {
-    #######################################################################
-
+sub Interpret
+{
     # Interpret XML parse tree as profile data structure.  Need more sanity
     # checking!
 
-    my ($tree) = @_;
+    my ($self, $tree) = @_;
 
     # NB: we are being passed element *content*: ref to array
     # made up of tag-content sequences, one per tree node.
@@ -1269,13 +1183,10 @@ sub AddPath ($$$$$;$) {
       if (defined $tree->{DESCRIPTION});
 }
 
-#######################################################################
-sub MakeDatabase ($$$$) {
-    #######################################################################
-
+sub MakeDatabase
+{
     # Create the cache databases.
-
-    my ($profile, $path2eid_db, $eid2data_db, $dbformat) = @_;
+    my ($self, $profile, $path2eid_db, $eid2data_db, $dbformat) = @_;
 
     my %path2eid;
     my %eid2data;
@@ -1286,14 +1197,16 @@ sub MakeDatabase ($$$$) {
 
     my $err = EDG::WP4::CCM::DB::write(\%path2eid, $path2eid_db, $dbformat);
     if ($err) {
-        return(ERROR, $err);
+	$self->error($err);
+        return ERROR;
     }
     $err = EDG::WP4::CCM::DB::write(\%eid2data, $eid2data_db, $dbformat);
     if ($err) {
-        return(ERROR, $err);
+	$self->error("$err");
+	return ERROR;
     }
 
-    return (0, "");
+    return SUCCESS;
 }
 
 #sub destroyForeignProfile(){
