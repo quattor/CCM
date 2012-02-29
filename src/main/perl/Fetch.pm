@@ -224,12 +224,12 @@ sub retrieve
     my $rs = $ua->request($req);
     if ($rs->code() == 304) {
 	$self->verbose("No changes on $url since $time");
-	return 1;
+	return 0;
     }
 
     if (!$rs->is_success()) {
 	$self->warn("Got an unexpected result while retrieving $url: ", $rs->code());
-	return 0;
+	return;
     }
 
     my $cnt = $rs->content();
@@ -243,14 +243,12 @@ sub retrieve
 
     my $fh = CAF::FileWriter->($cache, log => $self);
     print $fh $content;
-    $fh->close();
 
     if (!utime($rs->last_modified(), $rs->last_modified(), $cache)) {
-	$self->error("Unable to set mtime for $dest: $!");
-	return 0;
+	$self->warn("Unable to set mtime for $dest: $!");
     }
 
-    return 1;
+    return $fh;
 }
 
 =pod
