@@ -165,8 +165,8 @@ if (!$fetch) {
 }
 
 # set debug
-$fetch->setDebug($this_app->option("debug"))
-		 if defined $this_app->option("debug");
+$fetch->setup_reporter($this_app->option("debug"), $this_app->option("quiet"),
+		       $this_app->option("verbose"));
 
 # set timeout
 $fetch->setTimeout($this_app->option("get_timeout")) 
@@ -198,18 +198,18 @@ $fetch->setWorldReadable($this_app->option("world_readable"))
 
 # set context notification time
 $fetch->setContextnTime($this_app->option("context_time")) 
-		if defined $this_app->option("context_time");
+    if defined $this_app->option("context_time");
 
 # set context URL
 $fetch->setContext($this_app->option("context")) 
-		if defined $this_app->option("context");
+    if defined $this_app->option("context");
 
 #fetch rpofile
-my ($errno, $errmsg) = $fetch->fetchProfile();
+my $errno = $fetch->fetchProfile();
 
 if ($errno == -1){
-	$this_app->error($errmsg);
-	exit(1);
+    $this_app->error("Unable to fetch profile");
+    exit(1);
 }
 
 exit (0);
