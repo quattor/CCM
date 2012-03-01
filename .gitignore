@@ -1,0 +1,7 @@
+*~
+*#
+*.old
+*.bak
+*.tmp
+target
+.#*
