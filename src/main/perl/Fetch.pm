@@ -97,7 +97,7 @@ sub new {
 
     my ($class, $param) = @_;
 
-    my $self = bless({}, __PACKAGE__);
+    my $self = bless({}, $class);
 
     my $foreign_profile = ($param->{"FOREIGN"}) ? 1 : 0;
 
@@ -219,7 +219,7 @@ sub retrieve
 
     my $ht = scalar(localtime($time));
     if (!$self->{FORCE}) {
-	$self->debug("Retrieve if newer than $ht");
+	$self->debug(1, "Retrieve if newer than $ht");
 	$rq->if_modified_since($time-1);
     }
     $ua->timeout($self->{GET_TIMEOUT});
@@ -230,7 +230,8 @@ sub retrieve
     }
 
     if (!$rs->is_success()) {
-	$self->warn("Got an unexpected result while retrieving $url: ", $rs->code());
+	$self->warn("Got an unexpected result while retrieving $url: ", $rs->code(),
+		    " ", $rs->message());
 	return;
     }
 
@@ -1261,13 +1262,13 @@ sub setConfig(;$){
 sub setProfileURL($){
     my ($self, $prof) = @_;
     my $base_url = $self->{"BASE_URL"};
-    Debug ("base_url is not defined in configuration") unless (defined $base_url);
+    $self->debug (5, "base_url is not defined in configuration") unless (defined $base_url);
     if ($prof =~ m/^http/) {
         $self->{"PROFILE_URL"} = $prof;
     } else {
         $self->{"PROFILE_URL"} = (defined $base_url)? $base_url . "/profile_" . $prof . ".xml" : "profile_" . $prof . ".xml";
     }
-    Debug ("URL is ". $self->{"PROFILE_URL"});
+    $self->debug (5, "URL is ". $self->{"PROFILE_URL"});
     return SUCCESS;
 }
 
