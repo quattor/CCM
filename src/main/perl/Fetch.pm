@@ -1263,7 +1263,7 @@ sub setProfileURL($){
     my ($self, $prof) = @_;
     my $base_url = $self->{"BASE_URL"};
     $self->debug (5, "base_url is not defined in configuration") unless (defined $base_url);
-    if ($prof =~ m/^http/) {
+    if ($prof =~ m{^(?:http|https|ssh|file)://}) {
         $self->{"PROFILE_URL"} = $prof;
     } else {
         $self->{"PROFILE_URL"} = (defined $base_url)? $base_url . "/profile_" . $prof . ".xml" : "profile_" . $prof . ".xml";
