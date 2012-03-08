@@ -40,8 +40,6 @@ use LWP::UserAgent;
 use XML::Parser;
 use Compress::Zlib;
 use Digest::MD5 qw(md5_hex);
-use DB_File;
-use GDBM_File;
 use Sys::Hostname;
 use File::Basename;
 use LC::Exception qw(SUCCESS throw_error);
