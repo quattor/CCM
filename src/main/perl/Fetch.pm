@@ -202,7 +202,7 @@ sub getLocks
 Stores $url into $cache if it's newer than $time, or if $self->{FORCE}
 is set.
 
-It returns -1 in case of error, 0 if it there were no changes (the
+It returns undef in case of error, 0 if it there were no changes (the
 server returned a 304 code) and a C<CAF::FileWriter> object with the
 downloaded contents if they had to be downloaded.
 
