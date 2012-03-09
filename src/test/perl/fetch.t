@@ -17,6 +17,9 @@ use Test::More tests => 15;
 use EDG::WP4::CCM::Fetch;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
+use CAF::Object;
+
+$CAF::Object::NoAction = 1;
 
 sub cleanup_cache
 {
