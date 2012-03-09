@@ -68,8 +68,9 @@ use constant MAXPROFILECOUNTER => 9999 ;
 use constant ERROR => -1 ;
 use parent qw(Exporter CAF::Reporter);
 
-@Exporter::EXPORT    = qw();
-@Exporter::EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN);
+our @EXPORT    = qw();
+our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
+		    ComputeChecksum);
 
 
 
