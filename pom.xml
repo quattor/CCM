@@ -1,4 +1,4 @@
-<project 
+<project
     xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -18,7 +18,7 @@
       <url>http://lapp-repo01.in2p3.fr:8081/nexus/content/repositories/releases/</url>
     </repository>
   </repositories>
-  
+
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
@@ -118,7 +118,7 @@
 		<phase>process-sources</phase>
 		<goals>
 		  <goal>copy-resources</goal>
-		</goals>		
+		</goals>
 		<configuration>
 		  <outputDirectory>${project.build.directory}/doc/eg</outputDirectory>
 		  <resources>
@@ -171,33 +171,25 @@
 	  <!-- Ok, so the build tools *really* want to have a bunch of
 	       .pod files under doc/pod. We just rename them. -->
 	  <plugin>
-	    <groupId>org.codehaus.mojo</groupId>
-	    <artifactId>exec-maven-plugin</artifactId>
+	    <artifactId>maven-antrun-plugin</artifactId>
 	    <executions>
 	      <execution>
-		<id>rename-to-pod</id>
+		<id>rename-pod-sources</id>
 		<phase>process-sources</phase>
 		<goals>
-		  <goal>exec</goal>
+		  <goal>run</goal>
 		</goals>
 		<configuration>
-		  <executable>rename</executable>
-		  <workingDirectory>${project.build.directory}/doc/pod/EDG/WP4/CCM</workingDirectory>
-		  <arguments>
-		    <argument>pm</argument>
-		    <argument>pod</argument>
-		    <argument>CacheManager.pm</argument>
-		    <argument>CCfg.pm</argument>
-		    <argument>Configuration.pm</argument>
-		    <argument>DB.pm</argument>
-		    <argument>Element.pm</argument>
-		    <argument>Fetch.pm</argument>
-		    <argument>Path.pm</argument>
-		    <argument>Property.pm</argument>
-		    <argument>Resource.pm</argument>
-		    <argument>Stream.pm</argument>
-		    <argument>SyncFile.pm</argument>
-		  </arguments>
+		  <tasks name="Rename">
+		    <echo>Hola</echo>
+		    <move filtering="true" todir="${project.build.directory}/doc/pod/EDG/WP4/CCM">
+		      <fileset dir="${project.build.directory}/doc/pod/EDG/WP4/CCM"/>
+		      <mapper>
+			<globmapper from="*.pm" to="*.pod"/>
+		      </mapper>
+		    </move>
+		    <echo>Renaming stuff?</echo>
+		  </tasks>
 		</configuration>
 	      </execution>
 	    </executions>
