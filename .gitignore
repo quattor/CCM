@@ -5,3 +5,5 @@
 *.tmp
 target
 .#*
+profile.xml
+profile.json
