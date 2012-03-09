@@ -5,7 +5,7 @@ use warnings;
 use Test::More;
 
 use constant MODULES => qw(Fetch CCfg Configuration Path SyncFile CacheManager
-			   Resource Element Stream Property DB);
+			   Resource Element Stream Property DB XMLPanProfile);
 
 plan tests => scalar(MODULES);
 
