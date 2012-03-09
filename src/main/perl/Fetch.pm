@@ -278,19 +278,19 @@ sub download
 
     my $cache = sprintf("%s/data/%s", $self->{CACHE_ROOT}, $self->EncodeURL($url));
 
-    my @st = stat($cache) or die "Unable to stat $type cache: $cache";
+    my @st = stat($cache) or die "Unable to stat $type cache: $cache ($!)";
 
-    my $rt;
 
     foreach my $u (($url, $self->{uc($type) . "_FAILOVER"})) {
 	for my $i (1..$self->{RETRIEVE_RETRIES}) {
-	    $rt = $self->retrieve($u, $cache, $st[ST_CTIME]);
+	    my $rt = $self->retrieve($u, $cache, $st[ST_CTIME]);
 	    return $rt if defined($rt);
 	    $self->debug(1, "$u: try $i of $self->{RETRIEVE_RETRIES}: ",
 			 "sleeping for $self->{RETRIEVE_WAIT} seconds");
 	    sleep($self->{RETRIEVE_WAIT});
 	}
     }
+    return undef;
 }
 
 sub previous
