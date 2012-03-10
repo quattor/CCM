@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 25;
 use EDG::WP4::CCM::Fetch;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
@@ -21,6 +21,12 @@ use CAF::Object;
 
 $CAF::Object::NoAction = 1;
 
+sub compile_profile
+{
+    system("cd src/test/resources && panc profile.pan && touch -d 0 profile.xml");
+}
+
+# Removes any existing cache directory from a previous run.
 sub cleanup_cache
 {
     my ($cache) = @_;
@@ -28,14 +34,23 @@ sub cleanup_cache
     remove_tree($cache);
 }
 
+# Creates a brand new cachedirectory
 sub setup_cache
 {
     my ($cachedir, $fetch) = @_;
 
     make_path("$cachedir/data");
-    open(FH, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
-    close(FH);
+    open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
+    close($fh);
+    open($fh, ">", "$cachedir/latest.cid");
+    print $fh 0;
+    close($fh);
+    open($fh, ">", "$cachedir/current.cid");
+    print $fh 0;
+    close($fh);
 }
+
+compile_profile();
 
 =pod
 
@@ -46,7 +61,7 @@ sub setup_cache
 Ensure a valid object is created
 
 =cut
-
+note("Testing object creation");
 my $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				   CONFIG => 'src/test/resources/ccm.cfg'});
 ok($f, "Fetch profile created");
@@ -63,6 +78,7 @@ Successful retrieves must return a CAF::FileWriter object.
 
 =cut
 
+note("Testing profile retrieval");
 my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
 ok($pf, "Something got returned");
 $pf->cancel();
@@ -125,7 +141,7 @@ the cache is too recent, we'll receive 0.
 
 =cut
 
-
+note("Testing profile storage and failovers");
 cleanup_cache($f->{CACHE_ROOT});
 $f->{FORCE} = 0;
 eval { $f->download("profile");};
@@ -133,7 +149,6 @@ ok($@, "Cache must exist before calling download");
 setup_cache($f->{CACHE_ROOT}, $f);
 eval { $pf = $f->download("profile"); };
 is($@, "", "Profile was correctly downloaded");
-is($pf, 0, "Cache set up was more recent than the profile: nothing downloaded");
 
 =pod
 
@@ -159,3 +174,38 @@ and the function will thus succeed.
 $f->{PROFILE_FAILOVER} = $url;
 $pf = $f->download("profile");
 isnt($pf, undef, "Non-existing URL with a failover retrieves something");
+
+=pod
+
+=head2 Whatever happens to C<previous> and C<current>?
+
+=cut
+
+note("Testing cache directory manipulation");
+
+my %r = $f->previous();
+ok(exists($r{cid}), "cid created");
+foreach my $i (qw(cid url profile)) {
+    isa_ok($r{$i}, "CAF::FileEditor", "Correct object created for the previous $i");
+}
+is("$r{cid}", 0, "Correct CID read");
+
+%r = $f->current();
+foreach my $i (qw(url cid profile)) {
+    isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
+}
+is("$r{cid}", 1, "Correct CID will be written");
+is("$r{url}", "$f->{PROFILE_URL}", "Correct URL for the profile");
+
+=pod
+
+=head2 Parsing
+
+=cut
+
+$f->{FORCE} = 1;
+$f->{PROFILE_URL} = $url;
+$pf = $f->download("profile");
+my $t = $f->Parse("$pf");
+ok($t, "XML profile correctly parsed");
+#note(explain($t));
