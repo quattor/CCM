@@ -193,7 +193,7 @@ sub getLocks
     $fl->set_lock($self->{LOCK_RETRIES}, $self->{LOCK_WAIT}, FORCE_IF_STALE) or
 	die "Failed to lock $self->{CACHE_ROOT}/$FETCH_LOCK_FN";
     return $fl;
-    
+
 }
 
 =pod
@@ -406,7 +406,7 @@ sub fetchProfile {
     $self->verbose("Downloaded new profile");
 
     %current = $self->current($profile, %previous);
-    $self->process_profile();
+    $self->process_profile($profile, %current);
     $self->cleanup_old("$current{cid}", "$previous{cid}");
     $previous{cid}->set_contents("$current{cid}");
     return SUCCESS;
@@ -414,10 +414,12 @@ sub fetchProfile {
 
 sub process_profile
 {
-    my ($self, $profile) = @_;
+    my ($self, $profile, %cur) = @_;
 
     my $t = $self->Parse($profile);
-    $self->Interpret($t);
+    $t = $self->Interpret($t);
+    return $self->MakeDatabase($t, $cur{eidpath}, $cur{eiddata},
+			       $self->{DBFORMAT});
 }
 
 ######################################################################################
@@ -572,7 +574,7 @@ sub _gss_decrypt {
     $status or _gss_die("unwrap", $status);
 
     return ($client_display, $self->Gunzip($outbuf));
-} 
+}
 
 
 
@@ -957,7 +959,7 @@ sub Show ($;$$) {
     $indent = '' if (not defined $indent);
 
     $name = $s->{NAME} if (not defined $name and defined $s->{NAME});
-    
+
     if (defined $name) {
         print $indent . $name . ' (';
     } else {
