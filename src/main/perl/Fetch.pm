@@ -49,6 +49,7 @@ use File::Temp qw /tempfile tempdir/;
 use File::Path qw(make_path remove_tree);
 use Encode qw(encode_utf8);
 use GSSAPI;
+use EDG::WP4::CCM::XMLPanProfile;
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
