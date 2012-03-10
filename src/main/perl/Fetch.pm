@@ -80,8 +80,8 @@ my $FETCH_LOCK_FN  = "fetch.lock";
 
 =item new()
 
-  new({PROFILE_URL => "profile_url or hostname", 
-       CONFIG  => "path of config file", 
+  new({PROFILE_URL => "profile_url or hostname",
+       CONFIG  => "path of config file",
        FOREIGN => "1/0"});
 
 Creates new Fetch object. Full url of the profile can be provided as
@@ -329,8 +329,8 @@ sub current
 		   profile => CAF::FileWriter->new("$dir/profile.xml"),
 		   eiddata => "eid2data.db",
 		   eidpath => "path2eid.db");
-    $current{cid}->print("$cid\n");
-    $current{url}->print("$self->{PROFILE_URL}\n");
+    $current{cid}->print("$cid");
+    $current{url}->print("$self->{PROFILE_URL}");
     return %current;
 }
 
@@ -373,7 +373,7 @@ sub fetchProfile {
 
     my ($self) = @_;
     my (%current, %previous);
-    
+
     $SIG{__DIE__} = sub {
 	$current{cid}->cancel();
 	$previous{cid}->cancel();
@@ -457,7 +457,7 @@ sub ReleaseLock ($$) {
 sub Base64Encode ($) {
     #######################################################################
 
-    # Uses MIME::Base64 -- with no breaking result into lines.    
+    # Uses MIME::Base64 -- with no breaking result into lines.
     # Always returns a value.
 
     return encode_base64($_[0], '');
@@ -587,7 +587,7 @@ sub Parse {
     return $tree;
 }
 
-sub DecodeValue ($$) {
+sub DecodeValue {
     # Decode a property value according to encoding attribute.
 
     my ($self, $data, $encoding) = @_;
@@ -616,7 +616,7 @@ sub ComputeChecksum ($) {
     my ($val) = @_;
     my $type = $val->{TYPE};
     my $value = $val->{VALUE};
-    
+
     if ($type eq 'nlist') {
         # MD5 of concat of children & their checksums, in order
         my @children = sort keys %$value;
@@ -763,7 +763,7 @@ sub InterpretNodeXMLDB ($$) {
 
     # Pull out the type for convenience and the list depth.  Depth of
     # zero means it is not a list.  Depth of one or higher gives the
-    # dimensionality of the list. 
+    # dimensionality of the list.
     my $type = $val->{TYPE};
     my $my_depth = (defined($att->{list})) ? int($att->{list}) : 0;
 
@@ -780,13 +780,13 @@ sub InterpretNodeXMLDB ($$) {
             my $c = $content->[$i++];
 
 	    # Ignore all but text nodes.  May also be a list element
-            # which has already been processed before. 
+            # which has already been processed before.
             if ($t ne '0' and $t ne '') {
 
 		my $a = $c->[0];
 		my $child_depth = (defined($a->{list})) ? int($a->{list}) : 0;
 
-		# Is the child a list? 
+		# Is the child a list?
 		if ($child_depth==0) {
 
 		    # No, just add the child normally.  Be careful,
@@ -804,18 +804,18 @@ sub InterpretNodeXMLDB ($$) {
 		    }
 
 		    # First, create a new node to handle the list
-		    # element. 
+		    # element.
 		    my $vallist = {};
 		    $vallist->{NAME} = $t;
 		    $vallist->{TYPE} = 'list';
 
 		    # Create a list for the value and process the
-		    # current node to add to it. 
+		    # current node to add to it.
 		    my $list = [];
 		    push @$list, $self->InterpretNodeXMLDB($t, $c);
 
 		    # Search through the rest of the entries to see if
-		    # there are other list elements from this list. 
+		    # there are other list elements from this list.
 		    my $j = $i;
 		    while ($j < scalar @$content) {
 			my $t2 = $content->[$j++];
@@ -823,12 +823,12 @@ sub InterpretNodeXMLDB ($$) {
 
 			# Same name and child is a list.
 			if ($t eq $t2) {
-			    my $child_depth2 = $c2->[0]->{list}; 
+			    my $child_depth2 = $c2->[0]->{list};
 			    $child_depth2 = 0 unless defined($child_depth2);
-                
+
 			    # Push the value of this node onto the
 			    # list, but also zero the name so that it
-			    # isn't processed twice. 
+			    # isn't processed twice.
 			    if ($child_depth == $child_depth2) {
 				push @$list, $self->InterpretNodeXMLDB($t2, $c2);
 				$content->[$j-2] = '0';
@@ -837,11 +837,11 @@ sub InterpretNodeXMLDB ($$) {
 		    }
 
 		    # Complete the node and add it the the nlist
-		    # parent. 
+		    # parent.
 		    $vallist->{VALUE} = $list;
 		    $vallist->{CHECKSUM} = ComputeChecksum($vallist);
 		    $nlist->{$t} = $vallist;
-            
+
 		}
 	    }
         }
@@ -849,7 +849,7 @@ sub InterpretNodeXMLDB ($$) {
 	# Normally just give the value of the nlist to val.  However,
         # if we're embedded into a multidimensional list, cheat the
         # remove an unnecessary level.  Just switch the $vallist
-	# reference for $val.  
+	# reference for $val.
 	if (! $collapse) {
 
 	    # Normal case.  Just set the value to the hash.
@@ -882,13 +882,13 @@ sub InterpretNodeXMLDB ($$) {
 	     $type eq 'fetch' ||
 	     $type eq 'stream' ||
 	     $type eq 'link') {
-    
+
         # decode if required
         if (defined $val->{ENCODING}) {
             $val->{VALUE} = $self->DecodeValue($content->[2], $val->{ENCODING});
         } else {
 	    # CAL # Empty element causes undefined context.  This
-            # shows up with empty strings.  Guard against this. 
+            # shows up with empty strings.  Guard against this.
 	    if (defined($content->[2])) {
 		$val->{VALUE} = $content->[2];
 	    } elsif ($type eq 'string') {
@@ -921,15 +921,15 @@ sub Interpret
     die('profile parse tree not a reference') unless (ref $tree);
     $self->warn('ignoring subsequent top-level elements') unless (scalar @$tree == 2);
 
-    # Check to see what XML style is in the format attribute.  If 
+    # Check to see what XML style is in the format attribute.  If
     # if there is no attribute, then the "pan" style is assumed.
     # Unsupported styles force an exist.
     my $t = $tree->[0];
     my $c = $tree->[1];
     my $a = $c->[0];
     my $format = $a->{format};
-    $format = 'pan' unless defined($format);
-    
+    $format ||= 'pan';
+
     my $v = undef;
     if ($format eq 'pan') {
 	$v = $self->InterpretNode($t, $c);
@@ -1182,23 +1182,23 @@ sub enableForeignProfile(){
 	mkdir("$cache_root/tmp", 0755)
 	  or return(ERROR, "can't make foreign profile tmp dir: $cache_root/tmp: $!");
     } else {
-	unless ((-d "$cache_root/data")) { 
-            $self->debug(5, "Creating $cache_root/data directory "); 
+	unless ((-d "$cache_root/data")) {
+            $self->debug(5, "Creating $cache_root/data directory ");
 	    mkdir("$cache_root/data", 0755)
-	      or return(ERROR, 
+	      or return(ERROR,
 			"can't make foreign profile data dir: $cache_root/data: $!");
         }
 	unless ((-d "$cache_root/tmp")) {
             $self->debug(5, "Creating $cache_root/tmp directory ");
 	    mkdir("$cache_root/tmp", 0755)
-	      or return(ERROR, 
+	      or return(ERROR,
 			"can't make foreign profile tmp dir: $cache_root/tmp: $!");
         }
     }
 
     # Create global lock file
     if (!(-f "$cache_root/$GLOBAL_LOCK_FN")) {
-        $self->debug(5, "Creating lock file in foreign cache root"); 
+        $self->debug(5, "Creating lock file in foreign cache root");
         StringToFile("no", "$cache_root/$GLOBAL_LOCK_FN");
     }
 }
@@ -1287,7 +1287,7 @@ sub setContextTime($){
 
 sub setContextnTime($){
     my ($self, $val) = @_;
-    throw_error("Context time should be natural number: $val") 
+    throw_error("Context time should be natural number: $val")
       unless ($val =~m/^\d+$/) ;
     $self->{CONTEXT_NTIME} = $val;
     return SUCCESS;
@@ -1295,7 +1295,7 @@ sub setContextnTime($){
 
 sub setProfilenTime($){
     my ($self, $val) = @_;
-    throw_error("Profile time should be natural number: $val") 
+    throw_error("Profile time should be natural number: $val")
       unless ($val =~m/^\d+$/) ;
     $self->{PROFILE_NTIME} = $val;
     return SUCCESS;
@@ -1303,7 +1303,7 @@ sub setProfilenTime($){
 
 sub setWorldReadable($){
     my ($self, $val) = @_;
-    throw_error("World readable option should be natural number: $val") 
+    throw_error("World readable option should be natural number: $val")
       unless ($val =~m/^\d+$/) ;
     $self->{"WORLD_READABLE"} = $val;
     return SUCCESS;
@@ -1364,7 +1364,7 @@ Define timeout after which profile fetch will be terminated.
 
 sub setTimeout($){
     my ($self, $val) = @_;
-    throw_error("Timeout should be natural number: $val") 
+    throw_error("Timeout should be natural number: $val")
       unless ($val =~m/^\d+$/) ;
     $self->{GET_TIMEOUT} = $val;
     return SUCCESS;
@@ -1372,7 +1372,7 @@ sub setTimeout($){
 
 sub setForce($){
     my ($self, $val) = @_;
-    throw_error("Force should be natural number: $val") 
+    throw_error("Force should be natural number: $val")
       unless ($val =~m/^\d+$/) ;
     $self->{"FORCE"} = $val;
     return SUCCESS;
