@@ -14,15 +14,14 @@ EDG::WP4::CCM::Fetch
                       CONFIG  => "path of config file",
                       FOREIGN => "1/0"});
 
-    
+
   $fetch->fetchProfile();
 
 =head1 DESCRIPTION
 
-  Module  provides  Fetch class. This helps in retrieving XML profiles and 
-  contexts from specified URLs. It allows users to retrieve local, as well 
-  as foreign node profiles.
-
+Module provides Fetch class. This helps in retrieving XML profiles and
+contexts from specified URLs. It allows users to retrieve local, as
+well as foreign node profiles.
 
 =head1 Functions
 
@@ -348,15 +347,15 @@ sub cleanup_old
 	}
     }
 }
-	    
+
 
 =pod
 
 =item fetchProfile()
 
-fetchProfile  fetches the  profile  from  profile  url and keeps it at 
-configured area.  The  cache  root variable is set as 
-$fetch_handle{'CACHE_ROOT'} which can further be passed to CacheManager 
+fetchProfile  fetches the  profile  from  profile  url and keeps it at
+configured area.  The  cache  root variable is set as
+$fetch_handle{'CACHE_ROOT'} which can further be passed to CacheManager
 object and use NVA-API to access Resources and Properties.
 
 If the profile is foreign, then the cache_root configuration is expected
