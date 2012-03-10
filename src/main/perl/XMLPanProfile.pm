@@ -115,8 +115,9 @@ sub interpret_list
 
 =head2 C<interpret_node>
 
-Interprets an XML tree, returning the appropriate data structure with
-all the attributes and values.
+Interprets an XML tree, which is assumed to have a C<format="pan">
+attribute, returning the appropriate data structure with all the
+attributes and values.
 
 =cut
 
