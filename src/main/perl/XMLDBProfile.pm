@@ -61,26 +61,25 @@ sub warn_unknown
 # types and metadata from the profile.
 sub interpret_nlist
 {
-    my ($content, $tag) = @_;
+    my ($class, $tag, $content) = @_;
 
     my $nl = {};
 
-    warn "nlist with tag $tag";
+    my $h;
+
 
     while (@$content) {
-	shift(@$content) for (1..2);
-	# Ooops, I'm the heading of a list!
 	$tag = shift(@$content);
-	if ($content->[1]) {
-	    warn "List heading with tag $tag and content ",
-		join("\t", @{$content->[0]});
+	my $c = $content->[0];
+	    exists($c->[0]->{list}) ? "list" : "no list";
+	if (exists($c->[0]->{list})) {
 	    $nl->{$tag} = { NAME => $tag,
 			    TYPE => 'list',
-			    VALUE => interpret_list($tag, $content)};
+			    VALUE => $class->interpret_list($tag, $content)
+			  };
 	} else {
-	    warn "real nlist with tag ", $content->[0];
-	    $nl->{$tag} =  __PACKAGE__->interpret_node($tag,
-						       $content->[1]);
+	    $nl->{$tag} = $class->interpret_node($tag, $c);
+	    shift(@$content) for(1..3);
 	}
     }
     return $nl;
@@ -92,9 +91,7 @@ sub interpret_scalar
 {
     my ($content, $tag, $encoding) = @_;
 
-    warn("I'm here and @$content");
     $content = $content->[1];
-    warn "Chose scalar content $content";
     if ($encoding) {
 	$content = EDG::CCM::WP4::Fetch->DecodeValue($content, $encoding);
     } elsif (!defined($content) && $tag eq 'string') {
@@ -108,15 +105,17 @@ sub interpret_scalar
 # the elements have the correct metadata associated.
 sub interpret_list
 {
-    my ($tag, $content, $type) = @_;
+    my ($class, $tag, $content) = @_;
 
     my $l = [];
     while (@$content) {
-	my $c = shift(@$content);
+	my $c;
+	do {
+	    $c = shift(@$content)
+	} while(!ref($c));
+	my $h = exists($c->[0]->{list}) ? \&interpret_list : \&interpret_nlist;
+	push(@$l, __PACKAGE__->interpret_node($tag, $c, $h));
 	shift(@$content) for (1..2);
-	warn("List contents to process: ", join("\t", @$c));
-	push(@$l, __PACKAGE__->interpret_node($tag, $c));
-	warn "List node contents: ", join("\t", (@{$content}[0..2]));
 	last if ($content->[0]);
 	shift(@$content);
     }
@@ -136,34 +135,31 @@ attributes and values.
 
 sub interpret_node
 {
-    my ($class, $tag, $content)  = @_;
+    my ($class, $tag, $content, $container_handler) = @_;
 
-    my $val = {};
+    $container_handler ||= \&interpret_nlist;
 
-    my $att = $content->[0];
+    my $val = {NAME => $tag};
 
-    $val->{NAME} = $tag;
-    warn "tag=$tag, att=", join(" ", %$att);
+    my $atts = shift(@$content);
 
-
-    while (my ($k, $v) = each(%$att)) {
+    while (my ($k, $v) = each(%$atts)) {
 	if (exists(VALID_ATTRIBUTES->{$k})) {
 	    $val->{VALID_ATTRIBUTES->{$k}} = $v;
-	} elsif ($k ne "format" && $k ne "list") {
-	    warn "Unknown attribute $k";
+	} else {
+	    #warn "Unknown attribute $k with value $v!!";
 	}
     }
 
-    if ($val->{TYPE}) {
-	shift(@$content);
-	$val->{VALUE} = interpret_scalar($content, $tag);
+    if (!@$content) {
+	return $val;
+    } elsif (scalar(@$content) == 2) {
+	$val->{VALUE} = interpret_scalar($content);
     } else {
-	shift(@$content);
-	$val->{VALUE} = interpret_nlist($content, $tag);
-	$val->{TYPE} = 'nlist';
+	shift(@$content) for(1..2);
+	$val->{VALUE} = $container_handler->($class, $tag, $content);
+	$val->{TYPE} = $atts->{list} ? 'list' : 'nlist';
     }
-
-    #$val->{CHECKSUM} ||= ComputeChecksum($val);
     return $val;
 }
 
