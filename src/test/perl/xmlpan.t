@@ -118,9 +118,11 @@ must be identical.
 
 =cut
 
+compile_profile();
+
 my $fh = CAF::FileEditor->new("src/test/resources/profile.xml");
 my $t = EDG::WP4::CCM::Fetch->Parse("$fh");
 
 my $reference_result = InterpretNode(@$t);
 my $our_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
-cmp_deeply($reference_result, $our_result, "Our result matches the old implementation");
+cmp_deeply($our_result, $reference_result, "Our result matches the old implementation");
