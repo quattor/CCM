@@ -160,7 +160,7 @@ sub InterpretNodeXMLDB
         }
 
 	# Normally just give the value of the nlist to val.  However,
-        # if we're embedded into a multidimensional list, cheat the
+        # if we're embedded intoa  multidimensional list, cheat the
         # remove an unnecessary level.  Just switch the $vallist
 	# reference for $val.
 	if (! $collapse) {
@@ -233,9 +233,6 @@ must be identical.
 my $fh = CAF::FileEditor->new("src/test/resources/profile.xml");
 my $t = EDG::WP4::CCM::Fetch->Parse("$fh");
 my $reference_result = InterpretNodeXMLDB(@$t);
-note(explain($t));
-note(explain($reference_result));
 my $our_result = EDG::WP4::CCM::XMLDBProfile->interpret_node(@$t);
-note(explain($our_result));
 cmp_deeply($our_result, $reference_result,
 	   "Our result matches the old implementation");

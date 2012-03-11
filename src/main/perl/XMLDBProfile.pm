@@ -71,7 +71,6 @@ sub interpret_nlist
     while (@$content) {
 	$tag = shift(@$content);
 	my $c = $content->[0];
-	    exists($c->[0]->{list}) ? "list" : "no list";
 	if (exists($c->[0]->{list})) {
 	    $nl->{$tag} = { NAME => $tag,
 			    TYPE => 'list',
@@ -113,7 +112,11 @@ sub interpret_list
 	do {
 	    $c = shift(@$content)
 	} while(!ref($c));
-	my $h = exists($c->[0]->{list}) ? \&interpret_list : \&interpret_nlist;
+	# Peek the next node to check if it is a list
+	my $h;
+	if (scalar(@$c) >= 5 && exists($c->[4]->[0]->{list})) {
+	    $h = \&interpret_list;
+	}
 	push(@$l, __PACKAGE__->interpret_node($tag, $c, $h));
 	shift(@$content) for (1..2);
 	last if ($content->[0]);
@@ -158,7 +161,7 @@ sub interpret_node
     } else {
 	shift(@$content) for(1..2);
 	$val->{VALUE} = $container_handler->($class, $tag, $content);
-	$val->{TYPE} = $atts->{list} ? 'list' : 'nlist';
+	$val->{TYPE} = ref($val->{VALUE}) eq 'HASH' ? 'nlist' : 'list';
     }
     return $val;
 }
