@@ -80,6 +80,7 @@ sub interpret_nlist
 	    $nl->{$tag} = $class->interpret_node($tag, $c);
 	    shift(@$content) for(1..3);
 	}
+	$nl->{$tag}->{CHECKSUM} ||= ComputeChecksum($nl->{$tag});
     }
     return $nl;
 }
@@ -154,15 +155,17 @@ sub interpret_node
 	}
     }
 
-    if (!@$content) {
-	return $val;
-    } elsif (scalar(@$content) == 2) {
-	$val->{VALUE} = interpret_scalar($content);
-    } else {
-	shift(@$content) for(1..2);
-	$val->{VALUE} = $container_handler->($class, $tag, $content);
-	$val->{TYPE} = ref($val->{VALUE}) eq 'HASH' ? 'nlist' : 'list';
+    if (@$content) {
+	if (scalar(@$content) == 2) {
+	    $val->{VALUE} = interpret_scalar($content);
+	} else {
+	    shift(@$content) for(1..2);
+	    $val->{VALUE} = $container_handler->($class, $tag, $content);
+	    $val->{TYPE} = ref($val->{VALUE}) eq 'HASH' ? 'nlist' : 'list';
+	}
     }
+
+    $val->{CHECKSUM} ||= ComputeChecksum($val);
     return $val;
 }
 

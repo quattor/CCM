@@ -152,7 +152,7 @@ sub InterpretNodeXMLDB
 		    # Complete the node and add it the the nlist
 		    # parent.
 		    $vallist->{VALUE} = $list;
-		    #$vallist->{CHECKSUM} = ComputeChecksum($vallist);
+		    $vallist->{CHECKSUM} = ComputeChecksum($vallist);
 		    $nlist->{$t} = $vallist;
 
 		}
@@ -215,7 +215,7 @@ sub InterpretNodeXMLDB
 
     # compute checksum if missing
     if (not defined $val->{CHECKSUM}) {
-        #$val->{CHECKSUM} = ComputeChecksum($val);
+        $val->{CHECKSUM} = ComputeChecksum($val);
     }
 
     return $val;
