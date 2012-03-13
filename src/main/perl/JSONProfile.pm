@@ -33,19 +33,6 @@ use JSON::XS;
 
 $SIG{__DIE__} = \&confess;
 
-use constant TOPLEVEL_TYPE => 'nlist';
-
-
-use constant VALID_ATTRIBUTES => {
-				  unencoded => 'NAME',
-				  derivation => 'DERIVATION',
-				  checksum => 'CHECKSUM',
-				  acl => 'ACL',
-				  encoding => 'ENCODING',
-				  description => 'DESCRIPTION',
-				  utype => 'USERTYPE',
-				  type => 'TYPE',
-				 };
 
 # Warns in case a tag in the XML profile is not known (i.e, has not a
 # valid entry in the INTERPRETERS hash.
@@ -108,7 +95,19 @@ sub interpret_node
 
     my $v = {NAME => $tag};
     if (!$r) {
-	$v->{VALUE} = $r;
+	# Perl loses all the basic type information. All we can
+	# recover is if it is a boolean or not. The rest will be
+	# handled as strings, which is how they will be stored in the
+	# profile, anyways. It is harmless from the component's point
+	# of view, but it won't produce identical caches as what we
+	# get from the XMLs.
+	if (JSON::XS::is_bool($doc)) {
+	    $v->{TYPE} = "boolean";
+	    $v->{VALUE} = $doc ? "true" : "false";
+	} else {
+	    $v->{VALUE} = $doc;
+	    $v->{TYPE} = 'string';
+	}
     } elsif ($r eq 'HASH') {
 	$v->{TYPE} = 'nlist';
 	$v->{VALUE} = $class->interpret_nlist($tag, $doc);
@@ -116,6 +115,7 @@ sub interpret_node
 	$v->{TYPE} = 'list';
 	$v->{VALUE} = $class->interpret_list($tag, $doc);
     }
+    $v->{CHECKSUM} = ComputeChecksum($v);
     return $v;
 }
 
