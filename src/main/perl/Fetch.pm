@@ -1129,7 +1129,7 @@ sub MakeDatabase
 
     # walk profile
     my $eid = 0;
-    AddPath('', $profile, \$eid, \%path2eid, \%eid2data, '');
+    $self->AddPath('', $profile, \$eid, \%path2eid, \%eid2data, '');
 
     my $err = EDG::WP4::CCM::DB::write(\%path2eid, $path2eid_db, $dbformat);
     if ($err) {
