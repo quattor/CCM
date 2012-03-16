@@ -18,7 +18,7 @@ BEGIN{
  use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
 
  @ISA       = qw(Exporter);
- @EXPORT    = qw();           
+ @EXPORT    = qw();
  @EXPORT_OK = qw();
  $VERSION = sprintf("%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/);
 }
@@ -61,7 +61,7 @@ my $ACTIVE_FN = "ccm-active-profile.";
 
 #
 # Create Configuration object. It takes two arguments:
-#   $cache_manager - CacheManager object 
+#   $cache_manager - CacheManager object
 #   $cid - configuration id
 #   $locked - true or false lock flag
 #
@@ -75,7 +75,7 @@ my $ACTIVE_FN = "ccm-active-profile.";
 sub new { #T
   my ($class, $cache_manager, $cid, $locked) = @_;
   my $cache_path = $cache_manager->getCachePath();
-  unless ($cache_path =~ m{^(/.*)}) {
+  unless ($cache_path =~ m{^([-./\w]+)}) {
     throw_error ("Cache path '$cache_path' is not an absolute path");
     return ();
   }
@@ -102,7 +102,7 @@ sub new { #T
     $ec->rethrow_error();
     return();
   }
-  return $self;  
+  return $self;
 }
 
 #
@@ -217,7 +217,7 @@ sub getConfigurationId { #T
   return $self->{"cid"};
 }
 
-=item getElement ($path) 
+=item getElement ($path)
 
 Returns Element object identified by $path (path may be a string or
 and object of class Path)
@@ -227,7 +227,7 @@ and object of class Path)
 sub getElement {
   my ($self, $path) = @_;
   unless (UNIVERSAL::isa ($path, "EDG::WP4::CCM::Path")) {
-    my $ps = $path; 
+    my $ps = $path;
     $path = EDG::WP4::CCM::Path->new ($ps);
     unless ($path) {
       throw_error ("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
@@ -278,7 +278,7 @@ returns true if elements identified by $path exists
 sub elementExists {
     my ($self, $path) = @_;
     unless (UNIVERSAL::isa ($path, "EDG::WP4::CCM::Path")) {
-	my $ps = $path; 
+	my $ps = $path;
 	$path = EDG::WP4::CCM::Path->new ($ps);
 	unless ($path) {
 	    throw_error ("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
