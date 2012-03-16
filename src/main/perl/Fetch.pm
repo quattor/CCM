@@ -335,8 +335,8 @@ sub current
 		   cid => CAF::FileWriter->new("$self->{CACHE_ROOT}/current.cid",
 					       log => $self),
 		   profile => CAF::FileWriter->new("$dir/profile.xml", log => $self),
-		   eiddata => "$dir/eid2data.db",
-		   eidpath => "$dir/path2eid.db");
+		   eiddata => "$dir/eid2data",
+		   eidpath => "$dir/path2eid");
     $current{cid}->print("$cid\n");
     $current{url}->print("$self->{PROFILE_URL}\n");
     $current{profile}->print("$profile");

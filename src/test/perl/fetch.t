@@ -13,8 +13,9 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 33;
+use Test::More tests => 36;
 use EDG::WP4::CCM::Fetch;
+use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
 use CAF::Object;
@@ -44,6 +45,8 @@ sub setup_cache
     my ($cachedir, $fetch) = @_;
 
     make_path("$cachedir/data");
+    open(my $fh, ">", "$cachedir/global.lock");
+    print $fh "no\n";
     # open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
     # close($fh);
     # open($fh, ">", "$cachedir/latest.cid");
@@ -219,6 +222,8 @@ $pf = $f->download("profile");
 my ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "XML Pan profile correctly parsed");
 is($class, 'EDG::WP4::CCM::XMLPanProfile', "Pan XML profile correctly diagnosed");
+is(ref($t), "ARRAY", "XML Pan profile is not empty");
+is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 compile_profile("xmldb");
@@ -239,9 +244,15 @@ is($class, 'EDG::WP4::CCM::JSONProfile', "JSON profile correctly diagnosed");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 
+
 =pod
 
-=head2 Generate a correct cache database
+=head2 Ensure the cache database is correct
 
 =cut
 
+%r = ();
+
+my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
+my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
+ok($cfg->elementExists("/"), "There is a root element in the cache");
