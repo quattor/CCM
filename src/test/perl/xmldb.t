@@ -8,7 +8,7 @@ use EDG::WP4::CCM::XMLDBProfile;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
 use Test::Deep;
-
+use XML::Parser;
 
 =pod
 
@@ -231,7 +231,8 @@ must be identical.
 =cut
 
 my $fh = CAF::FileEditor->new("src/test/resources/profile.xml");
-my $t = EDG::WP4::CCM::Fetch->Parse("$fh");
+my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
+
 my $reference_result = InterpretNodeXMLDB(@$t);
 my $our_result = EDG::WP4::CCM::XMLDBProfile->interpret_node(@$t);
 cmp_deeply($our_result, $reference_result,

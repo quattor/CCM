@@ -10,7 +10,8 @@ use EDG::WP4::CCM::Fetch;
 use CAF::FileEditor;
 use JSON::XS qw(decode_json);
 use Test::Deep;
-
+use XML::Parser;
+use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 
 =pod
 
@@ -46,7 +47,7 @@ must be identical.
 compile_profile("pan");
 compile_profile("json");
 my $fh = CAF::FileEditor->new("src/test/resources/simpleprofile.xml");
-my $t = EDG::WP4::CCM::Fetch->Parse("$fh");
+my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 $fh = CAF::FileEditor->new("src/test/resources/simpleprofile.json");
 note("Profile contents: $fh");
