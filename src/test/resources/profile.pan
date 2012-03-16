@@ -2,7 +2,7 @@ object template profile;
 
 "/a" = list(1, 2, 3);
 "/b" = "hello";
-"/c" = 1.0;
+"/c" = 1.5;
 "/d" = true;
 "/e/f" = 1;
 "/g/0/0" = 1;
