@@ -3,6 +3,8 @@
 # ${author-info}
 # ${build-info}
 
+package EDG::WP4::CCM::DB;
+
 =head1 NAME
 
 EDG::WP4::CCM::DB
@@ -23,6 +25,9 @@ format, which copes with multiple possible data formats.
 =cut
 
 # Which do we support, DB, CDB, GDBM?
+use strict;
+use warnings;
+
 our $default_format = 'DB_File';
 our @db_backends;
 BEGIN {
@@ -75,7 +80,7 @@ sub write {
     }
     # Okay, so now we're tied, copy across.
     if ($dbformat eq 'CDB_File') {
-        eval { 
+        eval {
             unlink("$prefix.tmp"); # ignore return code; we don't care
             CDB_File::create(%$hashref, "${prefix}.db", "${prefix}.tmp");
         };
