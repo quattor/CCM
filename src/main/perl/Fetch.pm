@@ -49,7 +49,7 @@ use File::Temp qw /tempfile tempdir/;
 use File::Path qw(make_path remove_tree);
 use Encode qw(encode_utf8);
 use GSSAPI;
-use EDG::WP4::CCM::XMLPanProfile;
+use JSON::XS qw(decode_json);
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -416,17 +416,32 @@ sub process_profile
 {
     my ($self, $profile, %cur) = @_;
 
-    my $t = $self->Parse($profile);
-    $t = $self->Interpret($t);
+    my ($class, $t) = $self->choose_interpreter($profile);
+    eval "require $class";
+    die "Couldn't load interpreter $class: $@" if $@;
+    $t = $class->interpret_node($t);
     return $self->MakeDatabase($t, $cur{eidpath}, $cur{eiddata},
 			       $self->{DBFORMAT});
 }
 
-######################################################################################
-# Supporting functions
-######################################################################################
+sub choose_interpreter
+{
+    my ($self, $profile) = @_;
 
+    if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
+	return ('EDG::WP4::CCM::JSONProfile', decode_json($profile));
+    }
 
+    my $xmlParser = new XML::Parser(Style => 'Tree');
+    my $tree = eval { $xmlParser->parse($profile); };
+    die("XML parse of profile failed: $@") if ($@);
+
+    if ($tree->[1]->[0]->{format} eq 'pan') {
+	return ('EDG::WP4::CCM::XMLPanProfile', $tree);
+    } else {
+	return ('EDG::WP4::CCM::XMLDBProfile', $tree);
+    }
+}
 
 #######################################################################
 sub RequestLock ($) {
@@ -574,20 +589,6 @@ sub _gss_decrypt {
     $status or _gss_die("unwrap", $status);
 
     return ($client_display, $self->Gunzip($outbuf));
-}
-
-
-
-sub Parse {
-    # Parse XML profile and return XML::Parser's tree structure.
-
-    my ($self, $xml) = @_;
-
-    my $xmlParser = new XML::Parser(Style => 'Tree');
-    my $tree = eval { $xmlParser->parse($xml); };
-    die("XML parse of profile failed: $@") if ($@);
-
-    return $tree;
 }
 
 sub DecodeValue {

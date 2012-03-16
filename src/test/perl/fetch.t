@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 25;
+use Test::More tests => 30;
 use EDG::WP4::CCM::Fetch;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
@@ -23,7 +23,11 @@ $CAF::Object::NoAction = 1;
 
 sub compile_profile
 {
-    system("cd src/test/resources && panc profile.pan && touch -d 0 profile.xml");
+    my ($type) = @_;
+
+    $type ||= 'pan';
+    my $filetype = $type eq 'json' ? 'json' : 'xml';
+    system("cd src/test/resources && panc -x $type profile.pan && touch -d 0 profile.$filetype");
 }
 
 # Removes any existing cache directory from a previous run.
@@ -201,11 +205,29 @@ is("$r{url}", "$f->{PROFILE_URL}", "Correct URL for the profile");
 
 =head2 Parsing
 
+The module must be able to parse XMLDB, Pan and JSON profiles, and to
+choose (and invoke) the correct interpreters.
+
 =cut
 
 $f->{FORCE} = 1;
 $f->{PROFILE_URL} = $url;
 $pf = $f->download("profile");
-my $t = $f->Parse("$pf");
-ok($t, "XML profile correctly parsed");
+my ($class, $t) = $f->choose_interpreter("$pf");
+ok($t, "XML Pan profile correctly parsed");
+is($class, 'EDG::WP4::CCM::XMLPanProfile', "Pan XML profile correctly diagnosed");
+compile_profile("xmldb");
+$pf = $f->download("profile");
+($class, $t) = $f->choose_interpreter("$pf");
+ok($t, "XMLDB profile correctly parsed");
+is($class, 'EDG::WP4::CCM::XMLDBProfile', "XMLDB profile correctly diagnosed");
+compile_profile("json");
+$f->{PROFILE_URL} =~ s{xml}{json};
+setup_cache($f->{CACHE_ROOT}, $f);
+$pf = $f->download("profile");
+($class, $t) = $f->choose_interpreter("$pf");
+ok($t, "JSON profile correctly parsed");
+is($class, 'EDG::WP4::CCM::JSONProfile', "JSON profile correctly diagnosed");
+
 #note(explain($t));
+
