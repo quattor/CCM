@@ -19,7 +19,7 @@ use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
 use CAF::Object;
 
-$CAF::Object::NoAction = 1;
+#$CAF::Object::NoAction = 1;
 
 sub compile_profile
 {
@@ -44,14 +44,14 @@ sub setup_cache
     my ($cachedir, $fetch) = @_;
 
     make_path("$cachedir/data");
-    open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
-    close($fh);
-    open($fh, ">", "$cachedir/latest.cid");
-    print $fh "0\n";
-    close($fh);
-    open($fh, ">", "$cachedir/current.cid");
-    print $fh 0;
-    close($fh);
+    # open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
+    # close($fh);
+    # open($fh, ">", "$cachedir/latest.cid");
+    # print $fh "0\n";
+    # close($fh);
+    # open($fh, ">", "$cachedir/current.cid");
+    # print $fh 0;
+    # close($fh);
 }
 
 compile_profile();
@@ -148,9 +148,6 @@ the cache is too recent, we'll receive 0.
 note("Testing profile storage and failovers");
 cleanup_cache($f->{CACHE_ROOT});
 $f->{FORCE} = 0;
-eval { $f->download("profile");};
-ok($@, "Cache must exist before calling download");
-setup_cache($f->{CACHE_ROOT}, $f);
 eval { $pf = $f->download("profile"); };
 is($@, "", "Profile was correctly downloaded");
 
@@ -186,7 +183,8 @@ isnt($pf, undef, "Non-existing URL with a failover retrieves something");
 =cut
 
 note("Testing cache directory manipulation");
-
+$f->{FORCE} = 1;
+$pf = $f->download("profile");
 my %r = $f->previous();
 ok(exists($r{cid}), "cid created");
 foreach my $i (qw(cid url profile)) {
@@ -194,10 +192,11 @@ foreach my $i (qw(cid url profile)) {
 }
 is("$r{cid}", "0\n", "Correct CID read");
 
-%r = $f->current();
+%r = $f->current($pf, %r);
 foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
 }
+like("$r{profile}", qr{^<\?xml}, "Current profile will be written");
 is("$r{cid}", "1\n", "Correct CID will be written");
 is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
 

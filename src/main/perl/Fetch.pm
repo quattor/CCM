@@ -282,7 +282,7 @@ sub download
     my $cache = sprintf("%s/data/%s", $self->{CACHE_ROOT}, $self->EncodeURL($url));
 
     if (! -f $cache) {
-	CAF::FileWriter->new($cache, log => $self);
+	CAF::FileWriter->new($cache, log => $self)->close();
     }
 
     my @st = stat($cache) or die "Unable to stat profile cache: $cache ($!)";
@@ -308,7 +308,7 @@ sub previous
     $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/latest.cid",
 				     log => $self);
 
-    $ret{cid}->print("0\n") if !defined(${$ret{cid}->string_ref()});
+    $ret{cid}->print("0\n") if "$ret{cid}" eq '';
     $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
     chomp($dir);
     $ret{url} = CAF::FileEditor->new("$dir/profile_url", log => $self);
@@ -339,6 +339,7 @@ sub current
 		   eidpath => "$dir/path2eid.db");
     $current{cid}->print("$cid\n");
     $current{url}->print("$self->{PROFILE_URL}\n");
+    $current{profile}->print("$profile");
     return %current;
 }
 
