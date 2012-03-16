@@ -71,7 +71,7 @@ sub interpret_list
     my $l = [];
 
     foreach my $i (@$doc) {
-	push(@$l, $class->interpret_node($tag, $i));
+	push(@$l, $class->interpret_node(undef, $i));
     }
 
     return $l;
@@ -85,6 +85,15 @@ Interprets an XML tree, which is assumed to have a C<format="pan">
 attribute, returning the appropriate data structure with all the
 attributes and values.
 
+JSON profiles don't contain any basic type information, and JSON::XS
+may lose it. So, from now on, we'll store in the caches only two types
+of scalars: booleans, which will be identical as they used to be, and
+strings.
+
+Component writers know if they expect a given element in the profile
+to be a number, and may rely on Perl's automatic
+stringification/numification.
+
 =cut
 
 sub interpret_node
@@ -93,28 +102,24 @@ sub interpret_node
 
     my $r = ref($doc);
 
-    my $v = {NAME => $tag};
+    my $v = {};
+    $v->{NAME} = $tag if $tag;
     if (!$r) {
-	# Perl loses all the basic type information. All we can
-	# recover is if it is a boolean or not. The rest will be
-	# handled as strings, which is how they will be stored in the
-	# profile, anyways. It is harmless from the component's point
-	# of view, but it won't produce identical caches as what we
-	# get from the XMLs.
-	if (JSON::XS::is_bool($doc)) {
-	    $v->{TYPE} = "boolean";
-	    $v->{VALUE} = $doc ? "true" : "false";
-	} else {
-	    $v->{VALUE} = $doc;
-	    $v->{TYPE} = 'string';
-	}
+	$v->{VALUE} = $doc;
+	$v->{TYPE} = 'string';
     } elsif ($r eq 'HASH') {
 	$v->{TYPE} = 'nlist';
 	$v->{VALUE} = $class->interpret_nlist($tag, $doc);
     } elsif ($r eq 'ARRAY') {
 	$v->{TYPE} = 'list';
 	$v->{VALUE} = $class->interpret_list($tag, $doc);
+    } elsif (JSON::XS::is_bool($doc)) {
+	$v->{TYPE} = "boolean";
+	$v->{VALUE} = $doc ? "true" : "false";
+    } else {
+	die "Unknown ref type ($r) for JSON document $doc, on $tag";
     }
+
     $v->{CHECKSUM} = ComputeChecksum($v);
     return $v;
 }
