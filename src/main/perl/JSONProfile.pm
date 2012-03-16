@@ -10,12 +10,12 @@ package EDG::WP4::CCM::JSONProfile;
 
 =head1 SYNOPSIS
 
-    EDG::WP4::CCM::XMLPanProfile->interpret_node($tag, $xmltree);
+    EDG::WP4::CCM::JSONProfile->interpret_node($tag, $jsondoc);
 
 =head1 DESCRIPTION
 
-Module that iterprets an XML profile in C<pan> format, and generates
-all the needed metadata, to be inserted in the cache DB.
+Module that iterprets a JSON profile and generates all the needed
+metadata, to be inserted in the cache DB.
 
 This metadata includes a checksum for each element in the profile, the
 Pan basic type, the element's name (that will help to reconstruct the path)...
