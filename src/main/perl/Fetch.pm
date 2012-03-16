@@ -44,12 +44,14 @@ use Digest::MD5 qw(md5_hex);
 use Sys::Hostname;
 use File::Basename;
 use LC::Exception qw(SUCCESS throw_error);
+use LC::File;
 use LC::Stat qw(:ST);
 use File::Temp qw /tempfile tempdir/;
 use File::Path qw(make_path remove_tree);
 use Encode qw(encode_utf8);
 use GSSAPI;
 use JSON::XS qw(decode_json);
+use Carp qw(carp);
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -279,8 +281,11 @@ sub download
 
     my $cache = sprintf("%s/data/%s", $self->{CACHE_ROOT}, $self->EncodeURL($url));
 
-    my @st = stat($cache) or die "Unable to stat $type cache: $cache ($!)";
+    if (! -f $cache) {
+	CAF::FileWriter->new($cache, log => $self);
+    }
 
+    my @st = stat($cache) or die "Unable to stat profile cache: $cache ($!)";
 
     foreach my $u (($url, $self->{uc($type) . "_FAILOVER"})) {
 	for my $i (1..$self->{RETRIEVE_RETRIES}) {
@@ -303,7 +308,9 @@ sub previous
     $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/latest.cid",
 				     log => $self);
 
+    $ret{cid}->print("0\n") if !defined(${$ret{cid}->string_ref()});
     $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
+    chomp($dir);
     $ret{url} = CAF::FileEditor->new("$dir/profile_url", log => $self);
     $ret{context_url} = CAF::FileEditor->new("$dir/context.url",
 					     log => $self);
@@ -317,7 +324,7 @@ sub current
 {
     my ($self, $profile, %previous) = @_;
 
-    my $cid = "$previous{cid}" + 1;
+    my $cid = "$previous{cid}"  + 1;
     $cid %= MAXPROFILECOUNTER;
 
     my $dir = "$self->{CACHE_ROOT}/profile.$cid";
@@ -330,8 +337,8 @@ sub current
 		   profile => CAF::FileWriter->new("$dir/profile.xml", log => $self),
 		   eiddata => "$dir/eid2data.db",
 		   eidpath => "$dir/path2eid.db");
-    $current{cid}->print("$cid");
-    $current{url}->print("$self->{PROFILE_URL}");
+    $current{cid}->print("$cid\n");
+    $current{url}->print("$self->{PROFILE_URL}\n");
     return %current;
 }
 
@@ -339,7 +346,7 @@ sub cleanup_old
 {
     my ($self, @valid) = @_;
 
-    foreach my $i (LC::File::dir_contents($self->{CACHE_ROOT})) {
+    foreach my $i (LC::File::directory_contents($self->{CACHE_ROOT})) {
 	next unless $i =~ m{profile\.(\d+)$};
 	my $n = $1;
 	if (!grep($_ == $n, @valid)) {
@@ -376,11 +383,14 @@ sub fetchProfile {
     my (%current, %previous);
 
     $SIG{__DIE__} = sub {
-	$current{cid}->cancel();
-	$previous{cid}->cancel();
-	$current{profile}->cancel();
+	$current{cid}->cancel() if $current{cid};
+	$previous{cid}->cancel() if $previous{cid};
+	$current{profile}->cancel() if $current{profile};
 	die @_;
     };
+
+    $SIG{__WARN__} = \&carp;
+
 
     $self->setupHttps();
 
@@ -406,7 +416,7 @@ sub fetchProfile {
     $self->verbose("Downloaded new profile");
 
     %current = $self->current($profile, %previous);
-    $self->process_profile($profile, %current);
+    $self->process_profile("$profile", %current);
     $self->cleanup_old("$current{cid}", "$previous{cid}");
     $previous{cid}->set_contents("$current{cid}");
     return SUCCESS;

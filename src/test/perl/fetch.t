@@ -47,7 +47,7 @@ sub setup_cache
     open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
     close($fh);
     open($fh, ">", "$cachedir/latest.cid");
-    print $fh 0;
+    print $fh "0\n";
     close($fh);
     open($fh, ">", "$cachedir/current.cid");
     print $fh 0;
@@ -192,14 +192,14 @@ ok(exists($r{cid}), "cid created");
 foreach my $i (qw(cid url profile)) {
     isa_ok($r{$i}, "CAF::FileEditor", "Correct object created for the previous $i");
 }
-is("$r{cid}", 0, "Correct CID read");
+is("$r{cid}", "0\n", "Correct CID read");
 
 %r = $f->current();
 foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
 }
-is("$r{cid}", 1, "Correct CID will be written");
-is("$r{url}", "$f->{PROFILE_URL}", "Correct URL for the profile");
+is("$r{cid}", "1\n", "Correct CID will be written");
+is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
 
 =pod
 
