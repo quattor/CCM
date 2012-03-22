@@ -212,6 +212,41 @@
   	</plugins>
       </build>
     </profile>
+    <profile>
+      <id>module-test</id>
+      <activation>
+	<property>
+	  <name>env.PERL5LIB</name>
+	</property>
+      </activation>
+      <build>
+	<plugins>
+	  <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>exec-maven-plugin</artifactId>
+	    <executions>
+	      <execution>
+		<id>prove</id>
+		<phase>test</phase>
+		<goals>
+		  <goal>exec</goal>
+		</goals>
+		<configuration>
+		  <executable>prove</executable>
+		  <workingDirectory>${basedir}</workingDirectory>
+		  <arguments>
+		    <argument>--harness=TAP::Harness::JUnit</argument>
+		    <argument>-I</argument>
+		    <argument>target/lib/perl</argument>
+		    <argument>src/test/perl</argument>
+		  </arguments>
+'		</configuration>
+	      </execution>
+	    </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
   </profiles>
 
   <build>
