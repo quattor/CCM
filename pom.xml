@@ -339,6 +339,22 @@
 		</sources>
 	      </mapping>
 	      <mapping>
+		<directory>/etc</directory>
+		<username>root</username>
+		<groupname>root</groupname>
+		<filemode>644</filemode>
+		<configuration>noreplace</configuration>
+		<documentation>false</documentation>
+		<sources>
+		  <source>
+		    <location>${project.build.directory}/etc</location>
+		    <includes>
+		      <include>ccm.conf</include>
+		    </includes>
+		  </source>
+		</sources>
+	      </mapping>
+	      <mapping>
 		<directory>/usr/share/doc/man</directory>
 		<filemode>644</filemode>
 		<username>root</username>
