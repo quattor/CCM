@@ -39,16 +39,6 @@
       <name>Luis Fernando Muñoz Mejías</name>
       <email>Luis.Munoz@UGent.be</email>
     </developer>
-    <developer>
-      <name>Rafael A. García Leiva</name>
-    </developer>
-    <developer>
-      <name>Piotr Poznanski</name>
-    </developer>
-    <developer>
-      <name>Ben Jones</name>
-      <email>ben.jones@morganstanleylcom</email>
-    </developer>
   </developers>
 
   <contributors>
@@ -58,6 +48,16 @@
     <contributor>
       <name>Germán Cancio Meliá</name>
       <email>German.Cancio@cern.ch</email>
+    </contributor>
+    <contributor>
+      <name>Rafael A. García Leiva</name>
+    </contributor>
+    <contributor>
+      <name>Piotr Poznanski</name>
+    </contributor>
+    <contributor>
+      <name>Ben Jones</name>
+      <email>ben.jones@morganstanleylcom</email>
     </contributor>
   </contributors>
 
