@@ -8,7 +8,7 @@ use EDG::WP4::CCM::XMLPanProfile;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
 use Test::Deep;
-
+use File::Path qw(make_path);
 
 =pod
 
@@ -27,7 +27,8 @@ be removed from L<EDG::WP4::CCM::Fetch>
 
 sub compile_profile
 {
-    system("cd src/test/resources && panc -x pan profile.pan");
+    make_path("target/test/pan");
+    system("cd src/test/resources && panc --output-dir=../../../target/test/pan -x pan profile.pan");
 }
 
 sub InterpretNode
@@ -120,7 +121,7 @@ must be identical.
 
 compile_profile();
 
-my $fh = CAF::FileEditor->new("src/test/resources/profile.xml");
+my $fh = CAF::FileEditor->new("target/test/pan/profile.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 
 my $reference_result = InterpretNode(@$t);

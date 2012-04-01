@@ -19,6 +19,7 @@ use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
 use CAF::Object;
+use Carp qw(croak);
 
 #$CAF::Object::NoAction = 1;
 
@@ -28,7 +29,12 @@ sub compile_profile
 
     $type ||= 'pan';
     my $filetype = $type eq 'json' ? 'json' : 'xml';
-    system("cd src/test/resources && panc -x $type profile.pan && touch -d 0 profile.$filetype");
+    make_path("target/test/fetch");
+    system (qq{cd src/test/resources &&
+               panc -x $type --output-dir ../../../target/test/fetch/ profile.pan &&
+               touch -d 0 ../../../target/test/fetch/profile.$filetype});
+    croak ("Couldn't compile profile of type $type") if $?;
+    croak ("WTF?") if ! -f "target/test/fetch/profile.$filetype";
 }
 
 # Removes any existing cache directory from a previous run.
@@ -47,14 +53,6 @@ sub setup_cache
     make_path("$cachedir/data");
     open(my $fh, ">", "$cachedir/global.lock");
     print $fh "no\n";
-    # open(my $fh, ">", "$cachedir/data/" . $fetch->EncodeURL($fetch->{PROFILE_URL}));
-    # close($fh);
-    # open($fh, ">", "$cachedir/latest.cid");
-    # print $fh "0\n";
-    # close($fh);
-    # open($fh, ">", "$cachedir/current.cid");
-    # print $fh 0;
-    # close($fh);
 }
 
 compile_profile();
@@ -90,7 +88,9 @@ my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
 ok($pf, "Something got returned");
 $pf->cancel();
 
-my $url = sprintf('file://%s/src/test/resources/profile.xml', getcwd());
+compile_profile();
+
+my $url = sprintf('file://%s/target/test/fetch/profile.xml', getcwd());
 $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				CONFIG => 'src/test/resources/ccm.cfg',
 				PROFILE_URL => $url});
@@ -226,17 +226,17 @@ is(ref($t), "ARRAY", "XML Pan profile is not empty");
 is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
-compile_profile("xmldb");
 setup_cache($f->{CACHE_ROOT}, $f);
+compile_profile("xmldb");
 $pf = $f->download("profile");
 ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "XMLDB profile correctly parsed");
 is($class, 'EDG::WP4::CCM::XMLDBProfile', "XMLDB profile correctly diagnosed");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
-compile_profile("json");
-$f->{PROFILE_URL} =~ s{xml}{json};
 setup_cache($f->{CACHE_ROOT}, $f);
+compile_profile("json");
+$f->{PROFILE_URL} =~ s{xml}{json}g;
 $pf = $f->download("profile");
 ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "JSON profile correctly parsed");

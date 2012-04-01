@@ -12,6 +12,7 @@ use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
+use File::Path qw(make_path);
 
 =pod
 
@@ -31,7 +32,8 @@ be removed from L<EDG::WP4::CCM::Fetch>
 sub compile_profile
 {
     my ($type) = @_;
-    system("cd src/test/resources && panc -x $type simpleprofile.pan");
+    make_path('target/test/json');
+    system("cd src/test/resources && panc -x $type --output-dir=../../../target/test/json simpleprofile.pan");
 }
 
 
@@ -46,10 +48,10 @@ must be identical.
 
 compile_profile("pan");
 compile_profile("json");
-my $fh = CAF::FileEditor->new("src/test/resources/simpleprofile.xml");
+my $fh = CAF::FileEditor->new("target/test/json/simpleprofile.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
-$fh = CAF::FileEditor->new("src/test/resources/simpleprofile.json");
+$fh = CAF::FileEditor->new("target/test/json/simpleprofile.json");
 note("Profile contents: $fh");
 $t = decode_json("$fh");
 note("Tree=", explain($t));

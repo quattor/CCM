@@ -9,6 +9,7 @@ use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
 use Test::Deep;
 use XML::Parser;
+use File::Path qw(make_path);
 
 =pod
 
@@ -27,7 +28,8 @@ be removed from L<EDG::WP4::CCM::Fetch>
 
 sub compile_profile
 {
-    system("cd src/test/resources && panc -x xmldb profile.pan");
+    make_path("target/test/xmldb");
+    system("cd src/test/resources && panc --output-dir=../../../target/test/xmldb -x xmldb profile.pan");
 }
 
 compile_profile();
@@ -230,7 +232,7 @@ must be identical.
 
 =cut
 
-my $fh = CAF::FileEditor->new("src/test/resources/profile.xml");
+my $fh = CAF::FileEditor->new("target/test/xmldb/profile.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 
 my $reference_result = InterpretNodeXMLDB(@$t);
