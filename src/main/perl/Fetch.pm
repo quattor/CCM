@@ -343,20 +343,6 @@ sub current
     return %current;
 }
 
-sub cleanup_old
-{
-    my ($self, @valid) = @_;
-
-    foreach my $i (LC::File::directory_contents($self->{CACHE_ROOT})) {
-	next unless $i =~ m{profile\.(\d+)$};
-	my $n = $1;
-	if (!grep($_ == $n, @valid)) {
-	    $self->debug(1, "Outdated tree $i found, removing");
-	    remove_tree($i);
-	}
-    }
-}
-
 
 =pod
 
@@ -417,12 +403,13 @@ sub fetchProfile {
     $self->verbose("Downloaded new profile");
 
     %current = $self->current($profile, %previous);
-    $self->process_profile("$profile", %current);
-    $self->cleanup_old("$current{cid}", "$previous{cid}");
+    return ERROR if $self->process_profile("$profile", %current) == ERROR;
     $previous{cid}->set_contents("$current{cid}");
     return SUCCESS;
 }
 
+# Stores a persistent cache in the directories defined by %cur, from a
+# retrieved profile. Returns ERROR or SUCCESS.
 sub process_profile
 {
     my ($self, $profile, %cur) = @_;
