@@ -13,13 +13,14 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 36;
+use Test::More tests => 41;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(make_path remove_tree);
 use CAF::Object;
 use Carp qw(croak);
+use LC::Exception qw(SUCCESS);
 
 #$CAF::Object::NoAction = 1;
 
@@ -154,6 +155,7 @@ $f->{FORCE} = 0;
 eval { $pf = $f->download("profile"); };
 is($@, "", "Profile was correctly downloaded");
 
+
 =pod
 
 =head3 Downloading a non-existing URL
@@ -253,6 +255,52 @@ is ($f->process_profile("$pf", %r), 1,
 
 %r = ();
 
+
+
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
+
+=pod
+
+=head2 Test all methods together
+
+If all goes well, we can test the C<fetchProfile> method, which the
+only really public method for this module.
+
+We expect it:
+
+=over
+
+=item * To respect the C<FORCE> flag when downloading from the same URL
+
+=cut
+
+
+$f->{FORCE} = 0;
+
+system("cat target/test/cache/profile.*/profile.url");
+is($f->fetchProfile(), SUCCESS, "Full fetchProfile worked correctly");
+is($f->{FORCE}, 1, "And the FORCE flag was not modified");
+$f->{PROFILE_URL} =~ s{json}{xml};
+
+=pod
+
+=item * To B<set> the C<FORCE> flag when downloading from a different URL
+
+=cut
+
+$f->{FORCE} = 0;
+is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on JSON profile");
+is($f->{FORCE}, 1, "A change in the URL forces to re-download");
+
+
+=pod
+
+=item * To return something special in the event of a network error
+
+=cut
+
+$f->{PROFILE_URL} = "http://uhlughliuhilhl.uyiuhkuh.net";
+delete($f->{PROFILE_FAILOVER});
+is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
