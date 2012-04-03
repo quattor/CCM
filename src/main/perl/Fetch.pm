@@ -312,10 +312,17 @@ sub previous
     $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
     chomp($dir);
     $ret{url} = CAF::FileEditor->new("$dir/profile_url", log => $self);
+    chomp($ret{url});
     $ret{context_url} = CAF::FileEditor->new("$dir/context.url",
 					     log => $self);
     $ret{profile} = CAF::FileEditor->new("$dir/profile.xml",
 					 log => $self);
+
+    # We want to read this stuff in a variety of ways, but we *don't*
+    # want it written back or modified in disk!!
+    $ret{profile}->cancel();
+    $ret{url}->cancel();
+    $ret{context_url}->cancel();
 
     return %ret;
 }
