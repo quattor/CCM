@@ -82,7 +82,7 @@ sub app_options {
 	  { NAME    => 'debug|d=i',
 	    DEFAULT => '0',
 	    HELP    => 'Turn on dubugging messages' });
-    
+
     return \@options;
 }
 
@@ -90,7 +90,7 @@ sub app_options {
 # initialise
 #
 sub _initialize {
-    
+
     # local lexicals
     my $self = shift;
 
@@ -169,27 +169,27 @@ $fetch->setup_reporter($this_app->option("debug"), $this_app->option("quiet"),
 		       $this_app->option("verbose"));
 
 # set timeout
-$fetch->setTimeout($this_app->option("get_timeout")) 
+$fetch->setTimeout($this_app->option("get_timeout"))
 		if defined $this_app->option("get_timeout");
 
 # set force
-$fetch->setForce($this_app->option("force")) 
+$fetch->setForce($this_app->option("force"))
 		if defined $this_app->option("force");
 
 # set failover profile url
-$fetch->setProfileFailover($this_app->option("profile_failover")) 
+$fetch->setProfileFailover($this_app->option("profile_failover"))
 		if defined $this_app->option("profile_failover");
 
 # set preprocessor
-$fetch->setPreprocessor($this_app->option("preprocessor")) 
+$fetch->setPreprocessor($this_app->option("preprocessor"))
 		if defined $this_app->option("preprocessor");
 
 # set cache root
-$fetch->setCacheRoot($this_app->option("cache_root")) 
+$fetch->setCacheRoot($this_app->option("cache_root"))
 		if defined $this_app->option("cache_root");
 
 # set world readable flag
-$fetch->setWorldReadable($this_app->option("world_readable")) 
+$fetch->setWorldReadable($this_app->option("world_readable"))
 		if defined $this_app->option("world_readable");
 
 # we no longer set profile notification time
@@ -197,17 +197,20 @@ $fetch->setWorldReadable($this_app->option("world_readable"))
 # have on disk
 
 # set context notification time
-$fetch->setContextnTime($this_app->option("context_time")) 
+$fetch->setContextnTime($this_app->option("context_time"))
     if defined $this_app->option("context_time");
 
 # set context URL
-$fetch->setContext($this_app->option("context")) 
+$fetch->setContext($this_app->option("context"))
     if defined $this_app->option("context");
 
 #fetch rpofile
 my $errno = $fetch->fetchProfile();
 
-if ($errno == -1){
+if (!defined($errno)) {
+    $this_app->error("Network error detected");
+    exit(2);
+} elsif ($errno == -1){
     $this_app->error("Unable to fetch profile");
     exit(1);
 }
@@ -348,7 +351,7 @@ File containing a bundle of trusted CA certificates for use with HTTPS.
 
 =item ca_dir
 
-Directory containing trusted CA certificates for use with HTTPS. Hash 
+Directory containing trusted CA certificates for use with HTTPS. Hash
 symlinks are needed.
 
 =item world_readable
@@ -356,5 +359,18 @@ symlinks are needed.
 World readable profiles flag (1/0). If true profiles will be
 stored on local disk with 755 permissions, if false with 700.
 
+=head1 EXIT STATUSES
+
+This program exits with:
+
+=over
+
+=item 0 on success
+
+=item 2 on a network error
+
+=item 1 on a different error
+
 =back
 
+=cut
