@@ -367,7 +367,8 @@ foreign copy will be stored: previous versions will be removed. Foreign
 profiles do not use failover URLs: if the primary URL is unavailable,
 then the fetch will fail.
 
-Returns -1 and error_msg on failure
+Returns undef if it cannot fetch the profile due to a network error,
+-1 in case of other failure, C<SUCCESS> in case of successful fetch.
 
 =cut
 
@@ -402,7 +403,7 @@ sub fetchProfile {
     my $profile = $self->download("profile");
     if (!defined($profile)) {
 	$self->error("Failed to fetch profile $self->{PROFILE_URL}");
-	return ERROR;
+	return undef;
     }
 
     return SUCCESS unless $profile;
