@@ -223,12 +223,12 @@ sub retrieve
     my $ht = scalar(localtime($time));
     if (!$self->{FORCE}) {
 	$self->debug(1, "Retrieve if newer than $ht");
-	$rq->if_modified_since($time-1);
+	$rq->if_modified_since($time);
     }
     $ua->timeout($self->{GET_TIMEOUT});
     my $rs = $ua->request($rq);
     if ($rs->code() == 304) {
-	$self->verbose("No changes on $url since $time");
+	$self->verbose("No changes on $url since $ht");
 	return 0;
     }
 
@@ -311,7 +311,8 @@ sub previous
     $ret{cid}->print("0\n") if "$ret{cid}" eq '';
     $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
     chomp($dir);
-    $ret{url} = CAF::FileEditor->new("$dir/profile_url", log => $self);
+    $ret{url} = CAF::FileEditor->new("$dir/profile.url", log => $self);
+    $ret{url}->cancel();
     chomp($ret{url});
     $ret{context_url} = CAF::FileEditor->new("$dir/context.url",
 					     log => $self);
@@ -321,7 +322,6 @@ sub previous
     # We want to read this stuff in a variety of ways, but we *don't*
     # want it written back or modified in disk!!
     $ret{profile}->cancel();
-    $ret{url}->cancel();
     $ret{context_url}->cancel();
 
     return %ret;
@@ -397,8 +397,15 @@ sub fetchProfile {
 
     %previous = $self->previous();
 
-    $self->{FORCE} ||=  ("$previous{url}" ne $self->{PROFILE_URL});
-    # the global lock is an indicator if CIDs are locked (no pivots allowed)
+    if (!$self->{FORCE} && "$previous{url}" ne $self->{PROFILE_URL}) {
+	$self->debug(1, "Current URL $self->{PROFILE_URL} is different ",
+		     "from the previous fetched one $previous{url}. ",
+		     "Forcing download.");
+	$self->{FORCE} = 1;
+    }
+
+    # the global lock is an indicator if CIDs are locked (no pivots
+    # allowed)
 
     my $profile = $self->download("profile");
     if (!defined($profile)) {

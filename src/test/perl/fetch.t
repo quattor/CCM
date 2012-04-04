@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 41;
+use Test::More tests => 43;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -191,11 +191,18 @@ note("Testing cache directory manipulation");
 $f->{FORCE} = 1;
 $pf = $f->download("profile");
 my %r = $f->previous();
+like(*{$r{url}}->{filename}, qr{profile.url$},
+     'Correct file read for the previous URL');
+like(*{$r{profile}}->{filename}, qr{profile.xml$},
+     "Correct file read with the previous XML");
 ok(exists($r{cid}), "cid created");
 foreach my $i (qw(cid url profile)) {
     isa_ok($r{$i}, "CAF::FileEditor", "Correct object created for the previous $i");
 }
+
+
 is("$r{cid}", "0\n", "Correct CID read");
+
 
 %r = $f->current($pf, %r);
 foreach my $i (qw(url cid profile)) {
