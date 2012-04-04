@@ -121,7 +121,7 @@ use LC::Exception;
 use strict;
 #use diagnostics;
 
-use vars qw($this_app $DEBUG);
+our ($this_app, $DEBUG);
 
 # local lexicals
 my $fetch   = undef;
