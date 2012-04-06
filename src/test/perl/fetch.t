@@ -102,6 +102,7 @@ $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/file-output", 0);
 isa_ok($pf, "CAF::FileWriter");
 $pf->cancel();
 
+unlink("target/test/profile.xml");
 compile_profile("pan", "-g");
 $pf = $f->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
 isa_ok($pf, "CAF::FileWriter");
