@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 43;
+use Test::More tests => 45;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -26,13 +26,15 @@ use LC::Exception qw(SUCCESS);
 
 sub compile_profile
 {
-    my ($type) = @_;
+    my ($type, $compress) = @_;
 
     $type ||= 'pan';
+
+    $compress //= '';
     my $filetype = $type eq 'json' ? 'json' : 'xml';
     make_path("target/test/fetch");
     system (qq{cd src/test/resources &&
-               panc -x $type --output-dir ../../../target/test/fetch/ profile.pan &&
+               panc -x $type $compress --output-dir ../../../target/test/fetch/ profile.pan &&
                touch -d 0 ../../../target/test/fetch/profile.$filetype});
     croak ("Couldn't compile profile of type $type") if $?;
     croak ("WTF?") if ! -f "target/test/fetch/profile.$filetype";
@@ -100,6 +102,10 @@ $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/file-output", 0);
 isa_ok($pf, "CAF::FileWriter");
 $pf->cancel();
 
+compile_profile("pan", "-g");
+$pf = $f->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
+isa_ok($pf, "CAF::FileWriter");
+is(substr("$pf", 0, 1), "<", "Automatically decompressed");
 
 =pod
 

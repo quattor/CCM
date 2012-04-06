@@ -52,6 +52,7 @@ use Encode qw(encode_utf8);
 use GSSAPI;
 use JSON::XS qw(decode_json);
 use Carp qw(carp);
+use HTTP::Message;
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -226,6 +227,7 @@ sub retrieve
 	$rq->if_modified_since($time);
     }
     $ua->timeout($self->{GET_TIMEOUT});
+    $rq->accept_decodable();
     my $rs = $ua->request($rq);
     if ($rs->code() == 304) {
 	$self->verbose("No changes on $url since $ht");
@@ -238,7 +240,7 @@ sub retrieve
 	return;
     }
 
-    my $cnt = $rs->content();
+    my $cnt = $rs->decoded_content();
     if ($rs->content_encoding() && $rs->content_encoding() eq 'krbencrypt') {
 	my ($author, $payload) = $self->_gss_decrypt($cnt);
 	if ($self->{TRUST} && !grep($author =~ $_, @{$self->{TRUST}})) {
