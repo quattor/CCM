@@ -53,6 +53,7 @@ use GSSAPI;
 use JSON::XS qw(decode_json);
 use Carp qw(carp);
 use HTTP::Message;
+use LC::Secure qw(environment);
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -172,6 +173,15 @@ sub _config($){
         $self->{"TRUST"} = [];
     }
 
+    $self->{CACHE_ROOT} =~ m{^([-.:\w/]+)$} or
+      die "Weird root for cache: $self->{CACHE_ROOT} on profile $self->{PROFILE_URL}";
+    $self->{CACHE_ROOT} = $1;
+    $self->{TMP_DIR} =~ m{^([-.\w/:]*)$} or
+      die "Weird temp directory: $self->{TMP_DIR} on profile $self->{PROFILE_URL}";
+    $self->{TMP_DIR} = $1;
+    $self->{DBFORMAT} =~ m{^([a-zA-Z]\w+)(::[a-zA-Z]\w+)*$}
+      or die "Weird cache format $self->{DBFORMAT} for profile $self->{PROFILE_URL}";
+    $self->{DBFORMAT} = $1;
     map(defined($_) && chomp, values(%$self));
 
     return SUCCESS;
@@ -335,7 +345,8 @@ sub current
 
     my $cid = "$previous{cid}"  + 1;
     $cid %= MAXPROFILECOUNTER;
-
+    $cid =~ m{^(\d+)$} or die "Weird CID: $cid";
+    $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/profile.$cid";
 
     make_path($dir, { mode => ($self->{WORLD_READABLE} ? 0755:0700)});
@@ -391,8 +402,9 @@ sub fetchProfile {
 
     $self->setupHttps();
 
-    if ($self->{FOREIGN_PROFILE}) {
-        return ERROR if $self->enableForeignProfile() == ERROR;
+    if ($self->{FOREIGN_PROFILE} && $self->enableForeignProfile() == ERROR) {
+	$self->error("Unable to enable foreign profiles");
+	return ERROR;
     }
 
     my $lock = $self->getLocks();
@@ -420,7 +432,10 @@ sub fetchProfile {
     $self->verbose("Downloaded new profile");
 
     %current = $self->current($profile, %previous);
-    return ERROR if $self->process_profile("$profile", %current) == ERROR;
+    if ($self->process_profile("$profile", %current) == ERROR) {
+	$self->error("Failed to process profile for $self->{PROFILE_URL}");
+	return ERROR;
+    }
     $previous{cid}->set_contents("$current{cid}");
     return SUCCESS;
 }
@@ -1289,6 +1304,9 @@ sub setProfileURL($){
     } else {
         $self->{"PROFILE_URL"} = (defined $base_url)? $base_url . "/profile_" . $prof . ".xml" : "profile_" . $prof . ".xml";
     }
+    $self->{PROFILE_URL} =~ m{^((?:http|https|ssh|file)://[-/.\w]+)$} or
+      die "Invalid profile url $self->{PROFILE_URL}";
+    $self->{PROFILE_URL} = $1;
     $self->debug (5, "URL is ". $self->{"PROFILE_URL"});
     return SUCCESS;
 }
