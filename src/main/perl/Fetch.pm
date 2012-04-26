@@ -1311,7 +1311,7 @@ sub setProfileURL($){
     } else {
         $self->{"PROFILE_URL"} = (defined $base_url)? $base_url . "/profile_" . $prof . ".xml" : "profile_" . $prof . ".xml";
     }
-    $self->{PROFILE_URL} =~ m{^((?:http|https|ssh|file)://[-/.\w]+)$} or
+    $self->{PROFILE_URL} =~ m{^((?:http|https|ssh|file)://[-/.\w:]+)$} or
       die "Invalid profile url $self->{PROFILE_URL}";
     $self->{PROFILE_URL} = $1;
     $self->debug (5, "URL is ". $self->{"PROFILE_URL"});
