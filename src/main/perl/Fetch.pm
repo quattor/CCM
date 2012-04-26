@@ -397,15 +397,6 @@ sub fetchProfile {
     my ($self) = @_;
     my (%current, %previous);
 
-    $SIG{__DIE__} = sub {
-	$current{cid}->cancel() if $current{cid};
-	$previous{cid}->cancel() if $previous{cid};
-	$current{profile}->cancel() if $current{profile};
-	die @_;
-    };
-
-    $SIG{__WARN__} = \&carp;
-
 
     $self->setupHttps();
 
@@ -425,10 +416,15 @@ sub fetchProfile {
 	$self->{FORCE} = 1;
     }
 
+    $SIG{__WARN__} = \&carp;
+
+
     # the global lock is an indicator if CIDs are locked (no pivots
     # allowed)
 
     my $profile = $self->download("profile");
+
+
     if (!defined($profile)) {
 	$self->error("Failed to fetch profile $self->{PROFILE_URL}");
 	return undef;
@@ -436,6 +432,13 @@ sub fetchProfile {
 
     return SUCCESS unless $profile;
 
+    $SIG{__DIE__} = sub {
+	warn "Cleaning on die";
+	$current{cid}->cancel() if $current{cid};
+	$previous{cid}->cancel() if $previous{cid};
+	$current{profile}->cancel() if $current{profile};
+	confess(@_);
+    };
     $self->verbose("Downloaded new profile");
 
     %current = $self->current($profile, %previous);
@@ -444,6 +447,8 @@ sub fetchProfile {
 	return ERROR;
     }
     $previous{cid}->set_contents("$current{cid}");
+    $previous{cid}->close();
+    $current{cid}->close();
     return SUCCESS;
 }
 
