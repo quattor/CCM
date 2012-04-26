@@ -198,6 +198,9 @@ sub setupHttps
     $ENV{'HTTPS_CA_DIR'}      = $self->{CA_DIR} if (defined($self->{CA_DIR}));
 }
 
+# Sets up the required locks in the cache root.  It requires a
+# CAF::Lock for the profile itself, and another one, "global.lock" to
+# avoid breaking EDG::WP4::CCM::Configuration.
 sub getLocks
 {
     my ($self) = @_;
@@ -205,6 +208,10 @@ sub getLocks
     my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN");
     $fl->set_lock($self->{LOCK_RETRIES}, $self->{LOCK_WAIT}, FORCE_IF_STALE) or
 	die "Failed to lock $self->{CACHE_ROOT}/$FETCH_LOCK_FN";
+    my $global = CAF::FileWriter->new("$self->{CACHE_ROOT}/$GLOBAL_LOCK_FN",
+				      log => $self);
+    print $global "no\n";
+    $global->close();
     return $fl;
 
 }
