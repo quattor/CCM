@@ -11,19 +11,19 @@ BEGIN {
     unshift(@INC, '/opt/edg/lib/perl', '/usr/lib/perl');
 }
 
-# modules
 use CAF::Application;
 use CAF::Reporter;
+use CAF::FileEditor;
 use LC::Exception qw(SUCCESS throw_error);
-
 use strict;
-#use diagnostics;
+use warnings;
 
 our @ISA = qw(CAF::Application CAF::Reporter);
 
 # needed for method overriding
 no warnings 'redefine';
 
+use constant NOQUATTOR => "/etc/noquattor";
 
 #
 # application specific options:
@@ -98,10 +98,19 @@ sub _initialize {
     $self->{'VERSION'} = "${project.version}";
     $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
 
+    if (-f NOQUATTOR) {
+	$self->warn("CCM updates disabled globally (", NOQUATTOR, ") present");
+	my $fh = CAF::FileEditor->new(NOQUATTOR);
+	$fh->cancel();
+	$self->warn("$fh");
+	return undef;
+    }
+
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
 	return undef;
     }
+
     return SUCCESS;
 }
 
@@ -119,6 +128,7 @@ use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 
 use strict;
+use warnings;
 #use diagnostics;
 
 our ($this_app);
