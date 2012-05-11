@@ -253,6 +253,14 @@
     <pluginManagement>
       <plugins>
 	<plugin>
+          <groupId>org.quattor.pan</groupId>
+          <artifactId>panc-maven-plugin</artifactId>
+          <version>9.0.0-RC3</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+	<plugin>
 	  <groupId>org.codehaus.mojo</groupId>
 	  <artifactId>rpm-maven-plugin</artifactId>
 	  <configuration>
@@ -275,16 +283,17 @@
 	    <requires>
 	      <require>perl(CDB_File)</require>
 	    </requires>
+	    <defaultDirmode>755</defaultDirmode>
 	    <mappings>
               <mapping>
-                <directory>/usr/lib</directory>
+                <directory>/usr/lib/perl/EDG/WP4/CCM</directory>
                 <filemode>644</filemode>
                 <username>root</username>
                 <groupname>root</groupname>
                 <directoryIncluded>false</directoryIncluded>
                 <sources>
                   <source>
-                    <location>${project.build.directory}/lib</location>
+                    <location>${project.build.directory}/lib/perl/EDG/WP4/CCM</location>
                   </source>
                 </sources>
 		<recurseDirectories>true</recurseDirectories>
@@ -355,7 +364,7 @@
 		</sources>
 	      </mapping>
 	      <mapping>
-		<directory>/usr/share/doc/man</directory>
+		<directory>/usr/share/doc/man/man8</directory>
 		<filemode>644</filemode>
 		<username>root</username>
 		<groupname>root</groupname>
@@ -364,7 +373,7 @@
 		<directoryIncluded>false</directoryIncluded>
 		<sources>
 		  <source>
-		    <location>${project.build.directory}/doc/man</location>
+		    <location>${project.build.directory}/doc/man/man8</location>
 		  </source>
 		</sources>
 		<recurseDirectories>true</recurseDirectories>
@@ -391,13 +400,7 @@
 	    </postinstallScriptlet>
 	  </configuration>
 	</plugin>
-	<plugin>
-          <groupId>org.quattor.pan</groupId>
-          <artifactId>panc-maven-plugin</artifactId>
-          <version>9.0.0-RC3</version>
-        </plugin>
       </plugins>
-    </pluginManagement>
   </build>
 
 </project>
