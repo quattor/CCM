@@ -165,7 +165,7 @@ sub _config($){
     $self->{"RETRIEVE_WAIT"}    = getCfgValue('retrieve_wait');
     $self->{"PREPROCESSOR"}     = getCfgValue('preprocessor');
     $self->{"WORLD_READABLE"}   = getCfgValue('world_readable');
-    $self->{"TMP_DIR"}          = getCfgValue('tmp_dir');
+    $self->{"TMP_DIR"}          = getCfgValue('tmp_dir') || "/var/tmp";
     $self->{"DBFORMAT"}         = getCfgValue('dbformat');
     if (EDG::WP4::CCM::CCfg::getCfgValue('trust')) {
         $self->{"TRUST"} = [split(/\,\s*/, EDG::WP4::CCM::CCfg::getCfgValue('trust'))];
@@ -1213,9 +1213,6 @@ sub enableForeignProfile(){
     my $cache_root      = $self->{"CACHE_ROOT"};
     my $tmp_dir         = $self->{"TMP_DIR"};
     my $old_cache_root  = $cache_root;
-
-    # Create temporary directory
-    $tmp_dir = "/var/tmp" unless (defined($tmp_dir));
 
     return(ERROR, "temporary directory $tmp_dir does not exist")
       unless (-d "$tmp_dir");
