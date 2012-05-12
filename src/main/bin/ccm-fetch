@@ -127,6 +127,8 @@ use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 
+$ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
+
 use strict;
 use warnings;
 #use diagnostics;
