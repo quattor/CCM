@@ -396,7 +396,7 @@
 	      </mapping>
 	    </mappings>
 	    <postinstallScriptlet>
-	      <script>pgrep ncm-cdispd >/dev/null &amp;&amp; service ncm-cdispd restart</script>
+	      <script>pgrep ncm-cdispd >/dev/null &amp;&amp; service ncm-cdispd restart || true</script>
 	    </postinstallScriptlet>
 	  </configuration>
 	</plugin>
