@@ -47,7 +47,7 @@ use LC::Exception qw(SUCCESS throw_error);
 use LC::File;
 use LC::Stat qw(:ST);
 use File::Temp qw /tempfile tempdir/;
-use File::Path qw(make_path remove_tree);
+use File::Path qw(mkpath rmtree);
 use Encode qw(encode_utf8);
 use GSSAPI;
 use JSON::XS qw(decode_json);
@@ -356,7 +356,7 @@ sub current
     $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/profile.$cid";
 
-    make_path($dir, { mode => ($self->{WORLD_READABLE} ? 0755:0700)});
+    mkpath($dir, { mode => ($self->{WORLD_READABLE} ? 0755:0700)});
 
     my %current = (url => CAF::FileWriter->new("$dir/profile.url", log => $self),
 		   cid => CAF::FileWriter->new("$self->{CACHE_ROOT}/current.cid",
