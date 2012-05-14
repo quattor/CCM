@@ -244,7 +244,7 @@ sub retrieve
 	$rq->if_modified_since($time);
     }
     $ua->timeout($self->{GET_TIMEOUT});
-    $rq->accept_decodable();
+    $rq->accept_decodable() if $rq->can("accept_decodable");
     my $rs = $ua->request($rq);
     if ($rs->code() == 304) {
 	$self->verbose("No changes on $url since $ht");
