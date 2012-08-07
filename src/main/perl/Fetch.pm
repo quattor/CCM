@@ -107,7 +107,6 @@ sub new {
     my $foreign_profile = ($param->{"FOREIGN"}) ? 1 : 0;
 
     # remove starting and trailing spaces
-    $param->{"PROFILE_URL"} = trim($param->{"PROFILE_URL"}) if $param->{"PROFILE_URL"};
 
     if (!$param->{CONFIG} && $param->{CFGFILE}) {
 	# backwards compatability
@@ -123,6 +122,8 @@ sub new {
     # Set the profile URL if user is specifying it
     if ($param->{"PROFILE_URL"}) {
         $self->setProfileURL($param->{"PROFILE_URL"});
+    } elsif ($param->{"PROFILE"}) {
+	$self->setProfileURL($param->{"PROFILE"});
     }
 
     $param->{PROFILE_FORMAT} ||= 'xml';
@@ -1306,6 +1307,7 @@ sub setConfig(;$){
 
 sub setProfileURL($){
     my ($self, $prof) = @_;
+    $prof = trim($prof);
     my $base_url = $self->{"BASE_URL"};
     $self->debug (5, "base_url is not defined in configuration") unless (defined $base_url);
     if ($prof =~ m{^(?:http|https|ssh|file)://}) {
@@ -1463,8 +1465,7 @@ sub getHostName(){
 
 sub trim($){
 
-    $_[0] =~ s/^\s+//g;
-    $_[0] =~ s/\s+$//g;
+    $_[0] =~ s/^\s+|\s+$//g;
     return $_[0];
 }
 

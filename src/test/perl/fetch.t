@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 45;
+use Test::More tests => 47;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -68,15 +68,35 @@ compile_profile();
 
 =head3 Object creation
 
-Ensure a valid object is created
+Ensure a valid object is created. Including, for backwards
+compatibility, when C<PROFILE> is given. C<PROFILE_URL> has higher
+priority, though.
 
 =cut
 note("Testing object creation");
+
 my $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
-				   CONFIG => 'src/test/resources/ccm.cfg'});
+				   CONFIG => 'src/test/resources/ccm.cfg',
+				   PROFILE => "file://foo/bar"});
+is($f->{PROFILE_URL}, "file://foo/bar", "PROFILE parameter honored");
+$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
+				CONFIG => 'src/test/resources/ccm.cfg',
+				PROFILE => "file://foo/bar",
+				PROFILE_URL => "file://baz"});
+is($f->{PROFILE_URL}, "file://baz", "PROFILE_URL has priority over old PROFILE");
+
+$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
+				CONFIG => 'src/test/resources/ccm.cfg'});
 ok($f, "Fetch profile created");
 isa_ok($f, "EDG::WP4::CCM::Fetch", "Object is a valid reference");
 is($f->{PROFILE_URL}, "https://www.google.com", "Profile URL correctly set");
+
+=pod
+
+
+
+=cut
+
 
 =pod
 
@@ -318,4 +338,3 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
-
