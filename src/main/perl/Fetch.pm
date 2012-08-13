@@ -50,7 +50,7 @@ use File::Temp qw /tempfile tempdir/;
 use File::Path qw(mkpath rmtree);
 use Encode qw(encode_utf8);
 use GSSAPI;
-use JSON::XS qw(decode_json);
+use JSON::XS v2.3.0 qw(decode_json);
 use Carp qw(carp);
 use HTTP::Message;
 use LC::Secure qw(environment);

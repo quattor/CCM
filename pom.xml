@@ -282,6 +282,7 @@
 	    </provides>
 	    <requires>
 	      <require>perl(CDB_File)</require>
+	      <require>perl-JSON-XS >= 2.3.0</require>
 	    </requires>
 	    <defaultDirmode>755</defaultDirmode>
 	    <mappings>
