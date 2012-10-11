@@ -51,7 +51,7 @@ use File::Path qw(mkpath rmtree);
 use Encode qw(encode_utf8);
 use GSSAPI;
 use JSON::XS v2.3.0 qw(decode_json);
-use Carp qw(carp);
+use Carp qw(carp confess);
 use HTTP::Message;
 use LC::Secure qw(environment);
 
