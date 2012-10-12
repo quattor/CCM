@@ -416,7 +416,7 @@ sub fetchProfile {
 	$self->{FORCE} = 1;
     }
 
-    $SIG{__WARN__} = \&carp;
+    local $SIG{__WARN__} = \&carp;
 
 
     # the global lock is an indicator if CIDs are locked (no pivots
@@ -432,7 +432,7 @@ sub fetchProfile {
 
     return SUCCESS unless $profile;
 
-    $SIG{__DIE__} = sub {
+    local $SIG{__DIE__} = sub {
 	warn "Cleaning on die";
 	$current{cid}->cancel() if $current{cid};
 	$previous{cid}->cancel() if $previous{cid};
