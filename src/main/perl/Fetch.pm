@@ -308,9 +308,11 @@ sub previous
     $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/latest.cid",
 				     log => $self);
 
-    $ret{cid}->print("0\n") if "$ret{cid}" eq '';
-    $dir = "$self->{CACHE_ROOT}/profile.$ret{cid}";
-    chomp($dir);
+    if ("$ret{cid}" eq '') {
+	$ret{cid}->print("0\n");
+    }
+    $ret{cid} =~ m{^(\d+)\n?$} or die "Invalid CID: $ret{cid}";
+    $dir = "$self->{CACHE_ROOT}/profile.$1";
     $ret{url} = CAF::FileEditor->new("$dir/profile.url", log => $self);
     $ret{url}->cancel();
     chomp($ret{url});
