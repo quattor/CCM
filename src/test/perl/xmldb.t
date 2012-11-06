@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1;
+use Test::More skip_all => "XMLDB is deprecated. Skipping before removal";
 use EDG::WP4::CCM::XMLDBProfile;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
@@ -29,7 +29,7 @@ be removed from L<EDG::WP4::CCM::Fetch>
 sub compile_profile
 {
     make_path("target/test/xmldb");
-    system("cd src/test/resources && panc --output-dir=../../../target/test/xmldb -x xmldb profile.pan");
+    system("cd src/test/resources && panc --output-dir ../../../target/test/xmldb -x xmldb profile.pan");
 }
 
 compile_profile();

@@ -33,7 +33,7 @@ sub compile_profile
 {
     my ($type) = @_;
     make_path('target/test/json');
-    system("cd src/test/resources && panc -x $type --output-dir=../../../target/test/json simpleprofile.pan");
+    system("cd src/test/resources && panc --formats $type --output-dir ../../../target/test/json simpleprofile.pan");
 }
 
 

@@ -28,15 +28,14 @@ use LC::Exception qw(SUCCESS);
 
 sub compile_profile
 {
-    my ($type, $compress) = @_;
+    my ($type) = @_;
 
     $type ||= 'pan';
 
-    $compress //= '';
     my $filetype = $type eq 'json' ? 'json' : 'xml';
     make_path("target/test/fetch");
     system (qq{cd src/test/resources &&
-               panc -x $type $compress --output-dir ../../../target/test/fetch/ profile.pan &&
+               panc --formats $type --output-dir ../../../target/test/fetch/ profile.pan &&
                touch -d 0 ../../../target/test/fetch/profile.$filetype});
     croak ("Couldn't compile profile of type $type") if $?;
     croak ("WTF?") if ! -f "target/test/fetch/profile.$filetype";
@@ -132,7 +131,7 @@ isa_ok($pf, "CAF::FileWriter");
 $pf->cancel();
 
 unlink("target/test/profile.xml");
-compile_profile("pan", "-g");
+compile_profile("pan.gz");
 $pf = $f->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
 isa_ok($pf, "CAF::FileWriter");
 is(substr("$pf", 0, 1), "<", "Automatically decompressed");
@@ -272,13 +271,20 @@ is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 setup_cache($f->{CACHE_ROOT}, $f);
-compile_profile("xmldb");
-$pf = $f->download("profile");
-($class, $t) = $f->choose_interpreter("$pf");
-ok($t, "XMLDB profile correctly parsed");
-is($class, 'EDG::WP4::CCM::XMLDBProfile', "XMLDB profile correctly diagnosed");
-is ($f->process_profile("$pf", %r), 1,
-    "Cache from a Pan profile correctly created");
+# XMLDB support will die soon. This is here for completitude.
+eval {compile_profile("xmldb");
+      $pf = $f->download("profile");
+      ($class, $t) = $f->choose_interpreter("$pf");
+  };
+
+SKIP: {
+    skip "No XMLDB support", 3 if ($@);
+    ok($t, "XMLDB profile correctly parsed");
+    is($class, 'EDG::WP4::CCM::XMLDBProfile', "XMLDB profile correctly diagnosed");
+    is ($f->process_profile("$pf", %r), 1,
+	"Cache from a XMLDB profile correctly created");
+}
+
 setup_cache($f->{CACHE_ROOT}, $f);
 compile_profile("json");
 $f->{PROFILE_URL} =~ s{xml}{json}g;

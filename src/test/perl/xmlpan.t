@@ -28,7 +28,7 @@ be removed from L<EDG::WP4::CCM::Fetch>
 sub compile_profile
 {
     make_path("target/test/pan");
-    system("cd src/test/resources && panc --output-dir=../../../target/test/pan -x pan profile.pan");
+    system("cd src/test/resources && panc --output-dir ../../../target/test/pan --formats pan profile.pan");
 }
 
 sub InterpretNode
