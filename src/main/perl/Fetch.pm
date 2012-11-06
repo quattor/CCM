@@ -113,17 +113,11 @@ sub new {
     }
 
     # Interpret the config file.
-    unless ($self->_config($param->{"CONFIG"})) {
+    unless ($self->_config($param->{"CONFIG"}, $param)) {
         $ec->rethrow_error();
         return undef;
     }
 
-    # Set the profile URL if user is specifying it
-    if ($param->{"PROFILE_URL"}) {
-        $self->setProfileURL($param->{"PROFILE_URL"});
-    } elsif ($param->{"PROFILE"}) {
-	$self->setProfileURL($param->{"PROFILE"});
-    }
 
     $param->{PROFILE_FORMAT} ||= 'xml';
 
@@ -138,37 +132,24 @@ sub new {
 }
 
 sub _config($){
-    my ($self, $cfg) = @_;
+    my ($self, $cfg, $param) = @_;
+
     unless (EDG::WP4::CCM::CCfg::initCfg($cfg)){
         $ec->rethrow_error();
         return();
     }
 
-    $self->{DEBUG}             = getCfgValue('debug');
-    $self->{GET_TIMEOUT}       = getCfgValue('get_timeout') || DEFAULT_GET_TIMEOUT;
-    $self->{CERT_FILE}         = getCfgValue('cert_file');
-    $self->{KEY_FILE}          = getCfgValue('key_file');
-    $self->{CA_FILE}           = getCfgValue('ca_file');
-    $self->{CA_DIR}            = getCfgValue('ca_dir');
+    foreach my $p (qw(debug get_timeout cert_file ca_file ca_dir force base_url
+		      profile_failover context_url cache_root
+		      lock_retries lock_wait retrieve_retries retrieve_wait
+		      preprocessor world_readable tmp_dir dbformat)) {
+	$self->{uc($p)} ||= $param->{uc($p)} || getCfgValue($p);
+    }
 
-
-    # Local Variables to the object
-    $self->{"FORCE"}            = getCfgValue('force');
-    $self->{"BASE_URL"}         = getCfgValue('base_url');
-    $self->{"PROFILE_URL"}      = getCfgValue('profile');
-    $self->{"PROFILE_FAILOVER"} = getCfgValue('profile_failover');
-    $self->{"CONTEXT_URL"}      = getCfgValue('context');
-    $self->{"CACHE_ROOT"}       = getCfgValue('cache_root');
-    $self->{"LOCK_RETRIES"}     = getCfgValue('lock_retries');
-    $self->{"LOCK_WAIT"}        = getCfgValue('lock_wait');
-    $self->{"RETRIEVE_RETRIES"} = getCfgValue('retrieve_retries');
-    $self->{"RETRIEVE_WAIT"}    = getCfgValue('retrieve_wait');
-    $self->{"PREPROCESSOR"}     = getCfgValue('preprocessor');
-    $self->{"WORLD_READABLE"}   = getCfgValue('world_readable');
-    $self->{"TMP_DIR"}          = getCfgValue('tmp_dir') || "/var/tmp";
-    $self->{"DBFORMAT"}         = getCfgValue('dbformat');
-    if (EDG::WP4::CCM::CCfg::getCfgValue('trust')) {
-        $self->{"TRUST"} = [split(/\,\s*/, EDG::WP4::CCM::CCfg::getCfgValue('trust'))];
+    $self->setProfileURL(($param->{PROFILE_URL} || $param->{PROFILE} ||
+			     getCfgValue('profile')));
+    if (getCfgValue('trust')) {
+        $self->{"TRUST"} = [split(/\,\s*/, getCfgValue('trust'))];
     } else {
         $self->{"TRUST"} = [];
     }
