@@ -182,14 +182,12 @@
 		</goals>
 		<configuration>
 		  <tasks name="Rename">
-		    <echo>Hola</echo>
 		    <move filtering="true" todir="${project.build.directory}/doc/pod/EDG/WP4/CCM">
 		      <fileset dir="${project.build.directory}/doc/pod/EDG/WP4/CCM"/>
 		      <mapper>
 			<globmapper from="*.pm" to="*.pod"/>
 		      </mapper>
 		    </move>
-		    <echo>Renaming stuff?</echo>
 		  </tasks>
 		</configuration>
 	      </execution>
