@@ -7,3 +7,6 @@ target
 .#*
 profile.xml
 profile.json
+.prove*
+cover_db
+junit_output.xml
