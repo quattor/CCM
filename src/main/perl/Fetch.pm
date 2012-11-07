@@ -466,7 +466,7 @@ sub choose_interpreter
     if ($tree->[1]->[0]->{format} eq 'pan') {
 	return ('EDG::WP4::CCM::XMLPanProfile', $tree);
     } else {
-	return ('EDG::WP4::CCM::XMLDBProfile', $tree);
+	die "Invalid profile format.  Did you supply a deprecated XMLDB profile?";
     }
 }
 
