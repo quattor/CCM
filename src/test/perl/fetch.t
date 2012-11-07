@@ -251,7 +251,7 @@ is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
 
 =head2 Parsing
 
-The module must be able to parse XMLDB, Pan and JSON profiles, and to
+The module must be able to parse Pan and JSON profiles, and to
 choose (and invoke) the correct interpreters.
 
 For each format, it must be able to generate a valid cache.
@@ -271,20 +271,6 @@ is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 setup_cache($f->{CACHE_ROOT}, $f);
-# XMLDB support will die soon. This is here for completitude.
-eval {compile_profile("xmldb");
-      $pf = $f->download("profile");
-      ($class, $t) = $f->choose_interpreter("$pf");
-  };
-
-SKIP: {
-    skip "No XMLDB support", 3 if ($@);
-    ok($t, "XMLDB profile correctly parsed");
-    is($class, 'EDG::WP4::CCM::XMLDBProfile', "XMLDB profile correctly diagnosed");
-    is ($f->process_profile("$pf", %r), 1,
-	"Cache from a XMLDB profile correctly created");
-}
-
 setup_cache($f->{CACHE_ROOT}, $f);
 compile_profile("json");
 $f->{PROFILE_URL} =~ s{xml}{json}g;
