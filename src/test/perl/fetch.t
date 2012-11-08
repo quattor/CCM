@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 48;
+use Test::More tests => 45;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
