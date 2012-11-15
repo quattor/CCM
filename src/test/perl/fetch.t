@@ -85,16 +85,16 @@ $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 is($f->{PROFILE_URL}, "file://baz", "PROFILE_URL has priority over old PROFILE");
 
 $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
+				CACHE_ROOT => "/foo/bar",
+				CONFIG => 'src/test/resources/ccm.cfg'});
+is($f->{CACHE_ROOT}, "/foo/bar",
+   "Cache root given to constructor overrides config file");
+$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				CONFIG => 'src/test/resources/ccm.cfg'});
 ok($f, "Fetch profile created");
 isa_ok($f, "EDG::WP4::CCM::Fetch", "Object is a valid reference");
 is($f->{PROFILE_URL}, "https://www.google.com", "Profile URL correctly set");
 
-$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
-				CACHE_ROOT => "/foo/bar",
-				CONFIG => 'src/test/resources/ccm.cfg'});
-is($f->{CACHE_ROOT}, "/foo/bar",
-   "Cache root given to constructor overrides config file");
 
 
 =pod
