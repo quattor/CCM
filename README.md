@@ -1,3 +1,7 @@
+# CCM
+
+[![Build Status](https://jenkins1.ugent.be/view/Quattor/job/CCM/badge/icon)](http://jenkins1.ugent.be/view/Quattor/job/CCM/)
+
 CCM is the Configuration Cache Manager
 
 # Description
