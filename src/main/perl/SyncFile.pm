@@ -9,15 +9,10 @@ use strict;
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CCfg qw(getCfgValue);
 
-BEGIN{
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
-
- @ISA       = qw(Exporter);
- @EXPORT    = qw();           
- @EXPORT_OK = qw(new read write);
- $VERSION   = sprintf("%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/);
-}
+use parent qw(Exporter);
+our @EXPORT    = qw();
+our @EXPORT_OK = qw(new read write);
+our $VERSION   = '${project.version}';
 
 =head1 NAME
 
@@ -101,7 +96,7 @@ sub write { #T
 }
 
 #
-# lock using blocking flock call 
+# lock using blocking flock call
 #
 
 sub _block {
@@ -188,6 +183,6 @@ Piotr Poznanski <Piotr.Poznanski@cern.ch>
 
 =head1 VERSION
 
-$Id: SyncFile.pm.cin,v 1.1 2005/01/26 10:09:52 gcancio Exp $
+${project.version}
 
 =cut

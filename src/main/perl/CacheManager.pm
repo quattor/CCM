@@ -13,19 +13,14 @@ use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
 use MIME::Base64 qw(encode_base64);
 use LWP::UserAgent;
 use HTTP::Status;
+use parent qw(Exporter);
 
 use File::Temp;
 
-BEGIN{
 
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
-
- @ISA       = qw(Exporter);
- @EXPORT    = qw();           
- @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN);
- $VERSION = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/);
-}
+our @EXPORT    = qw();           
+our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN);
+our $VERSION = '${project.version}';
 
 =head1 NAME
 
@@ -54,13 +49,11 @@ the NVA cache.
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-use vars qw ($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
-	    $config);
 
-$GLOBAL_LOCK_FN = "global.lock";
-$CURRENT_CID_FN = "current.cid";
-$LATEST_CID_FN  = "latest.cid";
-$DATA_DN        = "data";
+our $GLOBAL_LOCK_FN = "global.lock";
+our $CURRENT_CID_FN = "current.cid";
+our $LATEST_CID_FN  = "latest.cid";
+our $DATA_DN        = "data";
 my $LOCKED      = "yes";
 my $UNLOCKED    = "no";
 

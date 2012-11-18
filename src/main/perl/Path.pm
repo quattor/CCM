@@ -7,16 +7,11 @@ package      EDG::WP4::CCM::Path;
 
 use strict;
 use LC::Exception qw(SUCCESS throw_error);
+use parent qw(Exporter);
 
-BEGIN{
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
-
- @ISA       = qw(Exporter);
- @EXPORT    = qw();           
- @EXPORT_OK = qw();
- $VERSION = sprintf("%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/);
-}
+our @EXPORT    = qw();
+our @EXPORT_OK = qw();
+our $VERSION = '${project.version}';
 
 =head1 NAME
 

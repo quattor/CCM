@@ -13,15 +13,12 @@ use EDG::WP4::CCM::Element qw();
 #use EDG::WP4::CCM::SyncFile qw (read);
 use EDG::WP4::CCM::Path qw ();
 use Scalar::Util qw (tainted);
-BEGIN{
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
 
- @ISA       = qw(Exporter);
- @EXPORT    = qw();
- @EXPORT_OK = qw();
- $VERSION = sprintf("%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/);
-}
+use parent qw(Exporter);
+
+our @EXPORT    = qw();
+our @EXPORT_OK = qw();
+our $VERSION = '${project.version}';
 
 =head1 NAME
 
@@ -382,6 +379,6 @@ Piotr Poznanski <Piotr.Poznanski@cern.ch>
 
 =head1 VERSION
 
-$Id: Configuration.pm.cin,v 1.5 2008/07/07 13:28:56 munoz Exp $
+${project.version}
 
 =cut

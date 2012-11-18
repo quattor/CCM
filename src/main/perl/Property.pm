@@ -9,11 +9,7 @@ use strict;
 use LC::Exception qw(SUCCESS throw_error);
 use LC::File qw (file_contents);
 use EDG::WP4::CCM::Stream;
-use vars qw(@ISA);
-
-use EDG::WP4::CCM::Element;
-
-@ISA = ("EDG::WP4::CCM::Element");
+use parent qw(EDG::WP4::CCM::Element);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
@@ -157,7 +153,6 @@ Universidad Autonoma de Madrid
 
 =head1 VERSION
 
-$Id: Property.pm.cin,v 1.3 2008/11/05 13:36:09 munoz Exp $
+${project.version}
 
 =cut
-

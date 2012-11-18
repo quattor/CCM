@@ -20,7 +20,7 @@ our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
 our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
 		    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD);
-our $VERSION = sprintf("%d.%02d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/);
+our $VERSION = '${project.version}';
 use EDG::WP4::CCM::DB;
 
 
@@ -70,11 +70,11 @@ that are common to all elments.
 
 Type constants:
 
-  ELEMENT  
-    PROPERTY  
-      STRING  
-      LONG    
-      DOUBLE  
+  ELEMENT
+    PROPERTY
+      STRING
+      LONG
+      DOUBLE
       BOOLEAN
       LINK
    RESOURCE
@@ -226,7 +226,7 @@ profile data goes into a whole new path.)
 =item elementExists($config, $ele_path)
 
 Returns true if the element identified by $ele_path exists
-otherwise false is returned 
+otherwise false is returned
 
 =cut
 
@@ -329,7 +329,7 @@ sub getConfiguration {
 
     my ($self) = shift;
     return $self->{CONFIG};
-    
+
 }
 
 =item getEID()
@@ -557,7 +557,7 @@ sub _resolve_eid($$) {
 	throw_error("cannot resolve element $ele_path");
 	return();
     }
-    
+
     return(unpack("L", $eid));
 
 }
@@ -732,7 +732,6 @@ Universidad Autonoma de Madrid
 
 =head1 VERSION
 
-$Id: Element.pm.cin,v 1.7 2008/10/31 19:48:07 munoz Exp $
+${project.version}
 
 =cut
-

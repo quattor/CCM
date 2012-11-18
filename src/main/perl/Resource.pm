@@ -7,11 +7,8 @@ package EDG::WP4::CCM::Resource;
 
 use strict;
 use LC::Exception qw(SUCCESS throw_error);
-use vars qw(@ISA);
+use parent qw(EDG::WP4::CCM::Element);
 
-use EDG::WP4::CCM::Element;
-
-@ISA = ("EDG::WP4::CCM::Element");
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
@@ -280,7 +277,6 @@ Universidad Autonoma de Madrid
 
 =head1 VERSION
 
-$Id: Resource.pm.cin,v 1.2 2007/02/07 14:02:44 gcancio Exp $
+${project.version}
 
 =cut
-

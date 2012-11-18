@@ -7,23 +7,18 @@ package      EDG::WP4::CCM::Stream;
 
 use strict;
 use LC::Exception qw(SUCCESS throw_error);
+use parent qw(Exporter);
 
-BEGIN{
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
-
- @ISA       = qw(Exporter);
- @EXPORT    = qw();
- @EXPORT_OK = qw(new read write);
- $VERSION   = sprintf("%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/);
-}
+our @EXPORT    = qw();
+our @EXPORT_OK = qw(new read write);
+our $VERSION   = '${project.version}';
 
 =head1 NAME
 
 EDG::WP4::CCM::Stream - Stream class
 
 =head1 SYNOPSIS
- 
+
  $stream = Stream->new($cm, $url);
  $buf_size = $stream->setBufSize($buf_size);
  $buf = $stream->getBlock();
@@ -181,4 +176,3 @@ Rafael A. Garcia Leiva <angel.leiva@uam.es>
 $Id: Stream.pm.cin,v 1.1 2005/01/26 10:09:52 gcancio Exp $
 
 =cut
-

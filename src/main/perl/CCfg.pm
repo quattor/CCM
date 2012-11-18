@@ -9,15 +9,11 @@ use strict;
 use LC::Exception qw(SUCCESS throw_error);
 use Net::Domain qw(hostname hostdomain);
 
-BEGIN{
- use      Exporter;
- use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
+use parent qw(Exporter);
 
- @ISA       = qw(Exporter);
- @EXPORT    = qw();           
- @EXPORT_OK = qw(initCfg getCfgValue);
- $VERSION   = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/);
-}
+our @EXPORT    = qw();
+our @EXPORT_OK = qw(initCfg getCfgValue);
+our $VERSION   = '${project.version}';
 
 =head1 NAME
 
@@ -26,7 +22,7 @@ EDG::WP4::CCM::CCfg
 =head1 SYNOPSIS
 
   init()
-    or 
+    or
   init("/etc/ccm.conf")
 
   $cache_root = getCfgValue ("cache_root");
@@ -109,7 +105,7 @@ sub _readConfigFile ($) {
 		my $s = _resolveTags ($val);
 		unless ($s) {
 		    throw_error ("_resolveTags ($val)", $ec->error);
-		    return ();  
+		    return ();
 		}
 		$cfg->{"profile"}=$s;
 	    }
@@ -125,7 +121,7 @@ sub _readConfigFile ($) {
 		my $s = _resolveTags ($val);
 		unless ($s) {
 		    throw_error ("_resolveTags ($val)", $ec->error);
-		    return ();  
+		    return ();
 		}
 		$cfg->{"context"}=$s;
 	    }
@@ -169,7 +165,7 @@ sub initCfg {
     unless (-f $cp) {
       throw_error ("configuration file not found");
       return();
-    } 
+    }
   } else {
     if (-f "/etc/$CONFIG_FN") {
       $cp = "/etc/$CONFIG_FN";
@@ -214,6 +210,6 @@ Piotr Poznanski <Piotr.Poznanski@cern.ch>
 
 =head1 VERSION
 
-$Id: CCfg.pm.cin,v 1.4 2007/11/23 12:05:56 rsharma Exp $
+${project.version}
 
 =cut
