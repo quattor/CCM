@@ -4,6 +4,8 @@
 # ${author-info}
 # ${build-info}
 
+use constant NOQUATTOR => "/etc/noquattor";
+
 package ccm_fetch;
 
 # required for CAF (Common Application Framework)
@@ -13,17 +15,13 @@ BEGIN {
 
 use CAF::Application;
 use CAF::Reporter;
-use CAF::FileEditor;
 use LC::Exception qw(SUCCESS throw_error);
 use strict;
 use warnings;
-
 our @ISA = qw(CAF::Application CAF::Reporter);
 
 # needed for method overriding
 no warnings 'redefine';
-
-use constant NOQUATTOR => "/etc/noquattor";
 
 #
 # application specific options:
@@ -98,14 +96,6 @@ sub _initialize {
     $self->{'VERSION'} = "${project.version}";
     $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
 
-    if (-f NOQUATTOR) {
-	$self->warn("CCM updates disabled globally (", NOQUATTOR, ") present");
-	my $fh = CAF::FileEditor->new(NOQUATTOR);
-	$fh->cancel();
-	$self->warn("$fh");
-	return undef;
-    }
-
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
 	return undef;
@@ -169,12 +159,22 @@ if (defined $this_app->option("dbformat")) {
     $opts->{DBFORMAT} = $this_app->option("dbformat");
 }
 
+# Disable all updates if the flag is present
+if (-f NOQUATTOR) {
+    $this_app->error("CCM updates disabled globally (", NOQUATTOR, " present)\n");
+    my $fh = CAF::FileEditor->new(NOQUATTOR);
+    $this_app->error("$fh");
+    $fh->close();
+    exit(3);
+}
+
 # initialize Fetch object
 $fetch = EDG::WP4::CCM::Fetch->new($opts);
 if (!$fetch) {
     throw_error("Initialization failed");
     exit (1);
 }
+
 
 # set debug
 $fetch->setup_reporter($this_app->option("debug"), $this_app->option("quiet"),
@@ -378,6 +378,8 @@ This program exits with:
 =over
 
 =item 0 on success
+
+=item 3 if updates have been disabled
 
 =item 2 on a network error
 
