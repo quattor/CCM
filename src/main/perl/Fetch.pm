@@ -140,9 +140,9 @@ sub _config($){
     }
 
     foreach my $p (qw(debug get_timeout cert_file ca_file ca_dir force base_url
-		      profile_failover context_url cache_root
-		      lock_retries lock_wait retrieve_retries retrieve_wait
-		      preprocessor world_readable tmp_dir dbformat)) {
+		      profile_failover context_url cache_root cert_file key_file
+		      ca_file ca_dir lock_retries lock_wait retrieve_retries
+		      retrieve_wait preprocessor world_readable tmp_dir dbformat)) {
 	$self->{uc($p)} ||= $param->{uc($p)} || getCfgValue($p);
     }
 
