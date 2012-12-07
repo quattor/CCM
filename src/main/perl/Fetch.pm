@@ -157,9 +157,12 @@ sub _config($){
     $self->{CACHE_ROOT} =~ m{^([-.:\w/]+)$} or
       die "Weird root for cache: $self->{CACHE_ROOT} on profile $self->{PROFILE_URL}";
     $self->{CACHE_ROOT} = $1;
-    $self->{TMP_DIR} =~ m{^([-.\w/:]*)$} or
-      die "Weird temp directory: $self->{TMP_DIR} on profile $self->{PROFILE_URL}";
-    $self->{TMP_DIR} = $1;
+    if ($self->{TMP_DIR}) {
+	$self->{TMP_DIR} =~ m{^([-.\w/:]*)$} or
+	    die "Weird temp directory: $self->{TMP_DIR} on profile $self->{PROFILE_URL}";
+	$self->{TMP_DIR} = $1;
+
+    }
     $self->{DBFORMAT} =~ m{^([a-zA-Z]\w+)(::[a-zA-Z]\w+)*$}
       or die "Weird cache format $self->{DBFORMAT} for profile $self->{PROFILE_URL}";
     $self->{DBFORMAT} = $1;
