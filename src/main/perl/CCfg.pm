@@ -162,7 +162,8 @@ locations the default values are used.
 sub initCfg {
   my ($cp) = @_;
   if ($cp) {
-    unless (-f $cp) {
+      # Accept the configuration be read from pipes (i.e, stdin)
+    unless (-f $cp || -p $cp) {
       throw_error ("configuration file not found");
       return();
     }
