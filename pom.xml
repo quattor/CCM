@@ -9,13 +9,6 @@
   <version>3.1.2-SNAPSHOT</version>
   <name>Configuration Cache Manager for Quattor</name>
 
-  <repositories>
-    <repository>
-      <id>quattor-releases</id>
-      <url>http://lapp-repo01.in2p3.fr:8081/nexus/content/repositories/releases/</url>
-    </repository>
-  </repositories>
-
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
