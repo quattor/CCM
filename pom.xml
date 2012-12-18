@@ -2,7 +2,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.quattor.cfg.module</groupId>
+  <groupId>org.quattor.client.libraries</groupId>
   <artifactId>ccm</artifactId>
 
   <packaging>pom</packaging>
