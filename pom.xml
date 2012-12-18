@@ -12,14 +12,14 @@
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
-    <version>1.26</version>
+    <version>1.27</version>
     <relativePath />
   </parent>
 
   <scm>
-    <connection>scm:git:git://github.com/quattor/CCM.git</connection>
-    <developerConnection>scm:git:git@github.com:quattor/CCM.git</developerConnection>
-    <url>https://github.com/quattor/CCM</url>
+    <connection>scm:git:git://github.com/piojo/CCM.git</connection>
+    <developerConnection>scm:git:git@github.com:piojo/CCM.git</developerConnection>
+    <url>https://github.com/piojo/CCM</url>
   </scm>
 
   <licenses>
