@@ -26,6 +26,12 @@
     <relativePath/>
   </parent>
 
+  <scm>
+    <connection>scm:git:git://github.com/quattor/CCM.git</connection>
+    <developerConnection>scm:git:git@github.com:quattor/CCM.git</developerConnection>
+    <url>https://github.com/quattor/CCM</url>
+  </scm>
+
   <licenses>
     <license>
       <name>Apache 2 License</name>
