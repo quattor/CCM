@@ -13,7 +13,6 @@
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
     <version>1.27</version>
-    <relativePath />
   </parent>
 
   <scm>
