@@ -16,8 +16,8 @@
   </parent>
 
   <scm>
-    <connection>scm:git:git://github.com/piojo/CCM.git</connection>
-    <developerConnection>scm:git:git@github.com:piojo/CCM.git</developerConnection>
+    <connection>scm:git:git://github.com/quattor/CCM.git</connection>
+    <developerConnection>scm:git:git@github.com:quattor/CCM.git</developerConnection>
     <url>https://github.com/piojo/CCM</url>
   </scm>
 
