@@ -6,7 +6,7 @@
   <artifactId>ccm</artifactId>
 
   <packaging>pom</packaging>
-  <version>3.1.9-SNAPSHOT</version>
+  <version>3.1.9</version>
   <name>Configuration Cache Manager for Quattor</name>
 
   <parent>
