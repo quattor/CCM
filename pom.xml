@@ -22,6 +22,20 @@
     <url>https://github.com/piojo/CCM</url>
   </scm>
 
+  <distributionManagement>
+    <repository>
+      <id>quattor.releases</id>
+      <name>Releases</name>
+      <url>http://stratuslab-srv01.lal.in2p3.fr:8081/content/repositories/quattor-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>quattor.snapshots</id>
+      <name>Snapshots</name>
+      <url>http://stratuslab-srv01.lal.in2p3.fr:8081/content/repositories/quattor-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+
   <licenses>
     <license>
       <name>Apache 2 License</name>
