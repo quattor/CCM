@@ -250,7 +250,7 @@ sub retrieve
         $cnt = $payload;
     }
     else {
-        $cnt->decoded_content();
+        $cnt = $rs->decoded_content();
     }
 
     my $fh = CAF::FileWriter->new($cache, log => $self);
