@@ -233,7 +233,6 @@
 	  <provide>perl(EDG::WP4::CCM::SyncFile)</provide>
 	</provides>
 	<requires>
-	  <require>perl(CDB_File)</require>
 	  <require>perl-JSON-XS &gt;= 2.3.0</require>
 	</requires>
 	<defaultDirmode>755</defaultDirmode>
