@@ -34,52 +34,56 @@ sub app_options {
     # build options
     push (@options,
 
-	  { NAME    => 'config=s',
-	    DEFAULT => '/etc/ccm.conf',
-	    HELP    => 'configuration file for CCM' },
+          { NAME    => 'config=s',
+            DEFAULT => '/etc/ccm.conf',
+            HELP    => 'configuration file for CCM' },
 
-	  { NAME    => 'profile|p=s',
-	    HELP    => 'URL of profile to fetch' },
+          { NAME    => 'profile|p=s',
+            HELP    => 'URL of profile to fetch' },
 
-	  { NAME    => 'profile_failover=s',
-	    HELP    => 'URL of profile to fetch when --profile is not available' },
+          { NAME    => 'profile_failover=s',
+            HELP    => 'URL of profile to fetch when --profile is not available' },
 
-	  { NAME    => 'profile-time=s',
-	    HELP    => 'Unix timestamp as modification time of profile' },
+          { NAME    => 'profile-time=s',
+            HELP    => 'Unix timestamp as modification time of profile' },
 
-	  { NAME    => 'context|c=s',
-	    HELP    => 'URL of context to fetch' },
+          { NAME    => 'context|c=s',
+            HELP    => 'URL of context to fetch' },
 
-	  { NAME    => 'context_time=s',
-	    HELP    => 'Unix timestamp as modification time of context' },
+          { NAME    => 'context_time=s',
+            HELP    => 'Unix timestamp as modification time of context' },
 
-	  { NAME    => 'preprocessor=s',
-	    HELP    => 'Path of executable to be used to preprocess a profile with a context' },
+          { NAME    => 'preprocessor=s',
+            HELP    => 'Path of executable to be used to preprocess a profile with a context' },
 
-	  { NAME    => 'foreign',
-	    HELP    => 'whether a foreign profile or local profile' },
+          { NAME    => 'foreign',
+            HELP    => 'whether a foreign profile or local profile' },
 
-	  { NAME    => 'cache_root=s',
-	    DEFAULT => '/var/lib/ccm',
-	    HELP    => 'Path of executable to be used to preprocess a profile with a context' },
+          { NAME    => 'cache_root=s',
+            DEFAULT => '/var/lib/ccm',
+            HELP    => 'Path of executable to be used to preprocess a profile with a context' },
 
-	  { NAME    => 'get_timeout=i',
-	    DEFAULT => '30',
-	    HELP    => 'Timeout in seconds for HTTP GET operation' },
+          { NAME    => 'get_timeout=i',
+            DEFAULT => '30',
+            HELP    => 'Timeout in seconds for HTTP GET operation' },
 
-	  { NAME    => 'world_readable=i',
-	    DEFAULT => '1',
-	    HELP    => 'World readable profile flag 1/0' },
+          { NAME    => 'world_readable=i',
+            DEFAULT => '1',
+            HELP    => 'World readable profile flag 1/0' },
 
-	  { NAME    => 'force|f',
-	    HELP    => 'Force fetch to retrieve XML profiles' },
+          { NAME    => 'force|f',
+            HELP    => 'Fetch regardless of modification times' },
 
-	  { NAME    => 'dbformat=s',
-	    HELP    => 'Format to use for storing profile' },
+          { NAME    => 'dbformat=s',
+            HELP    => 'Format to use for storing profile' },
 
-	  { NAME    => 'debug|d=i',
-	    DEFAULT => '0',
-	    HELP    => 'Turn on dubugging messages' });
+          { NAME    => 'force-quattor',
+            DEFAULT => 0,
+            HELP    => 'Fetch even if CCM updates are globally disabled' },
+
+          { NAME    => 'debug|d=i',
+            DEFAULT => '0',
+            HELP    => 'Turn on dubugging messages' });
 
     return \@options;
 }
@@ -160,10 +164,10 @@ if (defined $this_app->option("dbformat")) {
 }
 
 # Disable all updates if the flag is present
-if (-f NOQUATTOR) {
-    $this_app->error("CCM updates disabled globally (", NOQUATTOR, " present)\n");
+if (-f NOQUATTOR && ! $this_app->option("force-quattor")) {
+    $this_app->warn("CCM updates disabled globally (", NOQUATTOR, " present)");
     my $fh = CAF::FileEditor->new(NOQUATTOR);
-    $this_app->error("$fh");
+    $this_app->warn("$fh") if $fh;
     $fh->close();
     exit(3);
 }
@@ -256,6 +260,11 @@ Turn on debugging messages.
 
 Force fetch to retrieve profiles/contexts, regardless of their
 modification times.
+
+=item B<--force-quattor>
+
+Execute even if CCM updates are globally disabled. This option exists
+to allow administrators to make one-off updates in a controlled manner.
 
 =item B<--config>=I<file>
 
