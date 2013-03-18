@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 45;
+use Test::More tests => 46;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -118,6 +118,10 @@ note("Testing profile retrieval");
 my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
 ok($pf, "Something got returned");
 $pf->cancel();
+
+my $specialchars = "http://securedserver?parameter1=foo&parameter=foo%20bar";
+$f->setProfileURL($specialchars);
+is($f->{PROFILE_URL}, $specialchars, "Can use http URLs with parameters");
 
 compile_profile();
 
