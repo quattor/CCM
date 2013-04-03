@@ -86,7 +86,7 @@ sub interpret_scalar
 
     $content = $content->[2];
     if ($encoding) {
-	$content = EDG::CCM::WP4::Fetch->DecodeValue($content, $encoding);
+	$content = EDG::WP4::CCM::Fetch->DecodeValue($content, $encoding);
     } elsif (!defined($content) && $tag eq 'string') {
 	$content = '';
     }
