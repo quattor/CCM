@@ -234,6 +234,7 @@
 	</provides>
 	<requires>
 	  <require>perl-JSON-XS &gt;= 2.3.0</require>
+	  <require>perl(Crypt::SSLeay)</require>
 	</requires>
 	<defaultDirmode>755</defaultDirmode>
 	<mappings>
