@@ -264,6 +264,10 @@
                   <include>ccm-*</include>
                 </includes>
               </source>
+              <softlinkSource>
+                <destination>quattor-fetch</destination>
+                <location>ccm-fetch</location>
+              </softlinkSource>
             </sources>
             <configuration>false</configuration>
             <documentation>false</documentation>
