@@ -34,7 +34,7 @@ sub app_options {
     # build options
     push (@options,
 
-          { NAME    => 'config=s',
+          { NAME    => 'cfgfile=s',
             DEFAULT => '/etc/ccm.conf',
             HELP    => 'configuration file for CCM' },
 
@@ -80,6 +80,33 @@ sub app_options {
           { NAME    => 'force-quattor',
             DEFAULT => 0,
             HELP    => 'Fetch even if CCM updates are globally disabled' },
+
+          { NAME    => 'retrieve_retries=i',
+            DEFAULT => 3,
+            HELP    => 'Number of times fetch will attempt to retrieve a profile' },
+
+          { NAME    => 'lock_retries=i',
+            DEFAULT => 3,
+            HELP    => 'Number of times fetch will attempt to get the fetch lock'},
+
+          { NAME    => 'retrieve_wait=i',
+            DEFAULT => 30,
+            HELP    => 'Number of seconds that fetch will wait between retrieve attempts' },
+          { NAME    => 'lock_wait=i',
+            DEFAULT => 30,
+            HELP    =>  'Number of seconds that fetch will wait between lock attempts' },
+
+          { NAME    => 'key_file=s',
+            HELP    => 'Absolute file name for key file to use with HTTPS.'},
+
+          { NAME    => 'cert_file=s',
+            HELP    => 'Absolute file name for certificate file to use with HTTPS.' },
+
+          { NAME    => 'ca_file=s',
+            HELP    => 'File containing a bundle of trusted CA certificates for use with HTTPS.' },
+
+          { NAME   => 'ca_dir=s',
+            HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
 
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
@@ -150,11 +177,11 @@ unless ($this_app = ccm_fetch->new($0, @ARGV)) {
 
 # get Config path
 my $opts = {};
-if (defined $this_app->option("config")) {
-    $opts->{CONFIG} = $this_app->option("config");
+if (defined $this_app->option("cfgfile")) {
+    $opts->{CONFIG} = $this_app->option("cfgfile");
 }
 if (defined $this_app->option("profile")) {
-    $opts->{CONFIG} = $this_app->option("profile");
+    $opts->{PROFILE} = $this_app->option("profile");
 }
 if (defined $this_app->option("foreign")) {
     $opts->{FOREIGN} = $this_app->option("foreign");
