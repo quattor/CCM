@@ -407,6 +407,8 @@ symlinks are needed.
 World readable profiles flag (1/0). If true profiles will be
 stored on local disk with 755 permissions, if false with 700.
 
+=back
+
 =head1 EXIT STATUSES
 
 This program exits with:
