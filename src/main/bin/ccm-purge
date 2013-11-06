@@ -66,7 +66,7 @@ sub Warn ($) {
 #######################################################################
 sub Info ($) {
 #######################################################################
- 
+
     my $msg = shift;
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [INFO] %s",
@@ -402,6 +402,8 @@ ccm-purge --time time_aging [--config ccm.conf] [--tolerant]
 
 =head1 OPTIONS
 
+=over
+
 =item B<--time>
 
 the maximun time (in seconds) before to remove a profile that
@@ -418,6 +420,8 @@ Controls how tolerant is the program to errors, the default behaviour
 is strict, that means that the program will stop whenever an error is
 found, if this option is specified, the program will continue even if
 small errors are detected
+
+=back
 
 =head1 AUTHOR
 

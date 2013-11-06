@@ -174,6 +174,34 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>ccm-fetch-man</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>pod2man</executable>
+              <arguments>
+                  <argument>${project.build.directory}/sbin/ccm-fetch</argument>
+                  <argument>${project.build.directory}/doc/man/man8/ccm-fetch</argument>
+                  <argument>${project.build.directory}/sbin/ccm-purge</argument>
+                  <argument>${project.build.directory}/doc/man/man8/ccm-purge</argument>
+                  <argument>${project.build.directory}/sbin/ccm-initialise</argument>
+                  <argument>${project.build.directory}/doc/man/man8/ccm-initialise</argument>
+              </arguments>
+              <workingDirectory>${project.build.directory}/</workingDirectory>
+              <outputFile>${project.build.directory}/target/doc/man/man8</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- Ok, so the build tools *really* want to have a bunch of
            .pod files under doc/pod. We just rename them. -->
       <plugin>
@@ -195,6 +223,29 @@
                 </move>
               </tasks>
             </configuration>
+          </execution>
+          <execution>
+              <id>compress-man-pages</id>
+              <phase>compile</phase>
+              <goals>
+                  <goal>run</goal>
+              </goals>
+              <configuration>
+                  <tasks name="compress">
+                      <gzip
+                          src="${project.build.directory}/doc/man/man8/ccm-fetch"
+                          destfile="${project.build.directory}/doc/man/man8/ccm-fetch.8.gz"/>
+                      <gzip
+                          src="${project.build.directory}/doc/man/man8/ccm-initialise"
+                          destfile="${project.build.directory}/doc/man/man8/ccm-initialise.8.gz"/>
+                      <gzip
+                          src="${project.build.directory}/doc/man/man8/ccm-purge"
+                          destfile="${project.build.directory}/doc/man/man8/ccm-purge.8.gz"/>
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-fetch"/>
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-initialise"/>
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-purge"/>
+                  </tasks>
+              </configuration>
           </execution>
         </executions>
       </plugin>
