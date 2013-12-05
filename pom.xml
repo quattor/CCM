@@ -6,7 +6,7 @@
   <artifactId>ccm</artifactId>
 
   <packaging>pom</packaging>
-  <version>13.1.3-SNAPSHOT</version>
+  <version>13.12</version>
   <name>Configuration Cache Manager for Quattor</name>
 
   <parent>
@@ -232,18 +232,12 @@
               </goals>
               <configuration>
                   <tasks name="compress">
-                      <gzip
-                          src="${project.build.directory}/doc/man/man8/ccm-fetch"
-                          destfile="${project.build.directory}/doc/man/man8/ccm-fetch.8.gz"/>
-                      <gzip
-                          src="${project.build.directory}/doc/man/man8/ccm-initialise"
-                          destfile="${project.build.directory}/doc/man/man8/ccm-initialise.8.gz"/>
-                      <gzip
-                          src="${project.build.directory}/doc/man/man8/ccm-purge"
-                          destfile="${project.build.directory}/doc/man/man8/ccm-purge.8.gz"/>
-                      <delete file="${project.build.directory}/doc/man/man8/ccm-fetch"/>
-                      <delete file="${project.build.directory}/doc/man/man8/ccm-initialise"/>
-                      <delete file="${project.build.directory}/doc/man/man8/ccm-purge"/>
+                      <gzip src="${project.build.directory}/doc/man/man8/ccm-fetch" destfile="${project.build.directory}/doc/man/man8/ccm-fetch.8.gz" />
+                      <gzip src="${project.build.directory}/doc/man/man8/ccm-initialise" destfile="${project.build.directory}/doc/man/man8/ccm-initialise.8.gz" />
+                      <gzip src="${project.build.directory}/doc/man/man8/ccm-purge" destfile="${project.build.directory}/doc/man/man8/ccm-purge.8.gz" />
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-fetch" />
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-initialise" />
+                      <delete file="${project.build.directory}/doc/man/man8/ccm-purge" />
                   </tasks>
               </configuration>
           </execution>
