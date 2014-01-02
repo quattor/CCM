@@ -108,6 +108,12 @@ sub app_options {
           { NAME   => 'ca_dir=s',
             HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
 
+          { NAME   => 'trust=s',
+            HELP   => 'Kerberos principal to trust if using encrypted profiles' },
+
+          { NAME   => 'keep_old=i',
+            HELP   => 'Number of old profiles to keep before purging' },
+
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
             HELP    => 'Turn on dubugging messages' });

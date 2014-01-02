@@ -24,7 +24,6 @@ BEGIN {
 use strict;
 use Getopt::Long;
 use Digest::MD5 qw(md5_hex);
-use GDBM_File;
 use Errno qw(ESRCH EPERM);
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg);
@@ -41,10 +40,11 @@ use EDG::WP4::CCM::DB;
 # @Profile      all the available profiles
 # %NonactiveURL list of non active URLs
 # $Tolerant     strict or tolerant behaviour to errors
+# $keepCID      oldest CID to keep
 #
 
 my ($CacheDir, $DataDir, $TmpDir);
-my ($TimeAging);
+my ($TimeAging, $KeepCID);
 my ($CurrentCID, $LatestCID);
 my (@Profile);
 my (%NonactiveURL);
@@ -116,14 +116,19 @@ sub init() {
     my ($ccm_conf);
 
     # Process command line options
+    my $usage = "$0 --time seconds [--conf ccm.conf] [--tolerant]";
 
     $ccm_conf = "";
     $TimeAging = 0;
     $Tolerant  = 0;
+    my $help = 0;
     GetOptions('config=s'  => \$ccm_conf,
                'time=i'    => \$TimeAging,
-               'tolerant'  => \$Tolerant )
-        or die("error processing command line: $!");
+               'tolerant'  => \$Tolerant,
+               'help'      => \$help,
+        ) or die("error processing command line: $!\n $usage");
+
+    die("Usage: $usage\n") if ($help || !$TimeAging);
 
     if (!$ccm_conf) {
         initCfg();
@@ -132,11 +137,7 @@ sub init() {
     }
 
     $CacheDir = EDG::WP4::CCM::CCfg::getCfgValue("cache_root");
-
-    # TODO: time aging should go to file "ccm.conf"
-    if (!$TimeAging) {
-        die("use: $0 --time time_aging [--conf ccm.conf] [--tolerant]\n");
-    }
+    my $numKeep = EDG::WP4::CCM::CCfg::getCfgValue("keep_old");
 
     $DataDir = $CacheDir . "/data";
     $TmpDir = $CacheDir . "/tmp";
@@ -145,6 +146,7 @@ sub init() {
 
     $CurrentCID = read_cid("${CacheDir}/current.cid");
     $LatestCID  = read_cid("${CacheDir}/latest.cid");
+    $KeepCID    = $CurrentCID - $numKeep;
 
     # Get list of configuration profiles
 
@@ -316,7 +318,7 @@ sub clean_temp_dir() {
 
     while ($dir = readdir(DIR)) {
         next if ($dir eq "." or $dir eq "..");
-        $mod_time = (stat("$TmpDir/$dir"))[9];
+        $mod_time = (stat("$TmpDir/$dir"))[8];
         if ($mod_time + $TimeAging >= $curr_time ) {
             next;
         }
@@ -360,6 +362,7 @@ sub main() {
 
         if (($prof_cid eq $CurrentCID)
                 or ($prof_cid eq $LatestCID)
+                or (int($prof_cid) >= $KeepCID)
                 or num_active_pids($profile)
                 or ($mod_time + $TimeAging >= $curr_time)) {
             save_active_urls($profile);
