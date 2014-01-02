@@ -33,14 +33,14 @@ use EDG::WP4::CCM::DB;
 #
 # Global Variables
 #
-# $CacheDir	cache directory path
-# $DataDir	data subdirectory path
-# $TimeAging	time limit for not used profiles and temp files
-# $CurrentCID	content of current.cid file
-# $LatestCID	content of latest.cid file
-# @Profile	all the available profiles
-# %NonactiveURL	list of non active URLs
-# $Tolerant	strict or tolerant behaviour to errors
+# $CacheDir     cache directory path
+# $DataDir      data subdirectory path
+# $TimeAging    time limit for not used profiles and temp files
+# $CurrentCID   content of current.cid file
+# $LatestCID    content of latest.cid file
+# @Profile      all the available profiles
+# %NonactiveURL list of non active URLs
+# $Tolerant     strict or tolerant behaviour to errors
 #
 
 my ($CacheDir, $DataDir, $TmpDir);
@@ -122,7 +122,7 @@ sub init() {
     $Tolerant  = 0;
     GetOptions('config=s'  => \$ccm_conf,
                'time=i'    => \$TimeAging,
-	       'tolerant'  => \$Tolerant )
+               'tolerant'  => \$Tolerant )
         or die("error processing command line: $!");
 
     if (!$ccm_conf) {
@@ -178,7 +178,7 @@ sub clean_profile($) {
 
     if( !opendir(DIR , "${CacheDir}/$profile") ) {
         Warn("${CacheDir}/$profile open failed: $!");
-	return;
+        return;
     }
 
     while ($file = readdir(DIR)) {
@@ -187,20 +187,20 @@ sub clean_profile($) {
         $active_pid = $1;
 
         if( kill (0 => $active_pid) ) {
-	    # the process is alive
-	    Info("process ${active_pid} holding CID=$profile is still alive, not cleaning up");
-	    next;
-	} elsif ( $! == EPERM ) {
-	    # it is alive but I am not the owner, that's ok
-	    Warn("process is not owned by me: ${active_pid}, cannot clean up");
+            # the process is alive
+            Info("process ${active_pid} holding CID=$profile is still alive, not cleaning up");
+            next;
+        } elsif ( $! == EPERM ) {
+            # it is alive but I am not the owner, that's ok
+            Warn("process is not owned by me: ${active_pid}, cannot clean up");
             next;
         } elsif ( $! == ESRCH ) {
-	    # the process has died
-	    Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
-	    $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
-	    unlink($file) or Warn("error unlinking file ${file}: $!");
+            # the process has died
+            Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
+            $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
+            unlink($file) or Warn("error unlinking file ${file}: $!");
         } else {
-	    # this is an error
+            # this is an error
             Warn("error signaling pid ${active_pid}: $!");
         }
 
@@ -287,12 +287,12 @@ sub save_active_urls($) {
     foreach $key ( keys(%hash) ) {
         $ukey = unpack("L", $key);
         next unless ($ukey & 0x10000000);
-	next unless ($hash{$key} eq 'fetch');
-	$ukey = $ukey & 0xEFFFFFFF;
-	$key = pack("L", $ukey);
-	$url = $hash{$key};
+        next unless ($hash{$key} eq 'fetch');
+        $ukey = $ukey & 0xEFFFFFFF;
+        $key = pack("L", $ukey);
+        $url = $hash{$key};
         $md5 = md5_hex($url);
-	delete( $NonactiveURL{$md5} );
+        delete( $NonactiveURL{$md5} );
     }
 
     untie(%hash);
@@ -318,11 +318,11 @@ sub clean_temp_dir() {
         next if ($dir eq "." or $dir eq "..");
         $mod_time = (stat("$TmpDir/$dir"))[9];
         if ($mod_time + $TimeAging >= $curr_time ) {
-	    next;
-	}
+            next;
+        }
         if( !rmtree("$TmpDir/$dir")  ) {
             Warn("failed to remove $TmpDir/$dir: $1");
-	}
+        }
     }
 
     close(DIR);
@@ -350,31 +350,31 @@ sub main() {
     foreach $profile (@Profile) {
 
         $profile =~ /profile\.(\d+)/;
-	$prof_cid = $1;
+        $prof_cid = $1;
 
         $mod_time = (stat("$CacheDir/$profile"))[9];
 
         clean_profile($profile);
 
-	$curr_time = time();
+        $curr_time = time();
 
         if (($prof_cid eq $CurrentCID)
-	        or ($prof_cid eq $LatestCID)
-	        or num_active_pids($profile)
-		or ($mod_time + $TimeAging >= $curr_time)) {
-	    save_active_urls($profile);
-	    next;
-	}
+                or ($prof_cid eq $LatestCID)
+                or num_active_pids($profile)
+                or ($mod_time + $TimeAging >= $curr_time)) {
+            save_active_urls($profile);
+            next;
+        }
 
-	if( !rmtree("$CacheDir/$profile")  ) {
-	    Warn("cannot remove directory $CacheDir/$profile: $!");
-	}
+        if( !rmtree("$CacheDir/$profile")  ) {
+            Warn("cannot remove directory $CacheDir/$profile: $!");
+        }
 
     }
 
     foreach $url (keys(%NonactiveURL)) {
         unlink( "$DataDir/$url" )
-	    or Warn("error unlinking file $DataDir/$url: $!");
+            or Warn("error unlinking file $DataDir/$url: $!");
     }
 
     clean_temp_dir();
