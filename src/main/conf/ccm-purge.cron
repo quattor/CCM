@@ -1,5 +1,5 @@
 # run every day at 00:30 ccm-purge
 #
 
-30 0 * * * root /usr/sbin/ccm-purge --time 86400 >>/var/log/ccm-purge.log 2>&1
+30 0 * * * root /usr/sbin/ccm-purge >>/var/log/ccm-purge.log 2>&1
 

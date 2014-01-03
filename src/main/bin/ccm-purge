@@ -116,10 +116,10 @@ sub init() {
     my ($ccm_conf);
 
     # Process command line options
-    my $usage = "$0 --time seconds [--conf ccm.conf] [--tolerant]";
+    my $usage = "$0 [--time seconds] [--conf ccm.conf] [--tolerant]";
 
     $ccm_conf = "";
-    $TimeAging = 0;
+    $TimeAging = EDG::WP4::CCM::CCfg::getCfgValue("purge_time");
     $Tolerant  = 0;
     my $help = 0;
     GetOptions('config=s'  => \$ccm_conf,
@@ -142,7 +142,7 @@ sub init() {
     $DataDir = $CacheDir . "/data";
     $TmpDir = $CacheDir . "/tmp";
 
-    # Get currrent and latest CID
+    # Get current and latest CID
 
     $CurrentCID = read_cid("${CacheDir}/current.cid");
     $LatestCID  = read_cid("${CacheDir}/latest.cid");

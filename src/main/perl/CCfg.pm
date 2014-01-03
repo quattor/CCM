@@ -63,7 +63,8 @@ my $cfg = {
               "base_url" => undef,
               "world_readable" => undef,
               "dbformat" => "GDBM_File",
-              "keep_old" => 2
+              "keep_old" => 2,
+              "purge_time" => 86400,
 };
 
 sub _resolveTags ($) {
@@ -142,6 +143,7 @@ sub _readConfigFile ($) {
             elsif ($var eq 'dbformat') {$cfg->{"dbformat"}=$val;}
             elsif ($var eq 'trust') {$cfg->{"trust"}=$val;}
             elsif ($var eq 'keep_old') {$cfg->{"keep_old"}=$val;}
+            elsif ($var eq 'purge_time') {$cfg->{"purge_time"}=$val;}
 	    else { throw_error("unknown config variable: $var"); }
 	    next;
 	}
