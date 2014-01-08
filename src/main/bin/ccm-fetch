@@ -108,6 +108,15 @@ sub app_options {
           { NAME   => 'ca_dir=s',
             HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
 
+          { NAME   => 'trust=s',
+            HELP   => 'Kerberos principal to trust if using encrypted profiles' },
+
+          { NAME   => 'keep_old=i',
+            HELP   => 'Number of old profiles to keep before purging' },
+
+          { NAME   => 'purge_time=i',
+            HELP   => 'Number of seconds before purging inactive profiles' },
+
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
             HELP    => 'Turn on dubugging messages' });
@@ -263,11 +272,11 @@ exit (0);
 
 =head1 NAME
 
-ccm-fetch-new - fetch XML profiles and store in local cache
+ccm-fetch - fetch profiles and store in local cache
 
 =head1 DESCRIPTION
 
-This program retrieves XML profiles and contexts from specified URLs,
+This program retrieves profiles and contexts from specified URLs,
 subject to modification time constraints, validates them, and stores the
 contents in the local configuration cache.
 

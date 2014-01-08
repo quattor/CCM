@@ -24,26 +24,28 @@ BEGIN {
 use strict;
 use Getopt::Long;
 use Digest::MD5 qw(md5_hex);
-use GDBM_File;
 use Errno qw(ESRCH EPERM);
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg);
+use EDG::WP4::CCM::DB;
+use LC::Stat qw(:ST);
 
 #
 # Global Variables
 #
-# $CacheDir	cache directory path
-# $DataDir	data subdirectory path
-# $TimeAging	time limit for not used profiles and temp files
-# $CurrentCID	content of current.cid file
-# $LatestCID	content of latest.cid file
-# @Profile	all the available profiles
-# %NonactiveURL	list of non active URLs
-# $Tolerant	strict or tolerant behaviour to errors
+# $CacheDir     cache directory path
+# $DataDir      data subdirectory path
+# $TimeAging    time limit for not used profiles and temp files
+# $CurrentCID   content of current.cid file
+# $LatestCID    content of latest.cid file
+# @Profile      all the available profiles
+# %NonactiveURL list of non active URLs
+# $Tolerant     strict or tolerant behaviour to errors
+# $keepCID      oldest CID to keep
 #
 
 my ($CacheDir, $DataDir, $TmpDir);
-my ($TimeAging);
+my ($TimeAging, $KeepCID);
 my ($CurrentCID, $LatestCID);
 my (@Profile);
 my (%NonactiveURL);
@@ -115,14 +117,19 @@ sub init() {
     my ($ccm_conf);
 
     # Process command line options
+    my $usage = "$0 [--time seconds] [--conf ccm.conf] [--tolerant]";
 
     $ccm_conf = "";
-    $TimeAging = 0;
+    $TimeAging = EDG::WP4::CCM::CCfg::getCfgValue("purge_time");
     $Tolerant  = 0;
+    my $help = 0;
     GetOptions('config=s'  => \$ccm_conf,
                'time=i'    => \$TimeAging,
-	       'tolerant'  => \$Tolerant )
-        or die("error processing command line: $!");
+               'tolerant'  => \$Tolerant,
+               'help'      => \$help,
+        ) or die("error processing command line: $!\n $usage");
+
+    die("Usage: $usage\n") if ($help || !$TimeAging);
 
     if (!$ccm_conf) {
         initCfg();
@@ -131,19 +138,16 @@ sub init() {
     }
 
     $CacheDir = EDG::WP4::CCM::CCfg::getCfgValue("cache_root");
-
-    # TODO: time aging should go to file "ccm.conf"
-    if (!$TimeAging) {
-        die("use: $0 --time time_aging [--conf ccm.conf] [--tolerant]\n");
-    }
+    my $numKeep = EDG::WP4::CCM::CCfg::getCfgValue("keep_old");
 
     $DataDir = $CacheDir . "/data";
     $TmpDir = $CacheDir . "/tmp";
 
-    # Get currrent and latest CID
+    # Get current and latest CID
 
     $CurrentCID = read_cid("${CacheDir}/current.cid");
     $LatestCID  = read_cid("${CacheDir}/latest.cid");
+    $KeepCID    = $CurrentCID - $numKeep;
 
     # Get list of configuration profiles
 
@@ -177,7 +181,7 @@ sub clean_profile($) {
 
     if( !opendir(DIR , "${CacheDir}/$profile") ) {
         Warn("${CacheDir}/$profile open failed: $!");
-	return;
+        return;
     }
 
     while ($file = readdir(DIR)) {
@@ -186,20 +190,20 @@ sub clean_profile($) {
         $active_pid = $1;
 
         if( kill (0 => $active_pid) ) {
-	    # the process is alive
-	    Info("process ${active_pid} holding CID=$profile is still alive, not cleaning up");
-	    next;
-	} elsif ( $! == EPERM ) {
-	    # it is alive but I am not the owner, that's ok
-	    Warn("process is not owned by me: ${active_pid}, cannot clean up");
+            # the process is alive
+            Info("process ${active_pid} holding CID=$profile is still alive, not cleaning up");
+            next;
+        } elsif ( $! == EPERM ) {
+            # it is alive but I am not the owner, that's ok
+            Warn("process is not owned by me: ${active_pid}, cannot clean up");
             next;
         } elsif ( $! == ESRCH ) {
-	    # the process has died
-	    Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
-	    $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
-	    unlink($file) or Warn("error unlinking file ${file}: $!");
+            # the process has died
+            Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
+            $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
+            unlink($file) or Warn("error unlinking file $file: $!");
         } else {
-	    # this is an error
+            # this is an error
             Warn("error signaling pid ${active_pid}: $!");
         }
 
@@ -279,19 +283,19 @@ sub save_active_urls($) {
     # delete($NonactiveURL{$md5});
 
     # search URLs in fetch porperties
-
-    tie(%hash, "GDBM_File", "${CacheDir}/${profile}/eid2data.db", GDBM_READER,
-        0640) or die("${CacheDir}/${profile}/eid2data.db failed to open: $!");
+    my $readErr = EDG::WP4::CCM::DB::read(\%hash,
+                                          "${CacheDir}/${profile}/eid2data");
+    die("Failed to read eid2data: $readErr") if defined($readErr);
 
     foreach $key ( keys(%hash) ) {
         $ukey = unpack("L", $key);
         next unless ($ukey & 0x10000000);
-	next unless ($hash{$key} eq 'fetch');
-	$ukey = $ukey & 0xEFFFFFFF;
-	$key = pack("L", $ukey);
-	$url = $hash{$key};
+        next unless ($hash{$key} eq 'fetch');
+        $ukey = $ukey & 0xEFFFFFFF;
+        $key = pack("L", $ukey);
+        $url = $hash{$key};
         $md5 = md5_hex($url);
-	delete( $NonactiveURL{$md5} );
+        delete( $NonactiveURL{$md5} );
     }
 
     untie(%hash);
@@ -315,13 +319,13 @@ sub clean_temp_dir() {
 
     while ($dir = readdir(DIR)) {
         next if ($dir eq "." or $dir eq "..");
-        $mod_time = (stat("$TmpDir/$dir"))[9];
+        $mod_time = (stat("$TmpDir/$dir"))[ST_MTIME];
         if ($mod_time + $TimeAging >= $curr_time ) {
-	    next;
-	}
+            next;
+        }
         if( !rmtree("$TmpDir/$dir")  ) {
             Warn("failed to remove $TmpDir/$dir: $1");
-	}
+        }
     }
 
     close(DIR);
@@ -336,7 +340,7 @@ sub clean_temp_dir() {
 #
 # Remove all dead active.pid files of every profile.
 # If a profile is not the current or latest profiles, and if it is not
-# active, and the last time it was accesed is older than TimeAging,
+# active, and the last time it was modified is older than TimeAging,
 # then remove the profile.
 # Finally, remove unused URLs files, and temporary files.
 #
@@ -349,31 +353,32 @@ sub main() {
     foreach $profile (@Profile) {
 
         $profile =~ /profile\.(\d+)/;
-	$prof_cid = $1;
+        $prof_cid = $1;
 
-        $mod_time = (stat("$CacheDir/$profile"))[9];
+        $mod_time = (stat("$CacheDir/$profile"))[ST_MTIME];
 
         clean_profile($profile);
 
-	$curr_time = time();
+        $curr_time = time();
 
         if (($prof_cid eq $CurrentCID)
-	        or ($prof_cid eq $LatestCID)
-	        or num_active_pids($profile)
-		or ($mod_time + $TimeAging >= $curr_time)) {
-	    save_active_urls($profile);
-	    next;
-	}
+                or ($prof_cid eq $LatestCID)
+                or (int($prof_cid) >= $KeepCID)
+                or num_active_pids($profile)
+                or ($mod_time + $TimeAging >= $curr_time)) {
+            save_active_urls($profile);
+            next;
+        }
 
-	if( !rmtree("$CacheDir/$profile")  ) {
-	    Warn("cannot remove directory $CacheDir/$profile: $!");
-	}
+        if( !rmtree("$CacheDir/$profile")  ) {
+            Warn("cannot remove directory $CacheDir/$profile: $!");
+        }
 
     }
 
     foreach $url (keys(%NonactiveURL)) {
         unlink( "$DataDir/$url" )
-	    or Warn("error unlinking file $DataDir/$url: $!");
+            or Warn("error unlinking file $DataDir/$url: $!");
     }
 
     clean_temp_dir();
