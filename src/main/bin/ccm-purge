@@ -28,6 +28,7 @@ use Errno qw(ESRCH EPERM);
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg);
 use EDG::WP4::CCM::DB;
+use LC::Stat qw(:ST);
 
 #
 # Global Variables
@@ -318,7 +319,7 @@ sub clean_temp_dir() {
 
     while ($dir = readdir(DIR)) {
         next if ($dir eq "." or $dir eq "..");
-        $mod_time = (stat("$TmpDir/$dir"))[8];
+        $mod_time = (stat("$TmpDir/$dir"))[ST_MTIME];
         if ($mod_time + $TimeAging >= $curr_time ) {
             next;
         }
@@ -339,7 +340,7 @@ sub clean_temp_dir() {
 #
 # Remove all dead active.pid files of every profile.
 # If a profile is not the current or latest profiles, and if it is not
-# active, and the last time it was accesed is older than TimeAging,
+# active, and the last time it was modified is older than TimeAging,
 # then remove the profile.
 # Finally, remove unused URLs files, and temporary files.
 #
@@ -354,7 +355,7 @@ sub main() {
         $profile =~ /profile\.(\d+)/;
         $prof_cid = $1;
 
-        $mod_time = (stat("$CacheDir/$profile"))[9];
+        $mod_time = (stat("$CacheDir/$profile"))[ST_MTIME];
 
         clean_profile($profile);
 
