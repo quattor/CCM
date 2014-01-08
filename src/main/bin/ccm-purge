@@ -201,7 +201,7 @@ sub clean_profile($) {
             # the process has died
             Info("process ${active_pid} holding CCM cache CID=$profile has died without removing active flag, cleaning up");
             $file = "${CacheDir}/${profile}/ccm-active-$profile-$active_pid";
-            unlink($file) or Warn("error unlinking file ${file}: $!");
+            unlink($file) or Warn("error unlinking file $file: $!");
         } else {
             # this is an error
             Warn("error signaling pid ${active_pid}: $!");
