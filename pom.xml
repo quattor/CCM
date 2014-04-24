@@ -12,7 +12,7 @@
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
-    <version>1.32</version>
+    <version>1.34</version>
   </parent>
 
   <scm>
@@ -280,6 +280,7 @@
         <requires>
           <require>perl-JSON-XS &gt;= 2.3.0</require>
           <require>perl(Crypt::SSLeay)</require>
+          <require>perl(LWP::Protocol::https)</require>
         </requires>
         <defaultDirmode>755</defaultDirmode>
         <mappings>

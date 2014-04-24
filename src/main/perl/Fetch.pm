@@ -75,7 +75,10 @@ our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
 		    ComputeChecksum);
 
-
+# LWP should use Net::SSL (provided with Crypt::SSLeay)
+# and Net::SSL doesn't support hostname verify
+$ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = 'Net::SSL';
+$ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 

@@ -114,6 +114,17 @@ Successful retrieves must return a CAF::FileWriter object.
 
 =cut
 
+# in case the LWP::Protocol::https can't be loaded/found, 
+# the following test fails with
+#   Got an unexpected result while retrieving https://www.google.com: 501 
+#   Protocol scheme 'https' is not supported (LWP::Protocol::https not installed)
+# explicit import to generate a clean error
+# It will also fail if Net::SSL is not installed 
+# (part of package that provides perl(Crypt::SSLeay))
+# These are the requires as listed in the pom.xml file.
+use Crypt::SSLeay;
+use LWP::Protocol::https;
+
 note("Testing profile retrieval");
 my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
 ok($pf, "Something got returned");
