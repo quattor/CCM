@@ -46,7 +46,7 @@ use File::Basename;
 use LC::Exception qw(SUCCESS throw_error);
 use LC::File;
 use LC::Stat qw(:ST);
-use File::Temp qw /tempfile tempdir/;
+use File::Temp qw (tempfile tempdir);
 use File::Path qw(mkpath rmtree);
 use Encode qw(encode_utf8);
 use GSSAPI;
@@ -67,13 +67,17 @@ BEGIN {
     }
 }
 
+use constant NOQUATTOR => "/etc/noquattor";
+use constant NOQUATTOR_EXITCODE => 3;
+
+
 use constant MAXPROFILECOUNTER => 9999 ;
 use constant ERROR => -1 ;
 use parent qw(Exporter CAF::Reporter);
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
-		    ComputeChecksum);
+		    ComputeChecksum NOQUATTOR NOQUATTOR_EXITCODE);
 
 # LWP should use Net::SSL (provided with Crypt::SSLeay)
 # and Net::SSL doesn't support hostname verify

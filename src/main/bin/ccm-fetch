@@ -4,8 +4,6 @@
 # ${author-info}
 # ${build-info}
 
-use constant NOQUATTOR => "/etc/noquattor";
-
 package ccm_fetch;
 
 # required for CAF (Common Application Framework)
@@ -153,7 +151,7 @@ package main;
 use English;
 use LC::Exception qw(SUCCESS throw_error);
 use File::Basename;
-use EDG::WP4::CCM::Fetch;
+use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 
@@ -205,7 +203,7 @@ if (-f NOQUATTOR && ! $this_app->option("force-quattor")) {
     my $fh = CAF::FileEditor->new(NOQUATTOR);
     $this_app->warn("$fh") if $fh;
     $fh->close();
-    exit(3);
+    exit(NOQUATTOR_EXITCODE);
 }
 
 # initialize Fetch object
