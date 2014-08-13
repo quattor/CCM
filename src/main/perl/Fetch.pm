@@ -69,7 +69,7 @@ BEGIN {
 
 use constant NOQUATTOR => "/etc/noquattor";
 use constant NOQUATTOR_EXITCODE => 3;
-
+use constant NOQUATTOR_FORCE => "force-quattor";
 
 use constant MAXPROFILECOUNTER => 9999 ;
 use constant ERROR => -1 ;
