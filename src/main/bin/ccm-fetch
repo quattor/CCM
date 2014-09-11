@@ -4,8 +4,6 @@
 # ${author-info}
 # ${build-info}
 
-use constant NOQUATTOR => "/etc/noquattor";
-
 package ccm_fetch;
 
 # required for CAF (Common Application Framework)
@@ -16,6 +14,7 @@ BEGIN {
 use CAF::Application;
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS throw_error);
+use EDG::WP4::CCM::Fetch qw(NOQUATTOR_FORCE);
 use strict;
 use warnings;
 our @ISA = qw(CAF::Application CAF::Reporter);
@@ -77,7 +76,7 @@ sub app_options {
           { NAME    => 'dbformat=s',
             HELP    => 'Format to use for storing profile' },
 
-          { NAME    => 'force-quattor',
+          { NAME    => NOQUATTOR_FORCE,
             DEFAULT => 0,
             HELP    => 'Fetch even if CCM updates are globally disabled' },
 
@@ -153,7 +152,7 @@ package main;
 use English;
 use LC::Exception qw(SUCCESS throw_error);
 use File::Basename;
-use EDG::WP4::CCM::Fetch;
+use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 
@@ -200,12 +199,12 @@ if (defined $this_app->option("dbformat")) {
 }
 
 # Disable all updates if the flag is present
-if (-f NOQUATTOR && ! $this_app->option("force-quattor")) {
+if (-f NOQUATTOR && ! $this_app->option(NOQUATTOR_FORCE)) {
     $this_app->warn("CCM updates disabled globally (", NOQUATTOR, " present)");
     my $fh = CAF::FileEditor->new(NOQUATTOR);
     $this_app->warn("$fh") if $fh;
     $fh->close();
-    exit(3);
+    exit(NOQUATTOR_EXITCODE);
 }
 
 # initialize Fetch object
