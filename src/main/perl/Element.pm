@@ -19,7 +19,8 @@ use Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
 our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
-		    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD);
+		    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
+                    escape);
 our $VERSION = '${project.version}';
 use EDG::WP4::CCM::DB;
 
@@ -102,6 +103,23 @@ sub unescape ($)
     return $str;
 }
 
+
+=pod
+
+=item escape($string)
+
+Returns an escaped version of the string.  This method is exported on
+demand for use with all tools that have to escape and unescape values.
+
+=cut
+
+sub escape
+{
+    my $str = shift;
+
+    $str =~ s/(^[0-9]|[^a-zA-Z0-9])/sprintf("_%lx", ord($1))/eg;
+    return $str;
+}
 
 =item new($config, $ele_path)
 
