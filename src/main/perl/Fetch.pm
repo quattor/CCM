@@ -77,7 +77,7 @@ use parent qw(Exporter CAF::Reporter);
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
-		    ComputeChecksum NOQUATTOR NOQUATTOR_EXITCODE);
+		    ComputeChecksum NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 
 # LWP should use Net::SSL (provided with Crypt::SSLeay)
 # and Net::SSL doesn't support hostname verify
