@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 46;
+use Test::More tests => 49;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -312,12 +312,13 @@ We expect it:
 
 =cut
 
-
+# At this point, the profile is defined as a JSON profile...
+# First download the profile to be sure that it is already there
+# before the test.
+is($f->fetchProfile(), SUCCESS, "Initial fetchProfile worked correctly (JSON profile)");
 $f->{FORCE} = 0;
-system("cat target/test/cache/profile.*/profile.url");
-is($f->fetchProfile(), SUCCESS, "Full fetchProfile worked correctly");
-is($f->{FORCE}, 1, "And the FORCE flag was not modified");
-$f->{PROFILE_URL} =~ s{json}{xml};
+is($f->fetchProfile(), SUCCESS, "fetchProfile of the same JSON profile succeeded");
+is($f->{FORCE}, 0, "And the FORCE flag was not modified");
 
 =pod
 
@@ -325,10 +326,16 @@ $f->{PROFILE_URL} =~ s{json}{xml};
 
 =cut
 
+$f->{PROFILE_URL} =~ s{json}{xml};
 $f->{FORCE} = 0;
 $f->setup_reporter(0, 0, 1);
-is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on JSON profile");
+is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on XML profile");
 is($f->{FORCE}, 1, "A change in the URL forces to re-download");
+# Check that FORCE flag is also respected/not modified with XML profile in case of
+# format-specific issue.
+$f->{FORCE} = 0;
+is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on the same XML profile");
+is($f->{FORCE}, 0, "And the FORCE flag was not modified");
 
 
 =pod
