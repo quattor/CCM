@@ -6,8 +6,7 @@ use Test::More;
 
 use constant MODULES => qw(Fetch CCfg Configuration Path SyncFile
 			   CacheManager Resource Element Stream
-			   Property DB XMLPanProfile JSONProfile
-			   XMLDBProfile);
+			   Property DB XMLPanProfile JSONProfile);
 
 plan tests => scalar(MODULES);
 
