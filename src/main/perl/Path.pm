@@ -76,15 +76,7 @@ get the string representation of path
 
 sub toString {
   my ($self) = @_;
-  my $path ="";
-  if (@$self == 0) {
-    $path = "/";
-  } else {
-    foreach my $ch (@$self) {
-      $path = "$path/$ch";
-    }
-  }
-  return $path;
+  return join('/', '', @$self);
 }
 
 =item up ()
