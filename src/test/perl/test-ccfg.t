@@ -1,19 +1,11 @@
-#!/usr/bin/perl -w
-
 #
-# cache Path.pm test script
+# CCfg test 
 #
-# $Id: test-ccfg.pl,v 1.3 2006/06/26 14:20:43 gcancio Exp $
-#
-# Copyright (c) 2001 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-BEGIN {unshift(@INC,'/usr/lib/perl')};
-
 
 use strict;
-use Test::More qw(no_plan);
+use warnings;
+
+use Test::More;
 use myTest qw (eok);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CCfg qw ();
@@ -35,3 +27,5 @@ is (EDG::WP4::CCM::CCfg::_resolveTags('$host$domain'),$host.$domain, '_resolveTa
 is (EDG::WP4::CCM::CCfg::_resolveTags('$hosthost$domaindomain'),$host."host".$domain."domain", '_resolveTags($hosthost$domaindomain)');
 is (EDG::WP4::CCM::CCfg::_resolveTags('$host$domain$host$domain'),"$host$domain$host$domain", '_resolveTags($host$domain$host$domain)');
 is (EDG::WP4::CCM::CCfg::_resolveTags(':$host/$domain/$host/$domain'),":$host/$domain/$host/$domain", '_resolveTags(:$host/$domain/$host/$domain)');
+
+done_testing();
