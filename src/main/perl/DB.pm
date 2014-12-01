@@ -28,16 +28,31 @@ format, which copes with multiple possible data formats.
 use strict;
 use warnings;
 
+use CAF::FileWriter;
+use CAF::FileReader;
+
 our $default_format = 'DB_File';
 our @db_backends;
+
 BEGIN {
     foreach my $db (qw(DB_File CDB_File GDBM_File)) {
-    	eval " require $db; $db->import "; push(@db_backends, $db) unless $@;
+        eval " require $db; $db->import ";
+        push( @db_backends, $db ) unless $@;
     }
-    if (!scalar @db_backends) {
+    if ( !scalar @db_backends ) {
         die("No backends available for CCM\n");
     }
 }
+
+# test the supported format; returns undef on success
+sub test_supported_format {
+    my $dbformat = shift;
+    if ( !grep { $_ eq $dbformat } @db_backends ) {
+        return ( "unsupported CCM database format '$dbformat': we only support "
+              . join( ", ", @db_backends ) );
+    }
+    return;
+};
 
 =item write ($HASHREF, $PREFIX, $FORMAT)
 
@@ -56,48 +71,54 @@ be returned.
 =cut
 
 sub write {
-    my ($hashref, $prefix, $dbformat) = @_;
+    my ( $hashref, $prefix, $dbformat ) = @_;
+
+    my $supported = test_supported_format($dbformat);
+    return $supported if defined($supported);
 
     my %out;
-    if (!grep { $_ eq $dbformat } @db_backends) {
-        return ("unsupported CCM database format '$dbformat': we only support " . join(", ", @db_backends));
-    }
-    if ($dbformat eq 'DB_File') {
-    	my $d = new DB_File::HASHINFO;
-    	$d->{cachesize} = 102400;
-    	tie(%out, 'DB_File', "${prefix}.db", &O_RDWR|&O_CREAT, 0644, $d)
-        	or return "can't tie $prefix DB: $!";
 
-    } elsif ($dbformat eq 'CDB_File') {
+    my $file = "${prefix}.db";
+    if ( $dbformat eq 'DB_File' ) {
+        my $d = new DB_File::HASHINFO;
+        $d->{cachesize} = 102400;
+        tie( %out, $dbformat, $file, &O_RDWR | &O_CREAT, 0640, $d )
+          or return "can't tie $prefix DB: $!";
+    }
+    elsif ( $dbformat eq 'CDB_File' ) {
         # CDB is write-once, we need to create magically...
-	# We don't tie, instead we'll just do a create using
-	# this hash once the AddPaths have completed
+        # We don't tie, instead we'll just do a create using
+        # this hash once the AddPaths have completed
         ;
-
-    } elsif ($dbformat eq 'GDBM_File') {
-        tie(%out, 'GDBM_File', "${prefix}.db", &GDBM_WRCREAT, 0644)
-            or return "can't tie $prefix DB: $!";
     }
+    elsif ( $dbformat eq 'GDBM_File' ) {
+        my $d = tie( %out, $dbformat, $file, &GDBM_WRCREAT, 0640);
+        return "can't tie $prefix DB: $!" if (! $d);
+        # Default 100 seems ok
+        #GDBM_File::setopt($d, &GDBM_CACHESIZE, 100, 1);    
+    }
+
     # Okay, so now we're tied, copy across.
-    if ($dbformat eq 'CDB_File') {
+    if ( $dbformat eq 'CDB_File' ) {
         eval {
-            unlink("$prefix.tmp"); # ignore return code; we don't care
-            CDB_File::create(%$hashref, "${prefix}.db", "${prefix}.tmp");
+            unlink("$prefix.tmp");    # ignore return code; we don't care
+            CDB_File::create( %$hashref, "${prefix}.db", "${prefix}.tmp" );
         };
         if ($@) {
             return "creating CDB $prefix failed: $@";
         }
-    } else {
+    }
+    else {
         %out = %$hashref;
         untie(%out) or return "can't untie path2eid DB: $!";
     }
-    open(OUT, ">${prefix}.fmt") or return "can't set format: $!";
-    print OUT "$dbformat\n";
-    close(OUT);
-
+    
+    my $fh = CAF::FileWriter->new("${prefix}.fmt");
+    print $fh "$dbformat\n";
+    $fh->close();
+    
     return undef;
 }
-
 
 =item read ($HASHREF, $PREFIX)
 
@@ -114,33 +135,35 @@ the HASHREF will be tied to the specified database.
 =cut
 
 sub read {
-    my ($hashref, $prefix) = @_;
-    my $dbformat = $default_format;
-    if (open(FMT, "${prefix}.fmt")) {
-        $dbformat = <FMT>;
-        chomp($dbformat);
-        close(FMT);
-    }
-    if (!grep { $_ eq $dbformat } @db_backends) {
-        return ("unsupported CCM database format '$dbformat': we only support " . join(", ", @db_backends));
-    }
+    my ( $hashref, $prefix ) = @_;
+
+    my $fh = CAF::FileReader->new("${prefix}.fmt");
+    my $dbformat = "$fh" || $default_format;
+    $fh->close();
+    chomp($dbformat);
+ 
+    my $supported = test_supported_format($dbformat);
+    return $supported if defined($supported);
+
     my $file = "${prefix}.db";
-    if ($dbformat eq 'DB_File') {
-        if(!tie(%$hashref, $dbformat, $file, &O_RDONLY, 0640)) {
+    if ( $dbformat eq 'DB_File' ) {
+        if ( !tie( %$hashref, $dbformat, $file, &O_RDONLY, 0640 ) ) {
             return "failed to open $dbformat $file: $!";
         }
-    } elsif ($dbformat eq 'CDB_File') {
-        if (!tie(%$hashref, $dbformat, $file)) {
+    }
+    elsif ( $dbformat eq 'CDB_File' ) {
+        if ( !tie( %$hashref, $dbformat, $file ) ) {
             return "failed to open $dbformat $file: $!";
         }
-    } elsif ($dbformat eq 'GDBM_File') {
-        if(!tie(%$hashref, $dbformat, $file, GDBM_READER, 0640)) {
-            return "failed to open $dbformat $file: $!";
-        }
+    }
+    elsif ( $dbformat eq 'GDBM_File' ) {
+        my $d = tie( %$hashref, $dbformat, $file, &GDBM_READER, 0640);
+        return "failed to open $dbformat $file: $!" if (! $d);
+        # Default 100 seems ok
+        # GDBM_File::setopt($d, &GDBM_CACHESIZE, 100, 1);    
     }
 
     return undef;
 }
 
 1;
-
