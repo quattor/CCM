@@ -52,3 +52,5 @@ ok ($path->up() && ($path->toString() eq "/"), "$path->up()");
 ok ($path->down("b") && ($path->toString() eq "/b"), '$path->down("b")');
 eok ($ec, $path->down("/b"), '$path->down("/b")');
 eok ($ec, $path->down(""), '$path->down("")');
+
+done_testing();
