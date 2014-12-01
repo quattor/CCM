@@ -1,11 +1,13 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package      EDG::WP4::CCM::CCfg;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use Net::Domain qw(hostname hostdomain);
 

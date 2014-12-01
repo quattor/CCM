@@ -30,6 +30,8 @@ well as foreign node profiles.
 =cut
 
 use strict;
+use warnings;
+
 use Getopt::Long;
 use EDG::WP4::CCM::CCfg qw(getCfgValue);
 use EDG::WP4::CCM::DB;

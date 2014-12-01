@@ -359,3 +359,4 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
+

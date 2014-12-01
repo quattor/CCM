@@ -6,6 +6,8 @@
 package      EDG::WP4::CCM::Path;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use parent qw(Exporter);
 

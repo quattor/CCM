@@ -1,11 +1,13 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package      EDG::WP4::CCM::Configuration;
 
 use strict;
+use warnings;
+
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CacheManager qw ($CURRENT_CID_FN);

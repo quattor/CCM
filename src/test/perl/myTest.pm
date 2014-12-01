@@ -10,6 +10,8 @@
 package   myTest;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use Test::More;# qw (ok);
 

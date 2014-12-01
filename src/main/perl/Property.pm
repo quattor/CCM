@@ -1,11 +1,13 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package EDG::WP4::CCM::Property;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use LC::File qw (file_contents);
 use EDG::WP4::CCM::Stream;

@@ -28,6 +28,7 @@ This module has only one method for the outside world:
 
 use strict;
 use warnings;
+
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 
 use constant INTERPRETERS => {

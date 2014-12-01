@@ -1,11 +1,13 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package      EDG::WP4::CCM::SyncFile;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CCfg qw(getCfgValue);
 

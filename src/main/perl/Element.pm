@@ -1,11 +1,13 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package EDG::WP4::CCM::Element;
 
 use strict;
+use warnings;
+
 use DB_File;
 use File::Spec;
 use Encode qw(decode_utf8);
