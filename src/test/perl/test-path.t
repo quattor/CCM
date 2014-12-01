@@ -5,7 +5,9 @@
 #
 
 use strict;
-use Test::More qw(no_plan);
+use warnings;
+
+use Test::More;
 use myTest qw (eok);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::Path qw ();
