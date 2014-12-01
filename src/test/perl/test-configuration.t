@@ -1,42 +1,51 @@
-#!/usr/bin/perl -w
-
 #
 # cache Configuration.pm test script
 #
-# $Id: test-configuration.pl,v 1.11 2008/03/11 17:03:18 munoz Exp $
-#
-# Copyright (c) 2001 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-BEGIN {unshift(@INC,'/usr/lib/perl')};
-
 
 use strict;
+use warnings;
+
 use POSIX qw (getpid);
-use Test::More qw(no_plan);
+use Test::More;
 use myTest qw (eok);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 
 				      $CURRENT_CID_FN $LATEST_CID_FN);
 use EDG::WP4::CCM::Configuration;
+use Cwd;
 
-my $cp = "/tmp/c-test";
+my $ec = LC::Exception::Context->new->will_store_errors;
+
+
+sub make_file {
+    my ($fn, $data) = @_;
+    open(my $fh, ">", $fn);
+    print $fh $data if (defined($data));
+    close($fh);
+}
+
+my $cptmp = getcwd()."/target/tmp";
+my $cp = "$cptmp/cm-test";
+
 my $ccidfn = "$cp/$CURRENT_CID_FN";
 my $lcidfn = "$cp/$LATEST_CID_FN";
 
-{
 
-`rm -rf $cp`;
-`mkdir $cp`;
-`mkdir $cp/$DATA_DN`;
+mkdir($cptmp) if (! -d $cptmp);
+mkdir($cp);
+ok(-d $cp, "cache manager test dir $cp exists.");
 
-`echo 'no' > $cp/$GLOBAL_LOCK_FN`;
-`echo '2' > $ccidfn`;
-`echo '2' > $lcidfn`;
+mkdir("$cp/$DATA_DN");
+ok(-d "$cp/$DATA_DN", "cache manager DATA_DN $cp/$DATA_DN exists.");
 
-`mkdir $cp/profile.1`;
-`mkdir $cp/profile.2`;
+make_file("$cp/$GLOBAL_LOCK_FN", "no\n");
+make_file("$ccidfn", "2\n");
+make_file("$lcidfn", "2\n");
+
+mkdir("$cp/profile.1");
+mkdir("$cp/profile.2");
+ok(-d "$cp/profile.1", "cache manager profile.1 dir exists.");
+ok(-d "$cp/profile.2", "cache manager profile.1 dir exists.");
 
 my $cfgl;
 my $cfgu;
@@ -50,12 +59,13 @@ ok (EDG::WP4::CCM::Configuration::_touch_file("$cp/tf"),
 unlink ("$cp/tf");
 
 
-my $self = {"cid" => 1,
-	    "locked" => 1,
-	    "cache_path" => $cp,
-	    "cfg_path" => "$cp/profile.1",
-	    "cache_manager" => $cm
-	   };
+my $self = {
+    "cid" => 1,
+    "locked" => 1,
+    "cache_path" => $cp,
+    "cfg_path" => "$cp/profile.1",
+    "cache_manager" => $cm
+    };
 
 my $tpf1 = "$cp/profile.1/ccm-active-profile.1-".getpid();
 ok (EDG::WP4::CCM::Configuration::_create_pid_file($self),
@@ -104,5 +114,4 @@ $cfgu = ();
 ok (!-f "$cp/profile.2/active.".getpid(), 
     "cfg2 = undef && !-f $cp/profile.2/active.".getpid());
 
-}
-#`rm -rf $cp`;
+done_testing();
