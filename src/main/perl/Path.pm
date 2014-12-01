@@ -51,13 +51,20 @@ sub new {
     unless ( defined($path) ) {
         $path = "/";
     }
-    unless ( $path =~ /^\// && !( $path =~ /^(\/(\/)+)/ ) ) {
-        throw_error("path must be an absolute path");
+    
+    my @s = split( '/', $path, -1 );
+    my $start = shift @s;
+
+    # remove trailing /
+    my $end = pop @s;
+    push(@s, $end) if (defined($end) && $end ne '');
+
+    # must start with /, but not with //+
+    unless (defined($start) && $start eq '' && ( !@s || $s[0] ne '') ) {
+        throw_error("path $path must be an absolute path: start '".($start || '')."', remainder ".join(' / ', @s));
         return ();
     }
-    $path =~ s/^\///;
-    $path =~ s/\/$//;
-    my @s = split( /\//, $path );
+
     my $self = \@s;
     bless( $self, $class );
     return $self;
@@ -71,7 +78,7 @@ get the string representation of path
 
 sub toString {
     my ($self) = @_;
-    return join( '/', '', @$self );
+    return "/" . join( '/', @$self );
 }
 
 =item up ()

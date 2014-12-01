@@ -3,13 +3,6 @@
 #
 # cache Path.pm test script
 #
-# $Id: test-path.pl,v 1.5 2006/06/26 14:20:43 gcancio Exp $
-#
-# Copyright (c) 2001 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-BEGIN {unshift(@INC,'/usr/lib/perl')};
 
 use strict;
 use Test::More qw(no_plan);
@@ -46,6 +39,7 @@ is ($path->toString(), "/a", "$path->toString()");
 ok ($path = EDG::WP4::CCM::Path->new("/a/b/c"),
     'EDG::WP4::CCM::Path->new("/a/b/c")');
 is ($path->toString(), "/a/b/c", "$path->toString()");
+is_deeply($path, ['a', 'b', 'c'], "Correct array reference");
 
 ok ($path = EDG::WP4::CCM::Path->new("/a/b/c/"),
     'EDG::WP4::CCM::Path->new("/a/b/c/")');
