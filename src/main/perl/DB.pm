@@ -183,7 +183,7 @@ Open the database file named by the prefix (the prefix
 is the full filename, without any extension). The format
 of the database file will be determined by reading the
 file ${PREFIX}.fmt. If that file does not exist, then
-GDBM_File will be used as a default.
+DB_File will be used as a default.
 
 The routine will return an error message if there
 is a failure, else undef. If there is no errror, then
