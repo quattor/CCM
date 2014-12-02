@@ -107,6 +107,7 @@ sub _DB_GDBM_File {
     if ($tie) {
         if ($mode eq 'write') {
             %out = %$hashref;
+            $tie = undef; # avoid "untie attempted while 1 inner references still exist" warnings
             untie(%out) or return "can't untie $dbformat $file: $!";
         }
         return;
