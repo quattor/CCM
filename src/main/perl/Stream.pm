@@ -29,13 +29,11 @@ EDG::WP4::CCM::Stream - Stream class
 =head1 DESCRIPTION
 
 The class Stream helps the user to read large files using a stream
-of data. The user can control the blok size as well.
+of data. The user can control the block size as well.
 
 =over
 
 =cut
-
-# ------------------------------------------------------
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
@@ -46,38 +44,39 @@ my $ec = LC::Exception::Context->new->will_store_errors;
 # Manager object where to cache the file. The $url parameter is the URL
 # address of the file to stream.
 #
+
 sub new ($$) {
 
     my $proto = shift;
     my $class = ref($proto) || $proto;
-    my ($cm, $url);
+    my ( $cm, $url );
     my $self = {};
 
-    if (@_ != 2) {
-        throw_error ("usage: Stream->new(CacheManager, URL)");
-	return();
+    if ( @_ != 2 ) {
+        throw_error("usage: Stream->new(CacheManager, URL)");
+        return ();
     }
 
     $cm = shift;
-    if (!UNIVERSAL::isa($cm, "EDG::WP4::CCM::CacheManager")) {
-        throw_error ("usage: Stream->new(CacheManager, URL)");
-	return();
+    if ( !UNIVERSAL::isa( $cm, "EDG::WP4::CCM::CacheManager" ) ) {
+        throw_error("usage: Stream->new(CacheManager, URL)");
+        return ();
     }
 
     $url = shift;
 
     my $fn = $cm->cacheFile($url);
     unless ($fn) {
-        throw_error ("$cm->cacheFile($url)", $ec->error);
-        return();
+        throw_error( "$cm->cacheFile($url)", $ec->error );
+        return ();
     }
 
-    $self->{FILE_NAME}	= $fn;	# cached file name
-    $self->{SYSBUFSIZE}	= 8192;	# default buff size
-    $self->{OFFSET}	= 0;
-    $self->{CLOSED}	= 0;
+    $self->{FILE_NAME}  = $fn;     # cached file name
+    $self->{SYSBUFSIZE} = 8192;    # default buff size
+    $self->{OFFSET}     = 0;
+    $self->{CLOSED}     = 0;
 
-    bless ($self, $class);
+    bless( $self, $class );
     return $self;
 
 }
@@ -87,11 +86,12 @@ sub new ($$) {
 Set the default buffer size to $buf_size
 
 =cut
+
 sub setDefaultBufSize {
 
-    my($self, $size) = @_;
+    my ( $self, $size ) = @_;
     $self->{SYSBUFSIZE} = $size;
-    return($self->{SYSBUFSIZE});
+    return ( $self->{SYSBUFSIZE} );
 
 }
 
@@ -101,48 +101,50 @@ Get a block of size $buf_size from file. If you do not specify a buffer
 size, the default buffer size will be used.
 
 =cut
+
 sub getBlock {
 
-    my($self) = shift;
+    my ($self) = shift;
 
-    my($buff, $buff_size, $n_bytes);
-    local(*FH);
+    my ( $buff, $buff_size, $n_bytes );
+    local (*FH);
 
-    if (@_ == 1) {
+    if ( @_ == 1 ) {
         $buff_size = shift;
-    } else {
-        $buff_size = $self->{SYSBUFSIZE};	# use default buf. size
+    }
+    else {
+        $buff_size = $self->{SYSBUFSIZE};    # use default buf. size
     }
 
-    if ($self->{CLOSED}) {
-	throw_error("file $self->{FILE_NAME} is closed");
-	return();
+    if ( $self->{CLOSED} ) {
+        throw_error("file $self->{FILE_NAME} is closed");
+        return ();
     }
 
-    unless (open(FH, "<" . $self->{FILE_NAME})) {
-	throw_error("open($self->{FILE_NAME})", $!);
-	return();
+    unless ( open( FH, "<" . $self->{FILE_NAME} ) ) {
+        throw_error( "open($self->{FILE_NAME})", $! );
+        return ();
     }
     binmode(FH);
 
     $buff = "";
-    $n_bytes = read(FH, $buff, $buff_size, $self->{OFFSET});
-    unless (defined($n_bytes)) {
-	throw_error("read($self->{FILE_NAME})", $!);
-	return();
+    $n_bytes = read( FH, $buff, $buff_size, $self->{OFFSET} );
+    unless ( defined($n_bytes) ) {
+        throw_error( "read($self->{FILE_NAME})", $! );
+        return ();
     }
 
     $self->{OFFSET} += $n_bytes;
-    if( eof(FH) ) {
+    if ( eof(FH) ) {
         $self->{CLOSED} = 1;
     }
 
-    unless (close(FH)) {
-	throw_error("close($self->{FILE_NAME})", $!);
-	return();
+    unless ( close(FH) ) {
+        throw_error( "close($self->{FILE_NAME})", $! );
+        return ();
     }
 
-    return($buff);
+    return ($buff);
 
 }
 
@@ -151,6 +153,7 @@ sub getBlock {
 Return true if the stream has been closed
 
 =cut
+
 sub isClosed () {
 
     my ($self) = shift;
@@ -158,23 +161,4 @@ sub isClosed () {
 
 }
 
-
-# ------------------------------------------------------
-
 1;
-
-__END__
-
-
-=back
-
-=head1 AUTHOR
-
-Piotr Poznanski <Piotr.Poznanski@cern.ch>
-Rafael A. Garcia Leiva <angel.leiva@uam.es>
-
-=head1 VERSION
-
-$Id: Stream.pm.cin,v 1.1 2005/01/26 10:09:52 gcancio Exp $
-
-=cut
