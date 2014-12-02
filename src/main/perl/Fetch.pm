@@ -315,6 +315,7 @@ sub download {
 
     foreach my $u ( ( $url, $self->{ uc($type) . "_FAILOVER" } ) )
     {
+        next if (! defined($u));
         for my $i ( 1 .. $self->{RETRIEVE_RETRIES} ) {
             my $rt = $self->retrieve( $u, $cache, $st[ST_MTIME] );
             return $rt if defined($rt);
@@ -341,18 +342,14 @@ sub previous {
         $ret{cid}->print("0\n");
     }
     $ret{cid} =~ m{^(\d+)\n?$} or die "Invalid CID: $ret{cid}";
+
     $dir = "$self->{CACHE_ROOT}/profile.$1";
     $ret{url} = CAF::FileEditor->new( "$dir/profile.url", log => $self );
     $ret{url}->cancel();
     chomp( $ret{url} );
-    $ret{context_url} =
-      CAF::FileEditor->new( "$dir/context.url", log => $self );
-    $ret{profile} = CAF::FileEditor->new( "$dir/profile.xml", log => $self );
 
-    # We want to read this stuff in a variety of ways, but we *don't*
-    # want it written back or modified in disk!!
-    $ret{profile}->cancel();
-    $ret{context_url}->cancel();
+    $ret{context_url} = CAF::FileReader->new( "$dir/context.url", log => $self );
+    $ret{profile} = CAF::FileReader->new( "$dir/profile.xml", log => $self );
 
     return %ret;
 }
