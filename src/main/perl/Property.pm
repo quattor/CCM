@@ -56,13 +56,13 @@ sub new {
     my $self = $class->SUPER::new(@_);
 
     # check that element it is a property
-    if (!$self->isProperty()) {
+    if ( !$self->isProperty() ) {
         throw_error("element is not of type property");
-        return();
+        return ();
     }
 
-    bless($self, $class);
-    return($self);
+    bless( $self, $class );
+    return ($self);
 
 }
 
@@ -72,17 +72,17 @@ Return the property's string value,
 raising an exception if the value is not an string or fetch
 
 =cut
+
 sub getStringValue {
 
-  my $self = shift;
+    my $self = shift;
 
-  if ($self->isType($self->STRING)) {
-    return($self->{VALUE});
-  }
-  throw_error("property is not of type STRING");
-  return();
+    if ( $self->isType( $self->STRING ) ) {
+        return ( $self->{VALUE} );
+    }
+    throw_error("property is not of type STRING");
+    return ();
 }
-
 
 =item getDoubleValue()
 
@@ -90,17 +90,18 @@ Return the property's double value,
 raising an exception if the value is not a double
 
 =cut
+
 sub getDoubleValue {
 
     my $self = shift;
 
     # check that resource is of type double
-    if (!$self->isType($self->DOUBLE)) {
+    if ( !$self->isType( $self->DOUBLE ) ) {
         throw_error("property is not of type DOUBLE");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ( $self->{VALUE} );
 
 }
 
@@ -110,17 +111,18 @@ Return the property's long value,
 raising an exception if the value is not a long
 
 =cut
+
 sub getLongValue {
 
     my $self = shift;
 
     # check that resource is of type long
-    if (!$self->isType($self->LONG)) {
+    if ( !$self->isType( $self->LONG ) ) {
         throw_error("property is not of type LONG");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ( $self->{VALUE} );
 
 }
 
@@ -130,31 +132,18 @@ Return the property's boolean value,
 raising an exception if the value is not a boolean
 
 =cut
+
 sub getBooleanValue {
 
     my $self = shift;
-
     # check that resource is of type boolean
-    if (!$self->isType($self->BOOLEAN)) {
+    if ( !$self->isType( $self->BOOLEAN ) ) {
         throw_error("property is not of type BOOLEAN");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ( $self->{VALUE} );
 
 }
 
-__END__
-
-=back
-
-=head1 AUTHOR
-
-Rafael A. Garcia Leiva <angel.leiva@uam.es>
-Universidad Autonoma de Madrid
-
-=head1 VERSION
-
-${project.version}
-
-=cut
+1;
