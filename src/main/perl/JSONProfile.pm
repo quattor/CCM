@@ -34,45 +34,38 @@ use JSON::XS;
 
 $SIG{__DIE__} = \&confess;
 
-
 # Warns in case a tag in the XML profile is not known (i.e, has not a
 # valid entry in the INTERPRETERS hash.
-sub warn_unknown
-{
-    my ($content, $tag) = @_;
+sub warn_unknown {
+    my ( $content, $tag ) = @_;
 
     warn "Cannot handle tag $tag!";
 }
 
-
 # Turns an nlist in the XML into a Perl hash reference with all the
 # types and metadata from the profile.
-sub interpret_nlist
-{
-    my ($class, $tag, $content) = @_;
+sub interpret_nlist {
+    my ( $class, $tag, $content ) = @_;
 
     my $nl = {};
 
     my $h;
 
-
-    while (my ($k, $v) = each(%$content)) {
-	$nl->{$k} = $class->interpret_node($k, $v);
+    while ( my ( $k, $v ) = each(%$content) ) {
+        $nl->{$k} = $class->interpret_node( $k, $v );
     }
     return $nl;
 }
 
-
 # Turns a list in the profile into a perl array reference in which all
 # the elements have the correct metadata associated.
-sub interpret_list
-{
-    my ($class, $tag, $doc) = @_;
+sub interpret_list {
+    my ( $class, $tag, $doc ) = @_;
 
     my $l = [];
 
     foreach my $i (@$doc) {
-	push(@$l, $class->interpret_node(undef, $i));
+        push( @$l, $class->interpret_node( undef, $i ) );
     }
 
     return $l;
@@ -97,28 +90,31 @@ stringification/numification.
 
 =cut
 
-sub interpret_node
-{
-    my ($class, $tag, $doc) = @_;
+sub interpret_node {
+    my ( $class, $tag, $doc ) = @_;
 
     my $r = ref($doc);
 
     my $v = {};
     $v->{NAME} = $tag if $tag;
-    if (!$r) {
-	$v->{VALUE} = $doc;
-	$v->{TYPE} = 'string';
-    } elsif ($r eq 'HASH') {
-	$v->{TYPE} = 'nlist';
-	$v->{VALUE} = $class->interpret_nlist($tag, $doc);
-    } elsif ($r eq 'ARRAY') {
-	$v->{TYPE} = 'list';
-	$v->{VALUE} = $class->interpret_list($tag, $doc);
-    } elsif (JSON::XS::is_bool($doc)) {
-	$v->{TYPE} = "boolean";
-	$v->{VALUE} = $doc ? "true" : "false";
-    } else {
-	die "Unknown ref type ($r) for JSON document $doc, on $tag";
+    if ( !$r ) {
+        $v->{VALUE} = $doc;
+        $v->{TYPE}  = 'string';
+    }
+    elsif ( $r eq 'HASH' ) {
+        $v->{TYPE} = 'nlist';
+        $v->{VALUE} = $class->interpret_nlist( $tag, $doc );
+    }
+    elsif ( $r eq 'ARRAY' ) {
+        $v->{TYPE} = 'list';
+        $v->{VALUE} = $class->interpret_list( $tag, $doc );
+    }
+    elsif ( JSON::XS::is_bool($doc) ) {
+        $v->{TYPE} = "boolean";
+        $v->{VALUE} = $doc ? "true" : "false";
+    }
+    else {
+        die "Unknown ref type ($r) for JSON document $doc, on $tag";
     }
 
     $v->{CHECKSUM} = ComputeChecksum($v);
