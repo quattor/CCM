@@ -11,7 +11,6 @@ use warnings;
 use LC::Exception qw(SUCCESS throw_error);
 use parent qw(EDG::WP4::CCM::Element);
 
-
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 =head1 NAME
@@ -38,7 +37,6 @@ tree.
 
 =cut
 
-
 =item new($config, $res_path)
 
 Create new Resource object. The $config parameter is a Configuration
@@ -51,20 +49,20 @@ sub new {
 
     my $proto = shift;
     my $class = ref($proto) || $proto;
-    my $self = $class->SUPER::new(@_);
+    my $self  = $class->SUPER::new(@_);
 
     # check that element it is really a resource
-    if (!$self->isResource()) {
+    if ( !$self->isResource() ) {
         throw_error("element is not of type Resource");
-        return();
+        return ();
     }
 
     # initialize list of elements
-    $self->{ELEMENTS} = [split( /\x0/, $self->{VALUE} )];
+    $self->{ELEMENTS} = [ split( /\x0/, $self->{VALUE} ) ];
 
-    $self->{CURRENT}  = -1;
+    $self->{CURRENT} = -1;
 
-    bless($self, $class);
+    bless( $self, $class );
     return $self;
 
 }
@@ -78,38 +76,40 @@ This method is not a part of the NVA-API specification, it may be a
 subject to change.
 
 =cut
+
 sub getHash {
 
     my $self = shift;
-    my (%hash, $path, $el_path, $ele, $i, $name);
+    my ( %hash, $path, $el_path, $ele, $i, $name );
 
     # check that the resource type is nlist
-    if (!$self->isType($self->NLIST)) {
+    if ( !$self->isType( $self->NLIST ) ) {
         throw_error("resource is not of type NLIST");
-        return();
+        return ();
     }
 
     # from the list of names $self->{ELEMENTS}
     # create a hash of Elements objects indexed by name
 
     $path = $self->{PATH}->toString();
-    for ($i=0 ; $i<=($#{$self->{ELEMENTS}}) ; $i++) {
-    	$name = $self->{ELEMENTS}[$i];
-	if ($path eq "/") {
-	    $el_path = $path . $name;
-	} else {
-    	    $el_path = $path . "/" . $name;
-	}
-        $ele = EDG::WP4::CCM::Element->createElement(
-	                                 $self->{CONFIG}, $el_path);
+    for ( $i = 0 ; $i <= ( $#{ $self->{ELEMENTS} } ) ; $i++ ) {
+        $name = $self->{ELEMENTS}[$i];
+        if ( $path eq "/" ) {
+            $el_path = $path . $name;
+        }
+        else {
+            $el_path = $path . "/" . $name;
+        }
+        $ele =
+          EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
         unless ($ele) {
-            throw_error ("failed to create element $el_path)", $ec->error);
-            return();
+            throw_error( "failed to create element $el_path)", $ec->error );
+            return ();
         }
         $hash{$name} = $ele;
     }
 
-    return(%hash);
+    return (%hash);
 
 }
 
@@ -122,41 +122,41 @@ This method is not a part of the NVA-API specification, it may be a
 subject to change.
 
 =cut
+
 sub getList {
 
     my $self = shift;
-    my (@array, $path, $el_path, $ele, $i);
+    my ( @array, $path, $el_path, $ele, $i );
 
     # check that the resource type is list
-    if (!$self->isType($self->LIST)) {
+    if ( !$self->isType( $self->LIST ) ) {
         throw_error("resource is not of type LIST");
-        return();
+        return ();
     }
 
     # from the list of names $self->{ELEMENTS}
     # create an array of Elements objects
 
     $path = $self->{PATH}->toString();
-    for ($i=0 ; $i<=($#{$self->{ELEMENTS}}) ; $i++) {
-    	if ($path eq "/") {
-	    $el_path = $path . $i;
-	} else {
-    	    $el_path = $path . "/" . $i;
-	}
-        $ele = EDG::WP4::CCM::Element->createElement(
-	                                 $self->{CONFIG}, $el_path);
-	unless ($ele) {
-            throw_error ("failed to create element $el_path", $ec->error);
-            return();
+    for ( $i = 0 ; $i <= ( $#{ $self->{ELEMENTS} } ) ; $i++ ) {
+        if ( $path eq "/" ) {
+            $el_path = $path . $i;
+        }
+        else {
+            $el_path = $path . "/" . $i;
+        }
+        $ele =
+          EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
+        unless ($ele) {
+            throw_error( "failed to create element $el_path", $ec->error );
+            return ();
         }
         $array[$i] = $ele;
     }
 
-    return(@array);
+    return (@array);
 
 }
-
-
 
 =item hasNextElement()
 
@@ -164,15 +164,16 @@ Return true if the iteration through Resource has
 more elements, otherwise returns false
 
 =cut
+
 sub hasNextElement {
 
     my $self = shift;
 
-    if( $self->{CURRENT} < $#{$self->{ELEMENTS}} ) {
-        return(SUCCESS);
+    if ( $self->{CURRENT} < $#{ $self->{ELEMENTS} } ) {
+        return (SUCCESS);
     }
 
-    return();
+    return ();
 
 }
 
@@ -181,14 +182,15 @@ sub hasNextElement {
 Return the next element in the iteration
 
 =cut
+
 sub getNextElement {
 
     my $self = shift;
     my $element;
 
-    if (!$self->hasNextElement()) {
-        throw_error ("property has no more elements", $ec->error);
-        return();
+    if ( !$self->hasNextElement() ) {
+        throw_error( "property has no more elements", $ec->error );
+        return ();
     }
     $self->{CURRENT}++;
     $element = $self->getCurrentElement();
@@ -203,54 +205,34 @@ Return current element in the iteration. This is the element
 that was returned by the last call of getNextElement()
 
 =cut
+
 sub getCurrentElement {
 
     my $self = shift;
-    my ($element, @elements, $path, $el_path);
+    my ( $element, @elements, $path, $el_path );
 
-    if ($self->{CURRENT} == -1) {
-        throw_error ("no current element available", $ec->error);
-        return();
+    if ( $self->{CURRENT} == -1 ) {
+        throw_error( "no current element available", $ec->error );
+        return ();
     }
 
     $path = $self->{PATH}->toString();
-    if ($path eq "/") {
-        $el_path = $path . $self->{ELEMENTS}[$self->{CURRENT}];
-    } else {
-        $el_path = $path . "/" . $self->{ELEMENTS}[$self->{CURRENT}];
+    if ( $path eq "/" ) {
+        $el_path = $path . $self->{ELEMENTS}[ $self->{CURRENT} ];
+    }
+    else {
+        $el_path = $path . "/" . $self->{ELEMENTS}[ $self->{CURRENT} ];
     }
     $element =
-        EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
+      EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
     unless ($element) {
-        throw_error ("failed to create element $el_path", $ec->error);
-        return();
+        throw_error( "failed to create element $el_path", $ec->error );
+        return ();
     }
-
 
     return $element;
 
 }
-
-#=item currentElementName()
-#
-#Return the name of the current element in the iteration
-#
-#=cut
-#sub currentElementName {
-#
-#    my $self = shift;
-#    my $name;
-#
-#    if ($self->{CURRENT} == -1) {
-#        throw_error ("no current element available", $ec->error);
-#        return();
-#    }
-#
-#    $name = $self->{ELEMENTS}[$self->{CURRENT}];
-#
-#    return $name;
-#
-#}
 
 =item reset()
 
@@ -258,27 +240,15 @@ Reset the iteration. After this operation being called,
 getNextElement() will return first element in the iteration
 
 =cut
+
 sub reset {
 
     my $self = shift;
 
     $self->{CURRENT} = -1;
 
-    return(SUCCESS);
+    return (SUCCESS);
 
 }
 
-__END__
-
-=back
-
-=head1 AUTHOR
-
-Rafael A. Garcia Leiva <angel.leiva@uam.es>
-Universidad Autonoma de Madrid
-
-=head1 VERSION
-
-${project.version}
-
-=cut
+1;

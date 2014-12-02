@@ -1,21 +1,14 @@
-#!/usr/bin/perl -w
-
 #
 # test-resource.pl	Test class Resource
 #
-# $Id: test-resource.pl,v 1.9 2006/06/26 13:44:58 gcancio Exp $
-#
-# Copyright (c) 2003 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-BEGIN {unshift(@INC,'/usr/lib/perl')};
 
 use strict;
+use warnings;
+
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::Simple tests => 41;
+use Test::Simple tests => 42;
 use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
@@ -24,6 +17,8 @@ use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Resource;
 use EDG::WP4::CCM::Path;
+
+use myTest qw (eok make_file);
 
 my ($resource, $path, $string, $type);
 my ($derivation, $checksum, $description, $value);
@@ -34,19 +29,11 @@ my $tmp;
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-# TODO: Use Test::More and t::Test
+use Cwd;
+my $cdtmp = getcwd()."/target/tmp";
+mkdir($cdtmp) if (! -d $cdtmp);
 
-sub eok ($$$) {
-  my ($cec, $result, $descr) = @_;
-  unless ($result) {
-    if ($cec->error) {
-      ok (1, "exception: $descr");
-      $cec->ignore_error();
-      return SUCCESS;
-    }
-  }
-  ok (0, "exception: $descr");
-}
+# TODO: Use Test::More and t::Test
 
 #
 # Generate an example of DBM file
@@ -57,27 +44,19 @@ sub gen_dbm ($$) {
     my (%hash);
     my ($key, $val, $active);
 
-    # remove previous cache dir
-
-    if ( $cache_dir eq "" ) {
-        return ();
-    }
-    `rm -rf $cache_dir`;
-
     # create new profile
+    mkdir("$cache_dir");
+    mkdir("$cache_dir/$profile");
+    mkdir("$cache_dir/$DATA_DN");
 
-   `mkdir $cache_dir`;
-   `mkdir $cache_dir/$profile`;
-   `mkdir $cache_dir/$DATA_DN`;
-
-   `echo 'no' > $cache_dir/$GLOBAL_LOCK_FN`;
-   `echo '1' > $cache_dir/$CURRENT_CID_FN`;
-   `echo '1' > $cache_dir/$LATEST_CID_FN`;
+    make_file("$cache_dir/$GLOBAL_LOCK_FN", "no\n");
+    make_file("$cache_dir/$CURRENT_CID_FN", "1\n");
+    make_file("$cache_dir/$LATEST_CID_FN", "1\n");
 
     $active = $profile . "/active." . getpid();
-   `echo '1' > $cache_dir/$active`;
+    make_file("$cache_dir/$active", "1\n");
 
-   tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
         &O_RDWR|&O_CREAT, 0644) or return();
 
     $key = "/path/to/list";
@@ -222,9 +201,9 @@ sub gen_dbm ($$) {
 #
 # Perform tests
 #
-
-$cache_dir = "/tmp/e_test";
-$profile   = "profile.1";
+$cache_dir = "$cdtmp/cm-element-test";
+$profile = "profile.1";
+ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 
 # create profile
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
