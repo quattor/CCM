@@ -21,7 +21,7 @@ BEGIN{
 
  @ISA       = qw(Exporter);
  @EXPORT    = qw();           
- @EXPORT_OK = qw(eok);
+ @EXPORT_OK = qw(eok make_file);
  $VERSION   = 1.00;        
 }
 
@@ -38,6 +38,13 @@ sub eok ($$$) {
     }
   } 
   ok (0, "exception: $descr");
+}
+
+sub make_file {
+    my ($fn, $data) = @_;
+    open(my $fh, ">", $fn);
+    print $fh $data if (defined($data));
+    close($fh);
 }
 
 1;

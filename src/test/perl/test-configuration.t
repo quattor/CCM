@@ -7,7 +7,7 @@ use warnings;
 
 use POSIX qw (getpid);
 use Test::More;
-use myTest qw (eok);
+use myTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 
 				      $CURRENT_CID_FN $LATEST_CID_FN);
@@ -15,14 +15,6 @@ use EDG::WP4::CCM::Configuration;
 use Cwd;
 
 my $ec = LC::Exception::Context->new->will_store_errors;
-
-
-sub make_file {
-    my ($fn, $data) = @_;
-    open(my $fh, ">", $fn);
-    print $fh $data if (defined($data));
-    close($fh);
-}
 
 my $cptmp = getcwd()."/target/tmp";
 my $cp = "$cptmp/cm-test";

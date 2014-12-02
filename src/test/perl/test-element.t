@@ -18,12 +18,7 @@ use EDG::WP4::CCM::Path;
 
 use Cwd;
 
-sub make_file {
-    my ($fn, $data) = @_;
-    open(my $fh, ">", $fn);
-    print $fh $data if (defined($data));
-    close($fh);
-}
+use myTest qw(make_file);
 
 my $cdtmp = getcwd()."/target/tmp";
 mkdir($cdtmp) if (! -d $cdtmp);

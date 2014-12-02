@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use myTest qw (eok);
+use myTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
 use LC::File qw (differ);
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 
@@ -20,13 +20,6 @@ use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
 use EDG::WP4::CCM::SyncFile qw ();
 
 use Cwd;
-
-sub make_file {
-    my ($fn, $data) = @_;
-    open(my $fh, ">", $fn);
-    print $fh $data if (defined($data));
-    close($fh);
-}
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 my $cptmp = getcwd()."/target/tmp";
