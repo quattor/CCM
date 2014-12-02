@@ -54,6 +54,94 @@ sub test_supported_format {
     return;
 };
 
+# Init handlers
+sub _init_DB_File_read {
+    return &O_RDONLY;
+};    
+
+sub _init_DB_File_write {
+    my $d = new DB_File::HASHINFO;
+    $d->{cachesize} = 102400;
+    return &O_RDWR | &O_CREAT, $d;
+};    
+
+sub _post_tie_DB_File {
+    # Do nothing
+}
+
+sub _init_GDBM_File_read {
+    return &GDBM_READER;
+};    
+
+sub _init_GDBM_File_write {
+    return &GDBM_WRCREAT;
+};    
+
+sub _post_tie_GDBM_File {
+    my $tie = shift;
+    # Default 100 seems ok
+    #GDBM_File::setopt($tie, &GDBM_CACHESIZE, 100, 1);    
+}
+
+
+sub _DB_GDBM_File {
+    my ($dbformat, $hashref, $file, $mode) = @_;
+
+    $dbformat = 'DB_File' if ($dbformat ne 'GDBM_File');
+    $mode = 'read' if ($mode ne 'write');
+
+    my $method = "_init_${dbformat}_${mode}";
+    no strict 'refs';
+    my ($flags, @extras) = &$method;
+    use strict 'refs';    
+
+    my %out;
+    my $to_tie = $hashref; 
+    $to_tie = \%out if ($mode eq "write");
+    
+    my $tie = tie(%$to_tie, $dbformat, $file, $flags, 0640, @extras);
+    $method = "_post_tie_${dbformat}";
+    no strict 'refs';
+    &$method($tie);
+    use strict 'refs';    
+    if ($tie) {
+        if ($mode eq 'write') {
+            %out = %$hashref;
+            untie(%out) or return "can't untie $dbformat $file: $!";
+        }
+        return;
+    } else {
+        return "failed to open $dbformat $file for $mode: $!";
+    }    
+};
+
+sub _DB_File {
+    return _DB_GDBM_File('DB_File', @_);
+}    
+
+sub _GDBM_File {
+    return _DB_GDBM_File('GDBM_File', @_);
+}    
+
+sub _CDB_File {
+    my ($hashref, $file, $mode) = @_;
+    my $dbformat = 'CDB_File';
+    my $err;
+    if ($mode eq 'write') {
+        eval {
+            unlink("$file.tmp");    # ignore return code; we don't care
+            CDB_File::create( %$hashref, $file, "$file.tmp" );
+        };
+        $err = $@;
+    } else {
+        $err = $! if ( !tie( %$hashref, $dbformat, $file ) );
+    }
+    if ($err) {
+        return "failed to open $dbformat $file for $mode: $err";
+    }
+    return;
+}
+
 =item write ($HASHREF, $PREFIX, $FORMAT)
 
 Given a reference to a hash, write out the
@@ -76,48 +164,17 @@ sub write {
     my $supported = test_supported_format($dbformat);
     return $supported if defined($supported);
 
-    my %out;
+    my $method = "_${dbformat}";
+    no strict 'refs';
+    my $err = &$method($hashref, "${prefix}.db", 'write');
+    use strict 'refs';
+    return $err if (defined($err));
 
-    my $file = "${prefix}.db";
-    if ( $dbformat eq 'DB_File' ) {
-        my $d = new DB_File::HASHINFO;
-        $d->{cachesize} = 102400;
-        tie( %out, $dbformat, $file, &O_RDWR | &O_CREAT, 0640, $d )
-          or return "can't tie $prefix DB: $!";
-    }
-    elsif ( $dbformat eq 'CDB_File' ) {
-        # CDB is write-once, we need to create magically...
-        # We don't tie, instead we'll just do a create using
-        # this hash once the AddPaths have completed
-        ;
-    }
-    elsif ( $dbformat eq 'GDBM_File' ) {
-        my $d = tie( %out, $dbformat, $file, &GDBM_WRCREAT, 0640);
-        return "can't tie $prefix DB: $!" if (! $d);
-        # Default 100 seems ok
-        #GDBM_File::setopt($d, &GDBM_CACHESIZE, 100, 1);    
-    }
-
-    # Okay, so now we're tied, copy across.
-    if ( $dbformat eq 'CDB_File' ) {
-        eval {
-            unlink("$prefix.tmp");    # ignore return code; we don't care
-            CDB_File::create( %$hashref, "${prefix}.db", "${prefix}.tmp" );
-        };
-        if ($@) {
-            return "creating CDB $prefix failed: $@";
-        }
-    }
-    else {
-        %out = %$hashref;
-        untie(%out) or return "can't untie path2eid DB: $!";
-    }
-    
     my $fh = CAF::FileWriter->new("${prefix}.fmt");
     print $fh "$dbformat\n";
     $fh->close();
     
-    return undef;
+    return;
 }
 
 =item read ($HASHREF, $PREFIX)
@@ -145,25 +202,13 @@ sub read {
     my $supported = test_supported_format($dbformat);
     return $supported if defined($supported);
 
-    my $file = "${prefix}.db";
-    if ( $dbformat eq 'DB_File' ) {
-        if ( !tie( %$hashref, $dbformat, $file, &O_RDONLY, 0640 ) ) {
-            return "failed to open $dbformat $file: $!";
-        }
-    }
-    elsif ( $dbformat eq 'CDB_File' ) {
-        if ( !tie( %$hashref, $dbformat, $file ) ) {
-            return "failed to open $dbformat $file: $!";
-        }
-    }
-    elsif ( $dbformat eq 'GDBM_File' ) {
-        my $d = tie( %$hashref, $dbformat, $file, &GDBM_READER, 0640);
-        return "failed to open $dbformat $file: $!" if (! $d);
-        # Default 100 seems ok
-        # GDBM_File::setopt($d, &GDBM_CACHESIZE, 100, 1);    
-    }
+    my $method = "_${dbformat}";
+    no strict 'refs';
+    my $err = &$method($hashref, "${prefix}.db", 'read');
+    use strict 'refs';
+    return $err if (defined($err));
 
-    return undef;
+    return;
 }
 
 1;
