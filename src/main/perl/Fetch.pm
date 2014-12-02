@@ -272,11 +272,14 @@ sub retrieve {
 
     my $fh = CAF::FileWriter->new( $cache, log => $self );
     print $fh $cnt;
+    $fh->close();
 
-    if ( !utime( $rs->last_modified(), $rs->last_modified(), $cache ) ) {
+    my $modified = $rs->last_modified();
+    if ( ! (defined($modified) && utime($modified , $modified, $cache )) ) {
         $self->warn("Unable to set mtime for $cache: $!");
     }
 
+    $fh = CAF::FileReader->new( $cache, log => $self );
     return $fh;
 }
 
@@ -313,7 +316,7 @@ sub download {
     foreach my $u ( ( $url, $self->{ uc($type) . "_FAILOVER" } ) )
     {
         for my $i ( 1 .. $self->{RETRIEVE_RETRIES} ) {
-            my $rt = $self->retrieve( $u, $cache, $st[ST_CTIME] );
+            my $rt = $self->retrieve( $u, $cache, $st[ST_MTIME] );
             return $rt if defined($rt);
             $self->debug(
                 1,
