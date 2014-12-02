@@ -57,7 +57,7 @@ my $ACTIVE_FN     = "ccm-active-profile.";
 # cid. it is used for creation and removal of pid_files
 
 #
-# Create Configuration object. It takes two arguments:
+# Create Configuration object. It takes three arguments:
 #   $cache_manager - CacheManager object
 #   $cid - configuration id
 #   $locked - true or false lock flag
@@ -156,7 +156,6 @@ sub _remove_pid_file () {    #T (indirectly)
         my $pid_file =
           $self->{"cfg_path"} . "/$ACTIVE_FN" . $self->{"cid"} . "-" . getpid();
 
-        #unless (unlink ($pid_file)) {
         if ( ( -f $pid_file ) && !unlink($pid_file) ) {
             throw_error( "unlink($pid_file)", $! );
             return ();
@@ -351,13 +350,13 @@ Unlock configuration (local unlock).
 
 sub unlock {    #T
     my ($self) = @_;
-    $self->{"locked"} = 0;
     unless ( $self->{"locked"} ) {
         unless ( $self->_update_cid_pidf() ) {
             $ec->rethrow_error();
             return ();
         }
     }
+    $self->{"locked"} = 0;
 
     #TODO: events notification
 }
