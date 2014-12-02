@@ -32,64 +32,60 @@ use warnings;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 
 use constant INTERPRETERS => {
-			      nlist => \&interpret_nlist,
-			      list => \&interpret_list,
-			      string => \&interpret_scalar,
-			      long => \&interpret_scalar,
-			      double => \&interpret_scalar,
-			      boolean => \&interpret_scalar,
-			     };
+    nlist   => \&interpret_nlist,
+    list    => \&interpret_list,
+    string  => \&interpret_scalar,
+    long    => \&interpret_scalar,
+    double  => \&interpret_scalar,
+    boolean => \&interpret_scalar,
+};
 
 use constant VALID_ATTRIBUTES => {
-				  NAME => 1,
-				  DERIVATION => 1,
-				  CHECKSUM => 1,
-				  ACL => 1,
-				  ENCODING => 1,
-				  DESCRIPTION => 1,
-				  USERTYPE => 1
-				 };
+    NAME        => 1,
+    DERIVATION  => 1,
+    CHECKSUM    => 1,
+    ACL         => 1,
+    ENCODING    => 1,
+    DESCRIPTION => 1,
+    USERTYPE    => 1
+};
 
 # Warns in case a tag in the XML profile is not known (i.e, has not a
 # valid entry in the INTERPRETERS hash.
-sub warn_unknown
-{
-    my ($content, $tag) = @_;
+sub warn_unknown {
+    my ( $content, $tag ) = @_;
 
     warn "Cannot handle tag $tag!";
 }
 
-
 # Turns an nlist in the XML into a Perl hash reference with all the
 # types and metadata from the profile.
-sub interpret_nlist
-{
+sub interpret_nlist {
     my ($content) = @_;
 
     my $nl = {};
 
     my $i = 1;
 
-    while ($i < scalar(@$content)) {
-	my $t = $content->[$i++];
-	my $c = $content->[$i++];
-	$nl->{$c->[0]->{name}} = __PACKAGE__->interpret_node($t, $c) if $t;
+    while ( $i < scalar(@$content) ) {
+        my $t = $content->[ $i++ ];
+        my $c = $content->[ $i++ ];
+        $nl->{ $c->[0]->{name} } = __PACKAGE__->interpret_node( $t, $c ) if $t;
     }
 
     return $nl;
 }
 
-
 # Processess a scalar, possibly decoding its value.
-sub interpret_scalar
-{
-    my ($content, $tag, $encoding) = @_;
+sub interpret_scalar {
+    my ( $content, $tag, $encoding ) = @_;
 
     $content = $content->[2];
     if ($encoding) {
-	$content = EDG::WP4::CCM::Fetch->DecodeValue($content, $encoding);
-    } elsif (!defined($content) && $tag eq 'string') {
-	$content = '';
+        $content = EDG::WP4::CCM::Fetch->DecodeValue( $content, $encoding );
+    }
+    elsif ( !defined($content) && $tag eq 'string' ) {
+        $content = '';
     }
 
     return $content;
@@ -97,16 +93,15 @@ sub interpret_scalar
 
 # Turns a list in the profile into a perl array reference in which all
 # the elements have the correct metadata associated.
-sub interpret_list
-{
-    my ($content, $tag, $encoding) = @_;
+sub interpret_list {
+    my ( $content, $tag, $encoding ) = @_;
 
     my $l = [];
     my $i = 1;
-    while ($i < scalar(@$content)) {
-	my $t = $content->[$i++];
-	my $c = $content->[$i++];
-	push (@$l, __PACKAGE__->interpret_node($t, $c)) if $t;
+    while ( $i < scalar(@$content) ) {
+        my $t = $content->[ $i++ ];
+        my $c = $content->[ $i++ ];
+        push( @$l, __PACKAGE__->interpret_node( $t, $c ) ) if $t;
     }
 
     return $l;
@@ -122,9 +117,8 @@ attributes and values.
 
 =cut
 
-sub interpret_node
-{
-    my ($class, $tag, $content)  = @_;
+sub interpret_node {
+    my ( $class, $tag, $content ) = @_;
 
     my $val = {};
 
@@ -132,17 +126,18 @@ sub interpret_node
 
     $val->{TYPE} = $tag;
 
-    while (my ($k, $v) = each(%$att)) {
-	my $a = uc($k);
-	if (exists(VALID_ATTRIBUTES->{$a})) {
-	    $val->{$a} = $v;
-	} elsif ($k ne "format") {
-	    warn "Unknown attribute $k";
-	}
+    while ( my ( $k, $v ) = each(%$att) ) {
+        my $a = uc($k);
+        if ( exists( VALID_ATTRIBUTES->{$a} ) ) {
+            $val->{$a} = $v;
+        }
+        elsif ( $k ne "format" ) {
+            warn "Unknown attribute $k";
+        }
     }
 
     my $f = INTERPRETERS->{$tag} || \&warn_unknown;
-    $val->{VALUE} = $f->($content, $tag, $val->{ENCODING});
+    $val->{VALUE} = $f->( $content, $tag, $val->{ENCODING} );
 
     $val->{CHECKSUM} ||= ComputeChecksum($val);
     return $val;
