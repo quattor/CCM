@@ -201,7 +201,7 @@ sub gen_dbm ($$) {
 #
 # Perform tests
 #
-$cache_dir = "$cdtmp/cm-element-test";
+$cache_dir = "$cdtmp/resource-test";
 $profile = "profile.1";
 ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 

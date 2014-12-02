@@ -89,7 +89,7 @@ my ($cm, $config, $cache_dir, $profile, %hash, $key);
 #
 # Perform tests
 #
-$cache_dir = "$cdtmp/cm-element-test";
+$cache_dir = "$cdtmp/property-test";
 $profile = "profile.1";
 ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 

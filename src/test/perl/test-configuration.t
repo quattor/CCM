@@ -17,7 +17,7 @@ use Cwd;
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 my $cptmp = getcwd()."/target/tmp";
-my $cp = "$cptmp/cm-test";
+my $cp = "$cptmp/configuration-test";
 
 my $ccidfn = "$cp/$CURRENT_CID_FN";
 my $lcidfn = "$cp/$LATEST_CID_FN";
