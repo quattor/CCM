@@ -12,6 +12,7 @@ use LC::Exception qw(SUCCESS throw_error);
 use Net::Domain qw(hostname hostdomain);
 
 use parent qw(Exporter);
+use Readonly;
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw(initCfg getCfgValue);
@@ -45,7 +46,8 @@ my $ec          = LC::Exception::Context->new->will_store_errors;
 my $CONFIG_FN   = "ccm.conf";
 my $DEF_EDG_LOC = "/usr";
 
-my $cfg = {
+# Holds the default and all possible keys
+Readonly::Hash my %DEFAULT_CFG => {
     "debug"            => undef,
     "force"            => undef,
     "profile"          => undef,
@@ -67,7 +69,11 @@ my $cfg = {
     "dbformat"         => "GDBM_File",
     "keep_old"         => 2,
     "purge_time"       => 86400,
+    "trust"            => undef,
 };
+
+# copy hash to hash ref
+my $cfg = { %DEFAULT_CFG };
 
 sub _resolveTags ($) {
     my ($s) = @_;
@@ -103,56 +109,22 @@ sub _readConfigFile ($) {
         if (/^\s*(\w+)\s+(\S+)\s*$/) {
             my $var = $1;
             my $val = $2;
-            if    ( $var eq 'debug' ) { $cfg->{"debug"} = $val; }
-            elsif ( $var eq 'force' ) { $cfg->{"force"} = $val; }
-            elsif ( $var eq 'profile' ) {
-                my $s = _resolveTags($val);
-                unless ($s) {
-                    throw_error( "_resolveTags ($val)", $ec->error );
-                    return ();
-                }
-                $cfg->{"profile"} = $s;
+            if (exists($DEFAULT_CFG{$var})) {
+                if ( $var eq 'profile' or 
+                     $var eq 'profile_failover' or
+                     $var eq 'context') {
+                    my $s = _resolveTags($val);
+                    unless ($s) {
+                        throw_error( "_resolveTags ($val) for $var", $ec->error );
+                        return;
+                    }
+                    $cfg->{$var} = $s;
+                } else {
+                    $cfg->{$var} = $val;
+                };
+            } else {
+                throw_error("unknown config variable: $var (line $_)");
             }
-            elsif ( $var eq 'profile_failover' ) {
-                my $s = _resolveTags($val);
-                unless ($s) {
-                    throw_error( "_resolveTags ($val)", $ec->error );
-                    return ();
-                }
-                $cfg->{"profile_failover"} = $s;
-            }
-            elsif ( $var eq 'context' ) {
-                my $s = _resolveTags($val);
-                unless ($s) {
-                    throw_error( "_resolveTags ($val)", $ec->error );
-                    return ();
-                }
-                $cfg->{"context"} = $s;
-            }
-            elsif ( $var eq 'cache_root' )   { $cfg->{"cache_root"}   = $val; }
-            elsif ( $var eq 'get_timeout' )  { $cfg->{"get_timeout"}  = $val; }
-            elsif ( $var eq 'lock_retries' ) { $cfg->{"lock_retries"} = $val; }
-            elsif ( $var eq 'lock_wait' )    { $cfg->{"lock_wait"}    = $val; }
-            elsif ( $var eq 'retrieve_retries' ) {
-                $cfg->{"retrieve_retries"} = $val;
-            }
-            elsif ( $var eq 'retrieve_wait' ) {
-                $cfg->{"retrieve_wait"} = $val;
-            }
-            elsif ( $var eq 'preprocessor' ) { $cfg->{"preprocessor"} = $val; }
-            elsif ( $var eq 'cert_file' )    { $cfg->{"cert_file"}    = $val; }
-            elsif ( $var eq 'key_file' )     { $cfg->{"key_file"}     = $val; }
-            elsif ( $var eq 'ca_file' )      { $cfg->{"ca_file"}      = $val; }
-            elsif ( $var eq 'ca_dir' )       { $cfg->{"ca_dir"}       = $val; }
-            elsif ( $var eq 'base_url' )     { $cfg->{"base_url"}     = $val; }
-            elsif ( $var eq 'world_readable' ) {
-                $cfg->{"world_readable"} = $val;
-            }
-            elsif ( $var eq 'dbformat' )   { $cfg->{"dbformat"}   = $val; }
-            elsif ( $var eq 'trust' )      { $cfg->{"trust"}      = $val; }
-            elsif ( $var eq 'keep_old' )   { $cfg->{"keep_old"}   = $val; }
-            elsif ( $var eq 'purge_time' ) { $cfg->{"purge_time"} = $val; }
-            else { throw_error("unknown config variable: $var"); }
             next;
         }
         chomp;
