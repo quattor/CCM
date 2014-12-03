@@ -62,7 +62,7 @@ my $ACTIVE_FN     = "ccm-active-profile.";
 #   $cid - configuration id
 #   $locked - true or false lock flag
 #
-# active.pid is created in profile.cid directory (where pid is process
+# ccm-active-profile-$cid.$pid is created in profile.$cid directory (where pid is process
 # id).
 #
 # If configuration with specified cid does not exists exception is
@@ -82,14 +82,14 @@ sub new {    #T
         return ();
     }
     $cid = $1;
-    my $cfg_path = $cache_path . "/" . $PROFILE_DIR_N . $cid;
+    my $cfg_path = "$cache_path/${PROFILE_DIR_N}$cid";
     my $self     = {
         "cid"           => $cid,
         "locked"        => $locked,
         "cache_manager" => $cache_manager,
         "cache_path"    => $cache_path,
         "cfg_path"      => $cfg_path,
-        "cid_to_number" => undef
+        "cid_to_number" => undef,
     };
     unless ( -d $cfg_path ) {
         throw_error("configuration directory ($cfg_path) does not exist");
@@ -121,6 +121,14 @@ sub getCacheManager () {
     return $self->{"cache_manager"};
 }
 
+
+# returns the pid filename for cid
+sub _pid_filename {
+    my ($self, $cid) = @_;
+    $cid = $self->{"cid"} if (!defined($cid));
+    return $self->{"cfg_path"} . "/${ACTIVE_FN}${cid}-" . getpid();
+}
+
 #
 # sub creates pid file (if needed) in the directory of the configuration
 # it updates %cid_to_number
@@ -130,13 +138,13 @@ sub _create_pid_file {    #T
     my ($self) = @_;
     unless ( $self->{"cid_to_number"}{ $self->{"cid"} } ) {
         $self->{"cid_to_number"}{ $self->{"cid"} } += 1;
-        my $pid_file =
-          $self->{"cfg_path"} . "/$ACTIVE_FN" . $self->{"cid"} . "-" . getpid();
+        my $pid_file = $self->_pid_filename();
         unless ( _touch_file($pid_file) ) {
             throw_error( "_touch_file($pid_file)", $ec->error );
             return ();
         }
     }
+
     return SUCCESS;
 }
 
@@ -151,10 +159,9 @@ sub _remove_pid_file () {    #T (indirectly)
         throw_error( "_remove_pid_file", "cid parameter not defined" );
         return ();
     }
-    $self->{"cid_to_number"}{ $self->{"cid"} } -= 1;
-    if ( $self->{"cid_to_number"}{ $self->{"cid"} } == 0 ) {
-        my $pid_file =
-          $self->{"cfg_path"} . "/$ACTIVE_FN" . $self->{"cid"} . "-" . getpid();
+    $self->{"cid_to_number"}{ $cid } -= 1;
+    if ( $self->{"cid_to_number"}{ $cid } == 0 ) {
+        my $pid_file = $self->_pid_filename($cid);
 
         if ( ( -f $pid_file ) && !unlink($pid_file) ) {
             throw_error( "unlink($pid_file)", $! );
@@ -191,9 +198,6 @@ sub _touch_file ($) {    #T
 
 sub DESTROY {    #T (indirectly)
     my ($self) = @_;
-    my $cfg_path = $self->{"cfg_path"};
-    my $pid_file =
-      $self->{"cfg_path"} . "/$ACTIVE_FN" . $self->{"cid"} . "-" . getpid();
     unless ( $self->_remove_pid_file( $self->{"cid"} ) ) {
         throw_error( '_remove_pid_file($self->{"cid"})', $ec->error );
         return ();
@@ -207,6 +211,7 @@ Returns configuration id.
 
 =cut
 
+# triggers a _update_cid_pidf for unlocked configs 
 sub getConfigurationId {    #T
     my ($self) = @_;
     unless ( $self->{"locked"} ) {
@@ -321,8 +326,7 @@ sub _update_cid_pidf {    #T
             return ();
         }
         $self->{"cid"} = $cid;
-        $self->{"cfg_path"} =
-          $self->{"cache_path"} . "/" . $PROFILE_DIR_N . $cid;
+        $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
         unless ( $self->_create_pid_file() ) {
             $ec->rethrow_error();
             return ();
@@ -340,6 +344,7 @@ Lock configuration (local lock).
 sub lock {    #T
     my ($self) = @_;
     $self->{"locked"} = 1;
+    return SUCCESS;
 }
 
 =item unlock ()
@@ -350,15 +355,14 @@ Unlock configuration (local unlock).
 
 sub unlock {    #T
     my ($self) = @_;
-    unless ( $self->{"locked"} ) {
-        unless ( $self->_update_cid_pidf() ) {
-            $ec->rethrow_error();
-            return ();
-        }
-    }
     $self->{"locked"} = 0;
+    unless ( $self->_update_cid_pidf() ) {
+        $ec->rethrow_error();
+        return ();
+    }
 
     #TODO: events notification
+    return SUCCESS;
 }
 
 =item isLocked ()
