@@ -12,7 +12,7 @@
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
-    <version>1.34</version>
+    <version>1.38</version>
   </parent>
 
   <scm>
@@ -274,7 +274,6 @@
           <provide>perl(EDG::WP4::CCM::Path)</provide>
           <provide>perl(EDG::WP4::CCM::Property)</provide>
           <provide>perl(EDG::WP4::CCM::Resource)</provide>
-          <provide>perl(EDG::WP4::CCM::Stream)</provide>
           <provide>perl(EDG::WP4::CCM::SyncFile)</provide>
         </provides>
         <requires>

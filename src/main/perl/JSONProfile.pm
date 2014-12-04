@@ -28,11 +28,11 @@ This module has only one method for the outside world:
 
 use strict;
 use warnings;
+
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use JSON::XS;
 
 $SIG{__DIE__} = \&confess;
-
 
 # Warns in case a tag in the XML profile is not known (i.e, has not a
 # valid entry in the INTERPRETERS hash.
@@ -42,7 +42,6 @@ sub warn_unknown
 
     warn "Cannot handle tag $tag!";
 }
-
 
 # Turns an nlist in the XML into a Perl hash reference with all the
 # types and metadata from the profile.
@@ -54,13 +53,11 @@ sub interpret_nlist
 
     my $h;
 
-
     while (my ($k, $v) = each(%$content)) {
-	$nl->{$k} = $class->interpret_node($k, $v);
+        $nl->{$k} = $class->interpret_node($k, $v);
     }
     return $nl;
 }
-
 
 # Turns a list in the profile into a perl array reference in which all
 # the elements have the correct metadata associated.
@@ -71,7 +68,7 @@ sub interpret_list
     my $l = [];
 
     foreach my $i (@$doc) {
-	push(@$l, $class->interpret_node(undef, $i));
+        push(@$l, $class->interpret_node(undef, $i));
     }
 
     return $l;
@@ -105,21 +102,20 @@ sub interpret_node
     my $v = {};
     $v->{NAME} = $tag if $tag;
     if (!$r) {
-	$v->{VALUE} = $doc;
-	$v->{TYPE} = 'string';
+        $v->{VALUE} = $doc;
+        $v->{TYPE}  = 'string';
     } elsif ($r eq 'HASH') {
-	$v->{TYPE} = 'nlist';
-	$v->{VALUE} = $class->interpret_nlist($tag, $doc);
+        $v->{TYPE} = 'nlist';
+        $v->{VALUE} = $class->interpret_nlist($tag, $doc);
     } elsif ($r eq 'ARRAY') {
-	$v->{TYPE} = 'list';
-	$v->{VALUE} = $class->interpret_list($tag, $doc);
+        $v->{TYPE} = 'list';
+        $v->{VALUE} = $class->interpret_list($tag, $doc);
     } elsif (JSON::XS::is_bool($doc)) {
-	$v->{TYPE} = "boolean";
-	$v->{VALUE} = $doc ? "true" : "false";
+        $v->{TYPE} = "boolean";
+        $v->{VALUE} = $doc ? "true" : "false";
     } else {
-	die "Unknown ref type ($r) for JSON document $doc, on $tag";
+        die "Unknown ref type ($r) for JSON document $doc, on $tag";
     }
-
     $v->{CHECKSUM} = ComputeChecksum($v);
     return $v;
 }

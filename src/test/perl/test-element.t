@@ -1,27 +1,27 @@
-#!/usr/bin/perl -w
-
 #
-# test-element.pl	Test class Element
+# test-element	Test class Element
 #
-# $Id: test-element.pl,v 1.13 2007/03/21 18:07:11 munoz Exp $
-#
-# Copyright (c) 2003 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-BEGIN {unshift(@INC,'/usr/lib/perl')};
 
 use strict;
+use warnings;
+
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::More tests => 22;
+use Test::More;
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
                                       $CURRENT_CID_FN $LATEST_CID_FN);
 use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Path;
+
+use Cwd;
+
+use myTest qw(make_file);
+
+my $cdtmp = getcwd()."/target/tmp";
+mkdir($cdtmp) if (! -d $cdtmp);
 
 #
 # Generate an example of DBM file
@@ -35,23 +35,17 @@ sub gen_dbm ($$) {
 
     # remove previous cache dir
 
-    if ( $cache_dir eq "" ) {
-        return ();
-    }
-    `rm -rf $cache_dir`;
-
     # create new profile
+    mkdir("$cache_dir");
+    mkdir("$cache_dir/$profile");
+    mkdir("$cache_dir/$DATA_DN");
 
-   `mkdir $cache_dir`;
-   `mkdir $cache_dir/$profile`;
-   `mkdir $cache_dir/$DATA_DN`;
-
-   `echo 'no' > $cache_dir/$GLOBAL_LOCK_FN`;
-   `echo '1' > $cache_dir/$CURRENT_CID_FN`;
-   `echo '1' > $cache_dir/$LATEST_CID_FN`;
+    make_file("$cache_dir/$GLOBAL_LOCK_FN", "no\n");
+    make_file("$cache_dir/$CURRENT_CID_FN", "1\n");
+    make_file("$cache_dir/$LATEST_CID_FN", "1\n");
 
     $active = $profile . "/active." . getpid();
-   `echo '1' > $cache_dir/$active`;
+    make_file("$cache_dir/$active", "1\n");
 
     tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
         &O_RDWR|&O_CREAT, 0644) or return();
@@ -112,8 +106,10 @@ my ($string);
 my ($cm, $config, $cache_dir, $profile);
 my ($prof_dir, $eid, $name);
 
-$cache_dir = "/tmp/e_test";
-$profile   = "profile.1";
+
+$cache_dir = "$cdtmp/cm-element-test";
+$profile = "profile.1";
+ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 
 # create profile
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
@@ -204,7 +200,4 @@ ok(!$element->isResource(),   "!Element->isResource()");
 # test isProperty()
 ok($element->isProperty(),   "Element->isProperty()");
 
-# final clean-up
-# `rm -rf $cache_dir`;
-
-
+done_testing();

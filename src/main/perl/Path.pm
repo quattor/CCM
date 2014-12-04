@@ -1,17 +1,19 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package      EDG::WP4::CCM::Path;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use parent qw(Exporter);
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw();
-our $VERSION = '${project.version}';
+our $VERSION   = '${project.version}';
 
 =head1 NAME
 
@@ -33,11 +35,6 @@ to manipulate absolute paths
 
 =cut
 
-#TODO: work on exception messages
-
-
-# ------------------------------------------------------
-
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 =item new ($path)
@@ -51,21 +48,32 @@ Specification document
 
 =cut
 
-sub new {
-  my ($class, $path) = @_;
-  unless (defined ($path)) {
-    $path = "/";
-  }
-  unless ($path=~/^\// && !($path=~/^(\/(\/)+)/)) {
-    throw_error ("path must be an absolute path");
-    return();
-  }
-  $path=~s/^\///;
-  $path=~s/\/$//;
-  my @s = split (/\//, $path);
-  my $self = \@s;
-  bless ($self, $class);
-  return $self;
+sub new
+{
+    my ($class, $path) = @_;
+    unless (defined($path)) {
+        $path = "/";
+    }
+
+    my @s = split('/', $path, -1);
+    my $start = shift @s;
+
+    # remove trailing /
+    my $end = pop @s;
+    push(@s, $end) if (defined($end) && $end ne '');
+
+    # must start with /, but not with //+
+    unless (defined($start) && $start eq '' && (!@s || $s[0] ne '')) {
+        throw_error("path $path must be an absolute path: start '"
+                . ($start || '')
+                . "', remainder "
+                . join(' / ', @s));
+        return ();
+    }
+
+    my $self = \@s;
+    bless($self, $class);
+    return $self;
 }
 
 =item toString ()
@@ -74,17 +82,10 @@ get the string representation of path
 
 =cut
 
-sub toString {
-  my ($self) = @_;
-  my $path ="";
-  if (@$self == 0) {
-    $path = "/";
-  } else {
-    foreach my $ch (@$self) {
-      $path = "$path/$ch";
-    }
-  }
-  return $path;
+sub toString
+{
+    my ($self) = @_;
+    return "/" . join('/', @$self);
 }
 
 =item up ()
@@ -95,13 +96,14 @@ rises an exception
 
 =cut
 
-sub up {
-  my ($self) = @_;
-  if (@$self == 0) {
-    throw_error ("could not go up, it will generate empty path");
-    return ()
-  }
-  return pop (@$self);
+sub up
+{
+    my ($self) = @_;
+    if (@$self == 0) {
+        throw_error("could not go up, it will generate empty path");
+        return ();
+    }
+    return pop(@$self);
 }
 
 =item down ($chunk)
@@ -111,30 +113,21 @@ add one chunk to a path, chunk cannot be compound path
 
 =cut
 
-sub down {
-  my ($self, $chunk) = @_;
-  if ($chunk=~/\// || $chunk eq "") {
-    throw_error ("input is not a simple path chunk");
-    return();
-  }
-  push (@$self, $chunk);
-  return $self;
+sub down
+{
+    my ($self, $chunk) = @_;
+    if ($chunk =~ /\// || $chunk eq "") {
+        throw_error("input is not a simple path chunk");
+        return ();
+    }
+    push(@$self, $chunk);
+    return $self;
 }
 
-# ------------------------------------------------------
-
-1;
-
-__END__
+=pod
 
 =back
 
-=head1 AUTHOR
-
-Piotr Poznanski <Piotr.Poznanski@cern.ch>
-
-=head1 VERSION
-
-$Id: Path.pm.cin,v 1.1 2005/01/26 10:09:51 gcancio Exp $
-
 =cut
+
+1;

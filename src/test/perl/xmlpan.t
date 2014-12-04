@@ -127,3 +127,5 @@ my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 my $reference_result = InterpretNode(@$t);
 my $our_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 cmp_deeply($our_result, $reference_result, "Our result matches the old implementation");
+
+done_testing();

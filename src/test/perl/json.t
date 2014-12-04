@@ -59,3 +59,5 @@ my $our_result = EDG::WP4::CCM::JSONProfile->interpret_node(profile => $t);
 cmp_deeply($our_result, $reference_result, "Our result matches the old implementation");
 note("Reference=", explain($reference_result));
 note("Our=", explain($our_result));
+
+done_testing();

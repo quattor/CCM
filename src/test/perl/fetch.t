@@ -13,7 +13,7 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 49;
+use Test::More tests => 50;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -55,8 +55,6 @@ sub setup_cache
     my ($cachedir, $fetch) = @_;
 
     make_path("$cachedir/data");
-    # open(my $fh, ">", "$cachedir/global.lock");
-    # print $fh "no\n";
 }
 
 compile_profile();
@@ -72,6 +70,7 @@ compatibility, when C<PROFILE> is given. C<PROFILE_URL> has higher
 priority, though.
 
 =cut
+
 note("Testing object creation");
 
 my $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
@@ -94,15 +93,6 @@ $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 ok($f, "Fetch profile created");
 isa_ok($f, "EDG::WP4::CCM::Fetch", "Object is a valid reference");
 is($f->{PROFILE_URL}, "https://www.google.com", "Profile URL correctly set");
-
-
-
-=pod
-
-
-
-=cut
-
 
 =pod
 
@@ -142,13 +132,13 @@ $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				PROFILE_URL => $url});
 is($f->{PROFILE_URL}, $url, "file:// URL accepted");
 $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/file-output", 0);
-isa_ok($pf, "CAF::FileWriter");
+isa_ok($pf, "CAF::FileReader");
 $pf->cancel();
 
 unlink("target/test/profile.xml");
 compile_profile("pan.gz");
 $pf = $f->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
-isa_ok($pf, "CAF::FileWriter");
+isa_ok($pf, "CAF::FileReader");
 is(substr("$pf", 0, 1), "<", "Automatically decompressed");
 
 =pod
@@ -175,7 +165,7 @@ be downloaded again.
 
 $f->{FORCE} = 1;
 $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/file", time());
-isa_ok($pf, "CAF::FileWriter", "The FORCE flag is honored");
+isa_ok($pf, "CAF::FileReader", "The FORCE flag is honored");
 
 =pod
 
@@ -240,6 +230,8 @@ isnt($pf, undef, "Non-existing URL with a failover retrieves something");
 note("Testing cache directory manipulation");
 $f->{FORCE} = 1;
 $pf = $f->download("profile");
+isa_ok($pf, "CAF::FileReader", "download retruns CAF::FileReader instance");
+
 my %r = $f->previous();
 like(*{$r{url}}->{filename}, qr{profile.url$},
      'Correct file read for the previous URL');
@@ -277,6 +269,7 @@ note("Testing profile parsing and caching");
 
 $f->{FORCE} = 1;
 $f->{PROFILE_URL} = $url;
+
 $pf = $f->download("profile");
 my ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "XML Pan profile correctly parsed");
@@ -285,7 +278,7 @@ is(ref($t), "ARRAY", "XML Pan profile is not empty");
 is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
-setup_cache($f->{CACHE_ROOT}, $f);
+
 setup_cache($f->{CACHE_ROOT}, $f);
 compile_profile("json");
 $f->{PROFILE_URL} =~ s{xml}{json}g;
@@ -359,3 +352,4 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
+

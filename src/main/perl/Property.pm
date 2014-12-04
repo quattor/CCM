@@ -1,14 +1,15 @@
 # ${license-info}
-# ${developer-info
+# ${developer-info}
 # ${author-info}
 # ${build-info}
 
 package EDG::WP4::CCM::Property;
 
 use strict;
+use warnings;
+
 use LC::Exception qw(SUCCESS throw_error);
 use LC::File qw (file_contents);
-use EDG::WP4::CCM::Stream;
 use parent qw(EDG::WP4::CCM::Element);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
@@ -23,7 +24,6 @@ EDG::WP4::CCM::Property - Property class
  $double = $property->getDoubleValue();
  $long = $property->getLongValue();
  $boolean = $property->getBooleanValue();
- $stream = $property->getStreamValue();
 
 =head1 DESCRIPTION
 
@@ -46,7 +46,8 @@ tree.
 #=cut
 #
 
-sub new {
+sub new
+{
 
     my $proto = shift;
     my $class = ref($proto) || $proto;
@@ -56,11 +57,11 @@ sub new {
     # check that element it is a property
     if (!$self->isProperty()) {
         throw_error("element is not of type property");
-        return();
+        return ();
     }
 
     bless($self, $class);
-    return($self);
+    return ($self);
 
 }
 
@@ -70,17 +71,18 @@ Return the property's string value,
 raising an exception if the value is not an string or fetch
 
 =cut
-sub getStringValue {
 
-  my $self = shift;
+sub getStringValue
+{
 
-  if ($self->isType($self->STRING)) {
-    return($self->{VALUE});
-  }
-  throw_error("property is not of type STRING");
-  return();
+    my $self = shift;
+
+    if ($self->isType($self->STRING)) {
+        return ($self->{VALUE});
+    }
+    throw_error("property is not of type STRING");
+    return ();
 }
-
 
 =item getDoubleValue()
 
@@ -88,17 +90,19 @@ Return the property's double value,
 raising an exception if the value is not a double
 
 =cut
-sub getDoubleValue {
+
+sub getDoubleValue
+{
 
     my $self = shift;
 
     # check that resource is of type double
     if (!$self->isType($self->DOUBLE)) {
         throw_error("property is not of type DOUBLE");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ($self->{VALUE});
 
 }
 
@@ -108,17 +112,19 @@ Return the property's long value,
 raising an exception if the value is not a long
 
 =cut
-sub getLongValue {
+
+sub getLongValue
+{
 
     my $self = shift;
 
     # check that resource is of type long
     if (!$self->isType($self->LONG)) {
         throw_error("property is not of type LONG");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ($self->{VALUE});
 
 }
 
@@ -128,31 +134,26 @@ Return the property's boolean value,
 raising an exception if the value is not a boolean
 
 =cut
-sub getBooleanValue {
+
+sub getBooleanValue
+{
 
     my $self = shift;
 
     # check that resource is of type boolean
     if (!$self->isType($self->BOOLEAN)) {
         throw_error("property is not of type BOOLEAN");
-        return();
+        return ();
     }
 
-    return($self->{VALUE});
+    return ($self->{VALUE});
 
 }
 
-__END__
+=pod
 
 =back
 
-=head1 AUTHOR
-
-Rafael A. Garcia Leiva <angel.leiva@uam.es>
-Universidad Autonoma de Madrid
-
-=head1 VERSION
-
-${project.version}
-
 =cut
+
+1;
