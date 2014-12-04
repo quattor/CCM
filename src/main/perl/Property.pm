@@ -10,7 +10,6 @@ use warnings;
 
 use LC::Exception qw(SUCCESS throw_error);
 use LC::File qw (file_contents);
-use EDG::WP4::CCM::Stream;
 use parent qw(EDG::WP4::CCM::Element);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
@@ -25,7 +24,6 @@ EDG::WP4::CCM::Property - Property class
  $double = $property->getDoubleValue();
  $long = $property->getLongValue();
  $boolean = $property->getBooleanValue();
- $stream = $property->getStreamValue();
 
 =head1 DESCRIPTION
 
