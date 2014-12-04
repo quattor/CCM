@@ -120,7 +120,6 @@ sub new
     # remove starting and trailing spaces
 
     if (!$param->{CONFIG} && $param->{CFGFILE}) {
-
         # backwards compatability
         $param->{CONFIG} = $param->{CFGFILE};
     }
