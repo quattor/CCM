@@ -30,8 +30,6 @@ EDG::WP4::CCM::CacheManager
   $cm = EDG::WP4::CCM::CacheManager->new(["/path/to/root/of/cache"]);
   $cfg = $cm->getUnlockedConfiguration($cred[, $cid]);
   $cfg = $cm->getLockedConfiguration($cred[, $cid]);
-  $cm->lock($cred);
-  $cm->unlock($cred);
   $bool = $cm->isLocked();
 
 =head1 DESCRIPTION
@@ -213,111 +211,6 @@ sub _getConfig {    #T
         return ();
     }
     return $cfg;
-}
-
-=item lock ($cred)
-
-Lock cache globally.
-
-Security and $cred parameter meaning are not defined.
-
-=cut
-
-#TOC: lock and unlock have unsymetric behaviour is it ok?
-
-sub lock {    #T
-
-    throw_error("function is not implemented");
-    return ();
-}
-
-# only for old unittests
-sub _old_lock {    #T
-    my ( $self, $cred ) = @_;
-    unless ( $self->{"global_lock_file"}->write($LOCKED) ) {
-        throw_error(
-            "write (" . $self->{"global_lock_file"}->get_file_name() . ")",
-            $ec->error );
-        return ();
-    }
-    return SUCCESS;
-}
-
-=item unlock ($cred)
-
-Unlock cache globally.
-
-Security and $cred parameter meaning are not defined.
-
-=cut
-
-sub unlock {    #T
-
-    throw_error("function is not implemented");
-    return ();
-};
-
-# only for old unittests
-sub _old_unlock {    #T
-
-    my ( $self, $cred ) = @_;
-    my $locked = $self->isLocked();
-    unless ( defined($locked) ) {
-        throw_error( "isLocked()", $ec->error );
-        return ();
-    }
-    if ($locked) {
-        unless ( $self->_old_set_ccid_to_lcid() ) {
-            throw_error( "$self->_old_set_ccid_to_lcid()", $ec->error );
-            return ();
-        }
-        unless ( $self->{"global_lock_file"}->write($UNLOCKED) ) {
-            throw_error(
-                "write (" . $self->{"global_lock_file"}->get_file_name() . ")",
-                $ec->error
-            );
-            return ();
-        }
-    }
-    return SUCCESS;
-}
-
-#
-# subroutine sets current.cid to latest.cid (if they are different)
-#
-
-sub _set_ccid_to_lcid {    #T
-
-    throw_error("this function should't be called in current implemenation");
-    return ();
-};
-
-# only for old unittests
-sub _old_set_ccid_to_lcid {    #T
-    # TODO: investigate one extra new-line character at the end
-    #       of current.cid
-
-    my ($self) = @_;
-    my $lcidf  = $self->{"latest_cid_file"};
-    my $ccidf  = $self->{"current_cid_file"};
-
-    my $lcid = $lcidf->read();
-    unless ( defined $lcid ) {
-        throw_error( '$lcidf->read()', $ec->error );
-        return ();
-    }
-    my $ccid = $ccidf->read();
-    unless ( defined($ccid) ) {
-        throw_error( '$ccidf->read()', $ec->error );
-        return ();
-    }
-    unless ( $ccid == $lcid ) {
-        unless ( $ccidf->write("$lcid") ) {
-            throw_error( '$self->{"$ccidf->write($lcid)', $ec->error );
-            return ();
-        }
-    }
-    return SUCCESS;
 }
 
 =item isLocked ()
