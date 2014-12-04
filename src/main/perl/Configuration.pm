@@ -69,15 +69,16 @@ my $ACTIVE_FN     = "ccm-active-profile.";
 # thrown.
 #
 
-sub new {    #T
-    my ( $class, $cache_manager, $cid, $locked ) = @_;
+sub new
+{    #T
+    my ($class, $cache_manager, $cid, $locked) = @_;
     my $cache_path = $cache_manager->getCachePath();
-    unless ( $cache_path =~ m{^([-./\w]+)} ) {
+    unless ($cache_path =~ m{^([-./\w]+)}) {
         throw_error("Cache path '$cache_path' is not an absolute path");
         return ();
     }
     $cache_path = $1;
-    unless ( $cid =~ m{^(\d+)$} ) {
+    unless ($cid =~ m{^(\d+)$}) {
         throw_error("CID '$cid' must be a number");
         return ();
     }
@@ -91,12 +92,12 @@ sub new {    #T
         "cfg_path"      => $cfg_path,
         "cid_to_number" => undef,
     };
-    unless ( -d $cfg_path ) {
+    unless (-d $cfg_path) {
         throw_error("configuration directory ($cfg_path) does not exist");
         return ();
     }
-    bless( $self, $class );
-    unless ( $self->_create_pid_file($self) ) {
+    bless($self, $class);
+    unless ($self->_create_pid_file($self)) {
         $ec->rethrow_error();
         return ();
     }
@@ -107,7 +108,8 @@ sub new {    #T
 # return configuration path
 #
 
-sub getConfigPath {
+sub getConfigPath
+{
     my ($self) = @_;
     return $self->{"cfg_path"};
 }
@@ -116,14 +118,15 @@ sub getConfigPath {
 # return CacheManager
 #
 
-sub getCacheManager () {
+sub getCacheManager ()
+{
     my ($self) = @_;
     return $self->{"cache_manager"};
 }
 
-
 # returns the pid filename for cid
-sub _pid_filename {
+sub _pid_filename
+{
     my ($self, $cid) = @_;
     $cid = $self->{"cid"} if (!defined($cid));
     return $self->{"cfg_path"} . "/${ACTIVE_FN}${cid}-" . getpid();
@@ -134,13 +137,14 @@ sub _pid_filename {
 # it updates %cid_to_number
 #
 
-sub _create_pid_file {    #T
+sub _create_pid_file
+{    #T
     my ($self) = @_;
-    unless ( $self->{"cid_to_number"}{ $self->{"cid"} } ) {
-        $self->{"cid_to_number"}{ $self->{"cid"} } += 1;
+    unless ($self->{"cid_to_number"}{$self->{"cid"}}) {
+        $self->{"cid_to_number"}{$self->{"cid"}} += 1;
         my $pid_file = $self->_pid_filename();
-        unless ( _touch_file($pid_file) ) {
-            throw_error( "_touch_file($pid_file)", $ec->error );
+        unless (_touch_file($pid_file)) {
+            throw_error("_touch_file($pid_file)", $ec->error);
             return ();
         }
     }
@@ -153,18 +157,19 @@ sub _create_pid_file {    #T
 # given cid drops to zero. it updates %cid_to_number
 #
 
-sub _remove_pid_file () {    #T (indirectly)
-    my ( $self, $cid ) = @_;
-    unless ( defined($cid) ) {
-        throw_error( "_remove_pid_file", "cid parameter not defined" );
+sub _remove_pid_file ()
+{    #T (indirectly)
+    my ($self, $cid) = @_;
+    unless (defined($cid)) {
+        throw_error("_remove_pid_file", "cid parameter not defined");
         return ();
     }
-    $self->{"cid_to_number"}{ $cid } -= 1;
-    if ( $self->{"cid_to_number"}{ $cid } == 0 ) {
+    $self->{"cid_to_number"}{$cid} -= 1;
+    if ($self->{"cid_to_number"}{$cid} == 0) {
         my $pid_file = $self->_pid_filename($cid);
 
-        if ( ( -f $pid_file ) && !unlink($pid_file) ) {
-            throw_error( "unlink($pid_file)", $! );
+        if ((-f $pid_file) && !unlink($pid_file)) {
+            throw_error("unlink($pid_file)", $!);
             return ();
         }
     }
@@ -175,18 +180,19 @@ sub _remove_pid_file () {    #T (indirectly)
 # sub creates empty file with $file_name name
 #
 
-sub _touch_file ($) {    #T
+sub _touch_file ($)
+{    #T
     my ($file_name) = @_;
-    unless ( open( FILEHANDLE, "+> $file_name" ) ) {
-        throw_error( "open ($file_name)", $! );
+    unless (open(FILEHANDLE, "+> $file_name")) {
+        throw_error("open ($file_name)", $!);
         return ();
     }
-    unless ( truncate( FILEHANDLE, 0 ) ) {
-        throw_error( "truncate ($file_name)", $! );
+    unless (truncate(FILEHANDLE, 0)) {
+        throw_error("truncate ($file_name)", $!);
         return ();
     }
-    unless ( close(FILEHANDLE) ) {
-        throw_error( "close ($file_name)", $! );
+    unless (close(FILEHANDLE)) {
+        throw_error("close ($file_name)", $!);
         return ();
     }
     return SUCCESS;
@@ -196,10 +202,11 @@ sub _touch_file ($) {    #T
 # Destructor method. It unlinks the active.pid file.
 #
 
-sub DESTROY {    #T (indirectly)
+sub DESTROY
+{    #T (indirectly)
     my ($self) = @_;
-    unless ( $self->_remove_pid_file( $self->{"cid"} ) ) {
-        throw_error( '_remove_pid_file($self->{"cid"})', $ec->error );
+    unless ($self->_remove_pid_file($self->{"cid"})) {
+        throw_error('_remove_pid_file($self->{"cid"})', $ec->error);
         return ();
     }
     return SUCCESS;
@@ -211,11 +218,12 @@ Returns configuration id.
 
 =cut
 
-# triggers a _update_cid_pidf for unlocked configs 
-sub getConfigurationId {    #T
+# triggers a _update_cid_pidf for unlocked configs
+sub getConfigurationId
+{    #T
     my ($self) = @_;
-    unless ( $self->{"locked"} ) {
-        unless ( $self->_update_cid_pidf() ) {
+    unless ($self->{"locked"}) {
+        unless ($self->_update_cid_pidf()) {
             $ec->rethrow_error();
             return ();
         }
@@ -230,26 +238,26 @@ and object of class Path)
 
 =cut
 
-sub getElement {
-    my ( $self, $path ) = @_;
-    unless ( UNIVERSAL::isa( $path, "EDG::WP4::CCM::Path" ) ) {
+sub getElement
+{
+    my ($self, $path) = @_;
+    unless (UNIVERSAL::isa($path, "EDG::WP4::CCM::Path")) {
         my $ps = $path;
         $path = EDG::WP4::CCM::Path->new($ps);
         unless ($path) {
-            throw_error( "EDG::WP4::CCM::Path->new ($ps)", $ec->error );
+            throw_error("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
             return ();
         }
     }
-    unless ( $self->{"locked"} ) {
-        unless ( $self->_update_cid_pidf() ) {
+    unless ($self->{"locked"}) {
+        unless ($self->_update_cid_pidf()) {
             $ec->rethrow_error();
             return ();
         }
     }
-    my $el = EDG::WP4::CCM::Element->createElement( $self, $path );
+    my $el = EDG::WP4::CCM::Element->createElement($self, $path);
     unless ($el) {
-        throw_error( "EDG::WP4::CCM::Element->createElement ($self, $path)",
-            $ec->error );
+        throw_error("EDG::WP4::CCM::Element->createElement ($self, $path)", $ec->error);
         return ();
     }
     return $el;
@@ -261,16 +269,17 @@ returns value of the element identified by $path
 
 =cut
 
-sub getValue {
-    my ( $self, $path ) = @_;
+sub getValue
+{
+    my ($self, $path) = @_;
     my $el = $self->getElement($path);
     unless ($el) {
-        throw_error( "$self->getElement($path)", $ec->error );
+        throw_error("$self->getElement($path)", $ec->error);
         return ();
     }
     my $val = $el->getValue($path);
-    unless ( defined($val) ) {
-        throw_error( "$el->getValue($path)", $ec->error );
+    unless (defined($val)) {
+        throw_error("$el->getValue($path)", $ec->error);
         return ();
     }
     return ($val);
@@ -282,26 +291,26 @@ returns true if elements identified by $path exists
 
 =cut
 
-sub elementExists {
-    my ( $self, $path ) = @_;
-    unless ( UNIVERSAL::isa( $path, "EDG::WP4::CCM::Path" ) ) {
+sub elementExists
+{
+    my ($self, $path) = @_;
+    unless (UNIVERSAL::isa($path, "EDG::WP4::CCM::Path")) {
         my $ps = $path;
         $path = EDG::WP4::CCM::Path->new($ps);
         unless ($path) {
-            throw_error( "EDG::WP4::CCM::Path->new ($ps)", $ec->error );
+            throw_error("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
             return ();
         }
     }
-    unless ( $self->{"locked"} ) {
-        unless ( $self->_update_cid_pidf() ) {
+    unless ($self->{"locked"}) {
+        unless ($self->_update_cid_pidf()) {
             $ec->rethrow_error();
             return ();
         }
     }
-    my $ex = EDG::WP4::CCM::Element->elementExists( $self, $path );
-    unless ( defined($ex) ) {
-        throw_error( "EDG::WP4::CCM::Element->elementExists ($self, $path)",
-            $ec->error );
+    my $ex = EDG::WP4::CCM::Element->elementExists($self, $path);
+    unless (defined($ex)) {
+        throw_error("EDG::WP4::CCM::Element->elementExists ($self, $path)", $ec->error);
         return ();
     }
     return $ex;
@@ -313,21 +322,22 @@ sub elementExists {
 # if cid changes it also creates new pidfile
 #
 
-sub _update_cid_pidf {    #T
+sub _update_cid_pidf
+{    #T
     my ($self) = @_;
     my $cid = $self->{"cache_manager"}->getCurrentCid();
-    unless ( defined($cid) ) {
-        throw_error( '$self->{"cache_manager"}->getCurrentCid()', $ec->error );
+    unless (defined($cid)) {
+        throw_error('$self->{"cache_manager"}->getCurrentCid()', $ec->error);
         return ();
     }
-    if ( $self->{"cid"} != $cid ) {
-        unless ( $self->_remove_pid_file( $self->{"cid"} ) ) {
+    if ($self->{"cid"} != $cid) {
+        unless ($self->_remove_pid_file($self->{"cid"})) {
             $ec->rethrow_error();
             return ();
         }
-        $self->{"cid"} = $cid;
+        $self->{"cid"}      = $cid;
         $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
-        unless ( $self->_create_pid_file() ) {
+        unless ($self->_create_pid_file()) {
             $ec->rethrow_error();
             return ();
         }
@@ -341,7 +351,8 @@ Lock configuration (local lock).
 
 =cut
 
-sub lock {    #T
+sub lock
+{    #T
     my ($self) = @_;
     $self->{"locked"} = 1;
     return SUCCESS;
@@ -353,10 +364,11 @@ Unlock configuration (local unlock).
 
 =cut
 
-sub unlock {    #T
+sub unlock
+{    #T
     my ($self) = @_;
     $self->{"locked"} = 0;
-    unless ( $self->_update_cid_pidf() ) {
+    unless ($self->_update_cid_pidf()) {
         $ec->rethrow_error();
         return ();
     }
@@ -371,7 +383,8 @@ Returns true if the configuration is locked, otherwise false
 
 =cut
 
-sub isLocked {    #T
+sub isLocked
+{    #T
     my ($self) = @_;
     return $self->{"locked"};
 }

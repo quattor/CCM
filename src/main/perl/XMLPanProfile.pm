@@ -52,39 +52,41 @@ use constant VALID_ATTRIBUTES => {
 
 # Warns in case a tag in the XML profile is not known (i.e, has not a
 # valid entry in the INTERPRETERS hash.
-sub warn_unknown {
-    my ( $content, $tag ) = @_;
+sub warn_unknown
+{
+    my ($content, $tag) = @_;
 
     warn "Cannot handle tag $tag!";
 }
 
 # Turns an nlist in the XML into a Perl hash reference with all the
 # types and metadata from the profile.
-sub interpret_nlist {
+sub interpret_nlist
+{
     my ($content) = @_;
 
     my $nl = {};
 
     my $i = 1;
 
-    while ( $i < scalar(@$content) ) {
-        my $t = $content->[ $i++ ];
-        my $c = $content->[ $i++ ];
-        $nl->{ $c->[0]->{name} } = __PACKAGE__->interpret_node( $t, $c ) if $t;
+    while ($i < scalar(@$content)) {
+        my $t = $content->[$i++];
+        my $c = $content->[$i++];
+        $nl->{$c->[0]->{name}} = __PACKAGE__->interpret_node($t, $c) if $t;
     }
 
     return $nl;
 }
 
 # Processess a scalar, possibly decoding its value.
-sub interpret_scalar {
-    my ( $content, $tag, $encoding ) = @_;
+sub interpret_scalar
+{
+    my ($content, $tag, $encoding) = @_;
 
     $content = $content->[2];
     if ($encoding) {
-        $content = EDG::WP4::CCM::Fetch->DecodeValue( $content, $encoding );
-    }
-    elsif ( !defined($content) && $tag eq 'string' ) {
+        $content = EDG::WP4::CCM::Fetch->DecodeValue($content, $encoding);
+    } elsif (!defined($content) && $tag eq 'string') {
         $content = '';
     }
 
@@ -93,15 +95,16 @@ sub interpret_scalar {
 
 # Turns a list in the profile into a perl array reference in which all
 # the elements have the correct metadata associated.
-sub interpret_list {
-    my ( $content, $tag, $encoding ) = @_;
+sub interpret_list
+{
+    my ($content, $tag, $encoding) = @_;
 
     my $l = [];
     my $i = 1;
-    while ( $i < scalar(@$content) ) {
-        my $t = $content->[ $i++ ];
-        my $c = $content->[ $i++ ];
-        push( @$l, __PACKAGE__->interpret_node( $t, $c ) ) if $t;
+    while ($i < scalar(@$content)) {
+        my $t = $content->[$i++];
+        my $c = $content->[$i++];
+        push(@$l, __PACKAGE__->interpret_node($t, $c)) if $t;
     }
 
     return $l;
@@ -117,8 +120,9 @@ attributes and values.
 
 =cut
 
-sub interpret_node {
-    my ( $class, $tag, $content ) = @_;
+sub interpret_node
+{
+    my ($class, $tag, $content) = @_;
 
     my $val = {};
 
@@ -126,18 +130,17 @@ sub interpret_node {
 
     $val->{TYPE} = $tag;
 
-    while ( my ( $k, $v ) = each(%$att) ) {
+    while (my ($k, $v) = each(%$att)) {
         my $a = uc($k);
-        if ( exists( VALID_ATTRIBUTES->{$a} ) ) {
+        if (exists(VALID_ATTRIBUTES->{$a})) {
             $val->{$a} = $v;
-        }
-        elsif ( $k ne "format" ) {
+        } elsif ($k ne "format") {
             warn "Unknown attribute $k";
         }
     }
 
     my $f = INTERPRETERS->{$tag} || \&warn_unknown;
-    $val->{VALUE} = $f->( $content, $tag, $val->{ENCODING} );
+    $val->{VALUE} = $f->($content, $tag, $val->{ENCODING});
 
     $val->{CHECKSUM} ||= ComputeChecksum($val);
     return $val;

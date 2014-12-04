@@ -21,8 +21,8 @@ use Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
 our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
-  LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
-  escape);
+    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
+    escape);
 our $VERSION = '${project.version}';
 use EDG::WP4::CCM::DB;
 
@@ -30,15 +30,15 @@ use EDG::WP4::CCM::DB;
 
 use constant UNDEFINED => -1;
 use constant ELEMENT   => 0;
-use constant PROPERTY  => ( 1 << 0 );
-use constant RESOURCE  => ( 1 << 1 );
-use constant STRING    => ( ( 1 << 2 ) | PROPERTY );
-use constant LONG      => ( ( 1 << 3 ) | PROPERTY );
-use constant DOUBLE    => ( ( 1 << 4 ) | PROPERTY );
-use constant BOOLEAN   => ( ( 1 << 5 ) | PROPERTY );
-use constant LIST      => ( ( 1 << 2 ) | RESOURCE );
-use constant NLIST     => ( ( 1 << 3 ) | RESOURCE );
-use constant LINK      => ( ( 1 << 9 ) | STRING );
+use constant PROPERTY  => (1 << 0);
+use constant RESOURCE  => (1 << 1);
+use constant STRING    => ((1 << 2) | PROPERTY);
+use constant LONG      => ((1 << 3) | PROPERTY);
+use constant DOUBLE    => ((1 << 4) | PROPERTY);
+use constant BOOLEAN   => ((1 << 5) | PROPERTY);
+use constant LIST      => ((1 << 2) | RESOURCE);
+use constant NLIST     => ((1 << 3) | RESOURCE);
+use constant LINK      => ((1 << 9) | STRING);
 use constant TABLE     => NLIST;
 use constant RECORD    => NLIST;
 
@@ -96,7 +96,8 @@ for use with all the components that deal with escaped keys.
 
 =cut
 
-sub unescape ($) {
+sub unescape ($)
+{
     my $str = shift;
     $str =~ s!(_[0-9a-f]{2})!sprintf ("%c", hex($1))!eg;
     return $str;
@@ -111,7 +112,8 @@ demand for use with all tools that have to escape and unescape values.
 
 =cut
 
-sub escape {
+sub escape
+{
     my $str = shift;
 
     $str =~ s/(^[0-9]|[^a-zA-Z0-9])/sprintf("_%lx", ord($1))/eg;
@@ -126,27 +128,28 @@ configuration path (it can be either a Path object or a string).
 
 =cut
 
-sub new {
+sub new
+{
 
     my $proto = shift;
     my $class = ref($proto) || $proto;
 
-    my ( $config, $ele_path, $prof_dir );
+    my ($config, $ele_path, $prof_dir);
     my $self = {};
 
-    if ( @_ != 2 ) {
+    if (@_ != 2) {
         throw_error("usage: Element->new(config, ele_path)");
         return ();
     }
 
     $config = shift;    # profile's directory path
 
-    if ( !UNIVERSAL::isa( $config, "EDG::WP4::CCM::Configuration" ) ) {
+    if (!UNIVERSAL::isa($config, "EDG::WP4::CCM::Configuration")) {
         throw_error("usage: Element->new(config, ele_path)");
         return ();
     }
 
-    $ele_path = shift;                       # element's configuration path
+    $ele_path = shift;                      # element's configuration path
     $prof_dir = $config->getConfigPath();
 
     # element objects have the following structure
@@ -155,8 +158,8 @@ sub new {
     $self->{PROF_DIR}    = $prof_dir;
     $self->{NAME}        = undef;
     $self->{EID}         = undef;
-    $self->{PATH}        = undef;            # should be a Path object
-    $self->{TYPE}        = undef;            # should a valid TYPE constant)
+    $self->{PATH}        = undef;           # should be a Path object
+    $self->{TYPE}        = undef;           # should a valid TYPE constant)
     $self->{DERIVATION}  = undef;
     $self->{CHECKSUM}    = undef;
     $self->{DESCRIPTION} = undef;
@@ -164,14 +167,13 @@ sub new {
 
     # path can be a string or a Path object
 
-    if ( UNIVERSAL::isa( $ele_path, "EDG::WP4::CCM::Path" ) ) {
+    if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $self->{PATH} = $ele_path;
         $ele_path = $ele_path->toString();
-    }
-    else {
+    } else {
         $self->{PATH} = EDG::WP4::CCM::Path->new($ele_path);
-        if ( !$self->{PATH} ) {
-            throw_error( "Path->new ($ele_path)", $ec->error );
+        if (!$self->{PATH}) {
+            throw_error("Path->new ($ele_path)", $ec->error);
             return ();
         }
     }
@@ -181,26 +183,26 @@ sub new {
     $self->{NAME} = $1;
 
     # the name of the element wiht Path("/") is "/"
-    if ( $self->{NAME} eq "" ) {
+    if ($self->{NAME} eq "") {
         $self->{NAME} = "/";
     }
 
-    $self->{EID} = _resolve_eid( $prof_dir, $ele_path );
-    if ( !defined( $self->{EID} ) ) {
-        throw_error( "failed to resolve element's ID", $ec->error );
+    $self->{EID} = _resolve_eid($prof_dir, $ele_path);
+    if (!defined($self->{EID})) {
+        throw_error("failed to resolve element's ID", $ec->error);
         return ();
     }
-    if ( not _read_metadata($self) ) {
-        throw_error( "failed to read element's metadata", $ec->error );
-        return ();
-    }
-
-    if ( not _read_value($self) ) {
-        throw_error( "failed to read element's value", $ec->error );
+    if (not _read_metadata($self)) {
+        throw_error("failed to read element's metadata", $ec->error);
         return ();
     }
 
-    bless( $self, $class );
+    if (not _read_value($self)) {
+        throw_error("failed to read element's value", $ec->error);
+        return ();
+    }
+
+    bless($self, $class);
     return ($self);
 
 }
@@ -222,12 +224,13 @@ profile data goes into a whole new path.)
 {
     my $CACHE = {};
 
-    sub _get_tied_db($$) {
-        my ( $returnref, $path ) = @_;
+    sub _get_tied_db($$)
+    {
+        my ($returnref, $path) = @_;
         my ($base) = $path =~ /(\w+)$/;
         if (   $CACHE->{$base}->{err}
             or not $CACHE->{$base}->{path}
-            or $CACHE->{$base}->{path} ne $path )
+            or $CACHE->{$base}->{path} ne $path)
         {
             my %newhash = ();
             $CACHE->{$base}->{path} = $path;
@@ -235,7 +238,7 @@ profile data goes into a whole new path.)
             # Should any old references be untied here?
             $CACHE->{$base}->{db} = \%newhash;
             $CACHE->{$base}->{err} =
-              EDG::WP4::CCM::DB::read( \%newhash, $path );
+                EDG::WP4::CCM::DB::read(\%newhash, $path);
         }
         $$returnref = $CACHE->{$base}->{db};
         return $CACHE->{$base}->{err};
@@ -249,13 +252,14 @@ otherwise false is returned
 
 =cut
 
-sub elementExists {
+sub elementExists
+{
 
     my $proto = shift;
 
-    my ( $config, $ele_path, $prof_dir );
+    my ($config, $ele_path, $prof_dir);
 
-    if ( @_ != 2 ) {
+    if (@_ != 2) {
         throw_error("usage: Element->elementExists(config, ele_path)");
         return ();
     }
@@ -263,19 +267,19 @@ sub elementExists {
     $config   = shift;    # profile's directory path
     $ele_path = shift;    # element's configuration path
 
-    if ( UNIVERSAL::isa( $ele_path, "EDG::WP4::CCM::Path" ) ) {
+    if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $ele_path = $ele_path->toString();
     }
     $prof_dir = $config->getConfigPath();
-    my ( $hashref, $eid );
+    my ($hashref, $eid);
 
-    my $err = _get_tied_db( \$hashref, "${prof_dir}/path2eid" );
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
     if ($err) {
         throw_error($err);
         return ();
     }
 
-    return ( exists( $hashref->{$ele_path} ) );
+    return (exists($hashref->{$ele_path}));
 }
 
 =pod
@@ -289,14 +293,15 @@ configuration path (it can be either a Path object or a string).
 
 =cut
 
-sub createElement {
+sub createElement
+{
 
     my $proto = shift;
 
-    my ( $config, $ele_path, $prof_dir );
-    my ( $element, $ele_type );
+    my ($config, $ele_path, $prof_dir);
+    my ($element, $ele_type);
 
-    if ( @_ != 2 ) {
+    if (@_ != 2) {
         throw_error("usage: Element->createElement(config, ele_path)");
         return ();
     }
@@ -304,31 +309,29 @@ sub createElement {
     $config   = shift;    # profile's directory path
     $ele_path = shift;    # element's configuration path
 
-    if ( UNIVERSAL::isa( $ele_path, "EDG::WP4::CCM::Path" ) ) {
+    if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $ele_path = $ele_path->toString();
     }
 
-    $ele_type = _read_type( $config, $ele_path );
-    if ( !$ele_type ) {
-        throw_error( "Failed to read type of $ele_path", $ec->error );
+    $ele_type = _read_type($config, $ele_path);
+    if (!$ele_type) {
+        throw_error("Failed to read type of $ele_path", $ec->error);
         return ();
     }
 
-    if ( $ele_type & PROPERTY ) {
-        $element = EDG::WP4::CCM::Property->new( $config, $ele_path );
+    if ($ele_type & PROPERTY) {
+        $element = EDG::WP4::CCM::Property->new($config, $ele_path);
         unless ($element) {
-            throw_error( "Property->new($config, $ele_path)", $ec->error );
+            throw_error("Property->new($config, $ele_path)", $ec->error);
             return ();
         }
-    }
-    elsif ( $ele_type & RESOURCE ) {
-        $element = EDG::WP4::CCM::Resource->new( $config, $ele_path );
+    } elsif ($ele_type & RESOURCE) {
+        $element = EDG::WP4::CCM::Resource->new($config, $ele_path);
         unless ($element) {
-            throw_error( "Resource->new($config, $ele_path)", $ec->error );
+            throw_error("Resource->new($config, $ele_path)", $ec->error);
             return ();
         }
-    }
-    else {
+    } else {
         throw_error("wrong element type $ele_path");
         return ();
     }
@@ -344,7 +347,8 @@ Returns the element's Configuration object
 
 =cut
 
-sub getConfiguration {
+sub getConfiguration
+{
 
     my ($self) = shift;
     return $self->{CONFIG};
@@ -360,10 +364,11 @@ to change.
 
 =cut
 
-sub getEID {
+sub getEID
+{
 
     my $self = shift;
-    return ( $self->{EID} );
+    return ($self->{EID});
 
 }
 
@@ -373,10 +378,11 @@ Returns the name of the object
 
 =cut
 
-sub getName {
+sub getName
+{
 
     my $self = shift;
-    return ( $self->{NAME} );
+    return ($self->{NAME});
 
 }
 
@@ -386,9 +392,10 @@ Returns the name of the object, unescaped
 
 =cut
 
-sub getUnescapedName {
+sub getUnescapedName
+{
     my $self = shift;
-    return unescape( $self->getName() );
+    return unescape($self->getName());
 }
 
 =item getPath()
@@ -397,12 +404,13 @@ Returns a Path object with the element's path
 
 =cut
 
-sub getPath {
+sub getPath
+{
 
     my $self = shift;
     my $path;
 
-    $path = EDG::WP4::CCM::Path->new( $self->{PATH}->toString() );
+    $path = EDG::WP4::CCM::Path->new($self->{PATH}->toString());
 
     return ($path);
 
@@ -414,10 +422,11 @@ Returns the element's type, that is, one of the TYPE_* constans
 
 =cut
 
-sub getType {
+sub getType
+{
 
     my $self = shift;
-    return ( $self->{TYPE} );
+    return ($self->{TYPE});
 
 }
 
@@ -427,10 +436,11 @@ Returns the element's derivation
 
 =cut
 
-sub getDerivation {
+sub getDerivation
+{
 
     my $self = shift;
-    return ( $self->{DERIVATION} );
+    return ($self->{DERIVATION});
 
 }
 
@@ -440,10 +450,11 @@ Returns the element's checksum (that is, MD5 digest)
 
 =cut
 
-sub getChecksum {
+sub getChecksum
+{
 
     my $self = shift;
-    return ( $self->{CHECKSUM} );
+    return ($self->{CHECKSUM});
 
 }
 
@@ -453,10 +464,11 @@ Returns the element's description
 
 =cut
 
-sub getDescription {
+sub getDescription
+{
 
     my $self = shift;
-    return ( $self->{DESCRIPTION} );
+    return ($self->{DESCRIPTION});
 
 }
 
@@ -469,10 +481,11 @@ to change.
 
 =cut
 
-sub getValue {
+sub getValue
+{
 
     my $self = shift;
-    return ( $self->{VALUE} );
+    return ($self->{VALUE});
 
 }
 
@@ -482,10 +495,11 @@ Returns true if the element's type match type contained in argument $type
 
 =cut
 
-sub isType {
+sub isType
+{
 
-    my ( $self, $type ) = @_;
-    return ( ( $type & $self->{TYPE} ) == $type );
+    my ($self, $type) = @_;
+    return (($type & $self->{TYPE}) == $type);
 
 }
 
@@ -495,10 +509,11 @@ Return true if the element's type is RESOURCE
 
 =cut
 
-sub isResource {
+sub isResource
+{
 
-    my ( $self, $type ) = @_;
-    return ( RESOURCE & $self->{TYPE} );
+    my ($self, $type) = @_;
+    return (RESOURCE & $self->{TYPE});
 
 }
 
@@ -508,10 +523,11 @@ Return true if the element's type is PROPERTY
 
 =cut
 
-sub isProperty {
+sub isProperty
+{
 
-    my ( $self, $type ) = @_;
-    return ( PROPERTY & $self->{TYPE} );
+    my ($self, $type) = @_;
+    return (PROPERTY & $self->{TYPE});
 
 }
 
@@ -528,25 +544,26 @@ Note that links cannot be followed.
 
 =cut
 
-sub getTree {
+sub getTree
+{
     my $self = shift;
-    my ( $ret, $el );
+    my ($ret, $el);
 
-  SWITCH:
+SWITCH:
     {
         $self->isType(LIST) && do {
             $ret = [];
-            while ( $self->hasNextElement ) {
+            while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                push( @$ret, $el->getTree );
+                push(@$ret, $el->getTree);
             }
             last SWITCH;
         };
         $self->isType(NLIST) && do {
             $ret = {};
-            while ( $self->hasNextElement ) {
+            while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                $$ret{ $el->getName() } = $el->getTree;
+                $$ret{$el->getName()} = $el->getTree;
             }
             last SWITCH;
         };
@@ -569,12 +586,13 @@ sub getTree {
 # Private function that resolve element's id number. $prof_dir is the profile
 # full directory path, and $ele_path is the element path (as string)
 #
-sub _resolve_eid($$) {
+sub _resolve_eid($$)
+{
 
-    my ( $prof_dir, $ele_path ) = @_;
-    my ( $hashref, $eid );
+    my ($prof_dir, $ele_path) = @_;
+    my ($hashref, $eid);
 
-    my $err = _get_tied_db( \$hashref, "${prof_dir}/path2eid" );
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
     if ($err) {
         throw_error($err);
         return ();
@@ -587,7 +605,7 @@ sub _resolve_eid($$) {
         return ();
     }
 
-    return ( unpack( "L", $eid ) );
+    return (unpack("L", $eid));
 
 }
 
@@ -598,21 +616,22 @@ sub _resolve_eid($$) {
 # into a Type constant
 # $string type in string format
 #
-sub _type_converter($) {
+sub _type_converter($)
+{
 
     my $type = shift;
 
     # type conversion
     # TODO: there must be a better way to do this ...
-    return (STRING)  if ( $type eq "string" );
-    return (DOUBLE)  if ( $type eq "double" );
-    return (LONG)    if ( $type eq "long" );
-    return (BOOLEAN) if ( $type eq "boolean" );
-    return (LIST)    if ( $type eq "list" );
-    return (NLIST)   if ( $type eq "nlist" );
-    return (LINK)    if ( $type eq "link" );
-    return (TABLE)   if ( $type eq "table" );
-    return (RECORD)  if ( $type eq "record" );
+    return (STRING)  if ($type eq "string");
+    return (DOUBLE)  if ($type eq "double");
+    return (LONG)    if ($type eq "long");
+    return (BOOLEAN) if ($type eq "boolean");
+    return (LIST)    if ($type eq "list");
+    return (NLIST)   if ($type eq "nlist");
+    return (LINK)    if ($type eq "link");
+    return (TABLE)   if ($type eq "table");
+    return (RECORD)  if ($type eq "record");
 
     return (UNDEFINED);
 }
@@ -623,50 +642,51 @@ sub _type_converter($) {
 # Private function to read metadata information from DB file.
 # $self if a reference to myself (Element) object
 #
-sub _read_metadata($) {
+sub _read_metadata($)
+{
 
     my $self = shift;
-    my ( $prof_dir, $eid );
-    my ( $key,      $hashref );
+    my ($prof_dir, $eid);
+    my ($key,      $hashref);
 
     $prof_dir = $self->{PROF_DIR};
     $eid      = $self->{EID};
 
-    my $err = _get_tied_db( \$hashref, "${prof_dir}/eid2data" );
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
     if ($err) {
         throw_error($err);
         return ();
     }
 
-    $key = pack( "L", $eid | 0x10000000 );
+    $key = pack("L", $eid | 0x10000000);
     $self->{TYPE} = $hashref->{$key};
 
-    if ( !defined( $self->{TYPE} ) ) {
+    if (!defined($self->{TYPE})) {
         throw_error("failed to read element's type");
         return ();
     }
-    $self->{TYPE} = _type_converter( $self->{TYPE} );
+    $self->{TYPE} = _type_converter($self->{TYPE});
 
-    $key = pack( "L", $eid | 0x20000000 );
+    $key = pack("L", $eid | 0x20000000);
     $self->{DERIVATION} = $hashref->{$key};
 
     # TODO: metadata atribute "derivation" should not be optional
-    if ( !defined( $self->{DERIVATION} ) ) {
+    if (!defined($self->{DERIVATION})) {
         $self->{DERIVATION} = "";
     }
 
-    $key = pack( "L", $eid | 0x30000000 );
+    $key = pack("L", $eid | 0x30000000);
     $self->{CHECKSUM} = $hashref->{$key};
-    if ( !defined( $self->{CHECKSUM} ) ) {
+    if (!defined($self->{CHECKSUM})) {
         throw_error("failed to read element's checksum");
         return ();
     }
 
-    $key = pack( "L", $eid | 0x40000000 );
+    $key = pack("L", $eid | 0x40000000);
     $self->{DESCRIPTION} = $hashref->{$key};
 
     # metadata atribute "description" is optional
-    if ( !defined( $self->{DESCRIPTION} ) ) {
+    if (!defined($self->{DESCRIPTION})) {
         $self->{DESCRIPTION} = "";
     }
 
@@ -682,32 +702,33 @@ sub _read_metadata($) {
 # $config is a configuration profile
 # $ele_path is the element path (as string)
 #
-sub _read_type($$) {
+sub _read_type($$)
+{
 
-    my ( $config,   $ele_path );
-    my ( $prof_dir, $eid );
-    my ( $key,      $hashref, $type );
+    my ($config,   $ele_path);
+    my ($prof_dir, $eid);
+    my ($key,      $hashref, $type);
 
-    ( $config, $ele_path ) = @_;
+    ($config, $ele_path) = @_;
 
     $prof_dir = $config->getConfigPath();
 
-    $eid = _resolve_eid( $prof_dir, $ele_path );
-    if ( !defined($eid) ) {
-        throw_error( "failed to resolve element's ID", $ec->error );
+    $eid = _resolve_eid($prof_dir, $ele_path);
+    if (!defined($eid)) {
+        throw_error("failed to resolve element's ID", $ec->error);
         return ();
     }
 
-    my $err = _get_tied_db( \$hashref, "${prof_dir}/eid2data" );
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
     if ($err) {
         throw_error($err);
         return ();
     }
 
-    $key = pack( "L", $eid | 0x10000000 );
+    $key = pack("L", $eid | 0x10000000);
     $type = $hashref->{$key};
 
-    if ( !defined($type) ) {
+    if (!defined($type)) {
         throw_error("failed to read element's type");
         return ();
     }
@@ -724,24 +745,25 @@ sub _read_type($$) {
 # Private function to read element's value from DB file.
 # $self if a reference to myself (Element) object
 #
-sub _read_value ($$$) {
+sub _read_value ($$$)
+{
 
     my $self = shift;
-    my ( $prof_dir, $eid );
-    my ( $key,      $hashref );
+    my ($prof_dir, $eid);
+    my ($key,      $hashref);
 
     $prof_dir = $self->{PROF_DIR};
     $eid      = $self->{EID};
 
-    my $err = _get_tied_db( \$hashref, "${prof_dir}/eid2data" );
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
     if ($err) {
         throw_error($err);
         return ();
     }
 
-    $key = pack( "L", $eid );
-    $self->{VALUE} = decode_utf8( $hashref->{$key} );
-    if ( !defined( $self->{VALUE} ) ) {
+    $key = pack("L", $eid);
+    $self->{VALUE} = decode_utf8($hashref->{$key});
+    if (!defined($self->{VALUE})) {
         throw_error("failed to read element's value");
         return ();
     }

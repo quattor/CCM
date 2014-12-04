@@ -48,13 +48,14 @@ Specification document
 
 =cut
 
-sub new {
-    my ( $class, $path ) = @_;
-    unless ( defined($path) ) {
+sub new
+{
+    my ($class, $path) = @_;
+    unless (defined($path)) {
         $path = "/";
     }
-    
-    my @s = split( '/', $path, -1 );
+
+    my @s = split('/', $path, -1);
     my $start = shift @s;
 
     # remove trailing /
@@ -62,13 +63,16 @@ sub new {
     push(@s, $end) if (defined($end) && $end ne '');
 
     # must start with /, but not with //+
-    unless (defined($start) && $start eq '' && ( !@s || $s[0] ne '') ) {
-        throw_error("path $path must be an absolute path: start '".($start || '')."', remainder ".join(' / ', @s));
+    unless (defined($start) && $start eq '' && (!@s || $s[0] ne '')) {
+        throw_error("path $path must be an absolute path: start '"
+                . ($start || '')
+                . "', remainder "
+                . join(' / ', @s));
         return ();
     }
 
     my $self = \@s;
-    bless( $self, $class );
+    bless($self, $class);
     return $self;
 }
 
@@ -78,9 +82,10 @@ get the string representation of path
 
 =cut
 
-sub toString {
+sub toString
+{
     my ($self) = @_;
-    return "/" . join( '/', @$self );
+    return "/" . join('/', @$self);
 }
 
 =item up ()
@@ -91,9 +96,10 @@ rises an exception
 
 =cut
 
-sub up {
+sub up
+{
     my ($self) = @_;
-    if ( @$self == 0 ) {
+    if (@$self == 0) {
         throw_error("could not go up, it will generate empty path");
         return ();
     }
@@ -107,13 +113,14 @@ add one chunk to a path, chunk cannot be compound path
 
 =cut
 
-sub down {
-    my ( $self, $chunk ) = @_;
-    if ( $chunk =~ /\// || $chunk eq "" ) {
+sub down
+{
+    my ($self, $chunk) = @_;
+    if ($chunk =~ /\// || $chunk eq "") {
         throw_error("input is not a simple path chunk");
         return ();
     }
-    push( @$self, $chunk );
+    push(@$self, $chunk);
     return $self;
 }
 

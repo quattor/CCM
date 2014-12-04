@@ -55,7 +55,8 @@ character.
 
 =cut
 
-sub read {    #T
+sub read
+{    #T
     my ($self) = @_;
     my $fh = CAF::FileReader->new($self->{"file_name"});
     chop($fh);
@@ -69,8 +70,9 @@ contents.
 
 =cut
 
-sub write {    #T
-    my ( $self, $contents ) = @_;
+sub write
+{    #T
+    my ($self, $contents) = @_;
     my $fh = CAF::FileWriter->new($self->{"file_name"});
     print $fh "$contents\n";
     $fh->close();
@@ -81,9 +83,10 @@ sub write {    #T
 # lock using blocking flock call
 #
 
-sub _block {
-    unless ( flock( FH, 2 ) ) {
-        throw_error( "flock (FH, 2)", $! );
+sub _block
+{
+    unless (flock(FH, 2)) {
+        throw_error("flock (FH, 2)", $!);
         return ();
     }
     return SUCCESS;
@@ -93,17 +96,18 @@ sub _block {
 # lock using unblocking call with timeout mechanism
 #
 
-sub _lock {
+sub _lock
+{
     my ($self) = @_;
-    my $locked = flock( FH, 6 );
+    my $locked = flock(FH, 6);
     my $i = 1;
-    $locked = flock( FH, 6 );
-    while ( !$locked && $i++ < $self->{"retries"} ) {
-        sleep( $self->{"wait"} );
-        $locked = flock( FH, 6 );
+    $locked = flock(FH, 6);
+    while (!$locked && $i++ < $self->{"retries"}) {
+        sleep($self->{"wait"});
+        $locked = flock(FH, 6);
     }
     unless ($locked) {
-        throw_error( "could not get lock (flock (FH, 6))", $! );
+        throw_error("could not get lock (flock (FH, 6))", $!);
         return ();
     }
     return SUCCESS;
@@ -113,9 +117,10 @@ sub _lock {
 # unlock using flock call
 #
 
-sub _unlock {
-    unless ( flock( FH, 8 ) ) {
-        throw_error( "flock (FH, 8)", $! );
+sub _unlock
+{
+    unless (flock(FH, 8)) {
+        throw_error("flock (FH, 8)", $!);
         return ();
     }
     return SUCCESS;
@@ -127,7 +132,8 @@ get file name
 
 =cut
 
-sub get_file_name () {    #T
+sub get_file_name ()
+{    #T
     my ($self) = @_;
     return $self->{"file_name"};
 }
@@ -139,21 +145,21 @@ file
 
 =cut
 
-sub new ($$$) {           #T
-    my ( $class, $file_name, $wait, $retries ) = @_;
+sub new ($$$)
+{    #T
+    my ($class, $file_name, $wait, $retries) = @_;
     my $self = {
         "file_name" => $file_name,
         "wait"      => getCfgValue("lock_wait"),
         "retries"   => getCfgValue("retrieve_retries"),
     };
-    bless( $self, $class );
+    bless($self, $class);
     return $self;
 }
 
 =pod
 
 =back
-
 =cut
 
 1;

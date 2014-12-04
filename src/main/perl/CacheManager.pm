@@ -60,16 +60,17 @@ $config_file is an optional parameter that points to the ccc.conf file.
 
 =cut
 
-sub new {    #T
-    my ( $class, $cache_path ) = @_;
+sub new
+{    #T
+    my ($class, $cache_path) = @_;
 
     initCfg();
 
-    unless ( defined($cache_path) ) {
+    unless (defined($cache_path)) {
         $cache_path = getCfgValue("cache_root");
     }
 
-    unless ( check_dir( $cache_path, "main cache" ) ) {
+    unless (check_dir($cache_path, "main cache")) {
         $ec->rethrow_error();
         return ();
     }
@@ -92,36 +93,36 @@ sub new {    #T
     $self->{"current_cid_file"} = EDG::WP4::CCM::SyncFile->new($cc);
     $self->{"latest_cid_file"}  = EDG::WP4::CCM::SyncFile->new($lc);
 
-    unless ( check_dir( $self->{"data_path"}, "data" )
-        && check_file( $gl, "global.lock" )
-        && check_file( $cc, "current.cid" )
-        && check_file( $lc, "latest.cid" ) )
+    unless (check_dir($self->{"data_path"}, "data")
+        && check_file($gl, "global.lock")
+        && check_file($cc, "current.cid")
+        && check_file($lc, "latest.cid"))
     {
         $ec->rethrow_error();
         return ();
     }
 
-    bless( $self, $class );
+    bless($self, $class);
     return $self;
 }
 
-sub check_dir ($$) {    #T
-    my ( $dir, $name ) = @_;
-    if ( -d $dir ) {
+sub check_dir ($$)
+{    #T
+    my ($dir, $name) = @_;
+    if (-d $dir) {
         return SUCCESS;
-    }
-    else {
+    } else {
         throw_error("$name directory does not exist");
         return ();
     }
 }
 
-sub check_file ($$) {    #T
-    my ( $file, $name ) = @_;
-    if ( -f $file ) {
+sub check_file ($$)
+{    #T
+    my ($file, $name) = @_;
+    if (-f $file) {
         return SUCCESS;
-    }
-    else {
+    } else {
         throw_error("$name file does not exist");
         return ();
     }
@@ -131,7 +132,8 @@ sub check_file ($$) {    #T
 # returns path of the cache
 #
 
-sub getCachePath {
+sub getCachePath
+{
     my ($self) = @_;
     return $self->{"cache_path"};
 }
@@ -140,7 +142,8 @@ sub getCachePath {
 
 =cut
 
-sub fetchForeignProfile {
+sub fetchForeignProfile
+{
 }
 
 =item getUnlockedConfiguration ($cred; $cid)
@@ -153,10 +156,11 @@ Security and $cred parameter meaning are not defined.
 
 =cut
 
-sub getUnlockedConfiguration {    #T
-    my ( $self, $cred, $cid ) = @_;
-    my $cfg = $self->_getConfig( 0, $cred, $cid );
-    unless ( defined($cfg) ) {
+sub getUnlockedConfiguration
+{    #T
+    my ($self, $cred, $cid) = @_;
+    my $cfg = $self->_getConfig(0, $cred, $cid);
+    unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
     }
@@ -173,10 +177,11 @@ Security and $cred parameter meaning are not defined.
 
 =cut
 
-sub getLockedConfiguration {    #T
-    my ( $self, $cred, $cid ) = @_;
-    my $cfg = $self->_getConfig( 1, $cred, $cid );
-    unless ( defined($cfg) ) {
+sub getLockedConfiguration
+{    #T
+    my ($self, $cred, $cid) = @_;
+    my $cfg = $self->_getConfig(1, $cred, $cid);
+    unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
     }
@@ -190,24 +195,25 @@ sub getLockedConfiguration {    #T
 # $cid - (optional) configuration id
 #
 
-sub _getConfig {    #T
-    my ( $self, $lc, $cred, $cid ) = @_;
+sub _getConfig
+{    #T
+    my ($self, $lc, $cred, $cid) = @_;
     my $locked = $self->isLocked();
-    unless ( defined($locked) ) {
-        throw_error( "$self->isLocked()", $ec->error );
+    unless (defined($locked)) {
+        throw_error("$self->isLocked()", $ec->error);
         return ();
     }
 
-    unless ( defined($cid) ) {
+    unless (defined($cid)) {
         $cid = $self->{"current_cid_file"}->read();
-        unless ( defined($cid) ) {
-            throw_error( '$self{"current_cid_file"}->read()', $ec->error );
+        unless (defined($cid)) {
+            throw_error('$self{"current_cid_file"}->read()', $ec->error);
             return ();
         }
     }
 
-    my $cfg = EDG::WP4::CCM::Configuration->new( $self, $cid, $lc );
-    unless ( defined($cfg) ) {
+    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc);
+    unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
     }
@@ -220,21 +226,19 @@ Returns true if the cache is globally locked, otherwise false.
 
 =cut
 
-sub isLocked {    #T
+sub isLocked
+{    #T
     my ($self) = @_;
     my $locked = $self->{"global_lock_file"}->read();
-    unless ( defined($locked) ) {
-        throw_error(
-            "read (" . $self->{"global_lock_file"}->get_file_name . ")",
-            $ec->error );
+    unless (defined($locked)) {
+        throw_error("read (" . $self->{"global_lock_file"}->get_file_name . ")", $ec->error);
         return ();
     }
-    if    ( $locked eq $LOCKED )   { return 1; }
-    elsif ( $locked eq $UNLOCKED ) { return 0; }
+    if    ($locked eq $LOCKED)   {return 1;}
+    elsif ($locked eq $UNLOCKED) {return 0;}
     else {
-        throw_error( "bad contents of "
-              . $self->{"global_lock_file"}->get_file_name()
-              . " ($locked)" );
+        throw_error(
+            "bad contents of " . $self->{"global_lock_file"}->get_file_name() . " ($locked)");
         return ();
     }
 }
@@ -244,11 +248,12 @@ sub isLocked {    #T
 # cacheFile ($url)
 #
 
-sub cacheFile {    #T
-    my ( $self, $url ) = @_;
+sub cacheFile
+{    #T
+    my ($self, $url) = @_;
     my $eu = _encodeUrl($url);
     unless ($eu) {
-        throw_error( "_encodeUrl($url)", $! );
+        throw_error("_encodeUrl($url)", $!);
         return ();
     }
 
@@ -257,14 +262,14 @@ sub cacheFile {    #T
 
     #TODO retries/wait
 
-    $ua->timeout( $self->{"get_timeout"} );
-    my $req = HTTP::Request->new( GET => $url );
+    $ua->timeout($self->{"get_timeout"});
+    my $req = HTTP::Request->new(GET => $url);
 
     my $mtime;
-    if ( -f $fn ) {
-        $mtime = ( stat($fn) )[9];
-        unless ( defined($mtime) ) {
-            throw_error( "stat($fn)", $! );
+    if (-f $fn) {
+        $mtime = (stat($fn))[9];
+        unless (defined($mtime)) {
+            throw_error("stat($fn)", $!);
             return ();
         }
         $req->headers->if_modified_since($mtime);
@@ -272,27 +277,24 @@ sub cacheFile {    #T
     my $success = 0;
     my $i       = 0;
     my $res;
-    while ( !$success && ( $i < $self->{"retrieve_retries"} ) ) {
-        $res = $ua->request( $req, $fn );
-        if ( $res->is_success ) {
+    while (!$success && ($i < $self->{"retrieve_retries"})) {
+        $res = $ua->request($req, $fn);
+        if ($res->is_success) {
             $success = 1;                     #was downloaded
             $mtime   = $res->last_modified;
-            unless ( utime( $mtime, $mtime, $fn ) ) {
-                throw_error( "utime($mtime, $mtime, $fn)", $! );
+            unless (utime($mtime, $mtime, $fn)) {
+                throw_error("utime($mtime, $mtime, $fn)", $!);
                 return ();
             }
-        }
-        elsif ( $res->code == RC_NOT_MODIFIED ) {
-            $success =
-              1;    #was not downloaded, becasue it is cache and unmodified
-        }
-        else {
-            sleep( $self->{"retrieve_wait"} );
+        } elsif ($res->code == RC_NOT_MODIFIED) {
+            $success = 1;    #was not downloaded, becasue it is cache and unmodified
+        } else {
+            sleep($self->{"retrieve_wait"});
             $i++;
         }
     }
     unless ($success) {
-        throw_error( "http request failed", $res->code );
+        throw_error("http request failed", $res->code);
         return ();
     }
     return $fn;
@@ -302,9 +304,10 @@ sub cacheFile {    #T
 # _encodeUrl ($url)
 #
 
-sub _encodeUrl ($) {
+sub _encodeUrl ($)
+{
     my ($url) = @_;
-    my $eu = encode_base64( $url, "" );
+    my $eu = encode_base64($url, "");
     $eu =~ s/\//_/g;
     return $eu;
 }
@@ -313,11 +316,12 @@ sub _encodeUrl ($) {
 # returns current cid (from cid file)
 #
 
-sub getCurrentCid {
+sub getCurrentCid
+{
     my ($self) = @_;
     my $cid = $self->{"current_cid_file"}->read();
-    unless ( defined($cid) ) {
-        throw_error( '$self->{"current_cid_file"}}->read()', $ec );
+    unless (defined($cid)) {
+        throw_error('$self->{"current_cid_file"}}->read()', $ec);
         return ();
     }
     return $cid;

@@ -45,24 +45,25 @@ configuration path.
 
 =cut
 
-sub new {
+sub new
+{
 
     my $proto = shift;
     my $class = ref($proto) || $proto;
     my $self  = $class->SUPER::new(@_);
 
     # check that element it is really a resource
-    if ( !$self->isResource() ) {
+    if (!$self->isResource()) {
         throw_error("element is not of type Resource");
         return ();
     }
 
     # initialize list of elements
-    $self->{ELEMENTS} = [ split( /\x0/, $self->{VALUE} ) ];
+    $self->{ELEMENTS} = [split(/\x0/, $self->{VALUE})];
 
     $self->{CURRENT} = -1;
 
-    bless( $self, $class );
+    bless($self, $class);
     return $self;
 
 }
@@ -77,13 +78,14 @@ subject to change.
 
 =cut
 
-sub getHash {
+sub getHash
+{
 
     my $self = shift;
-    my ( %hash, $path, $el_path, $ele, $i, $name );
+    my (%hash, $path, $el_path, $ele, $i, $name);
 
     # check that the resource type is nlist
-    if ( !$self->isType( $self->NLIST ) ) {
+    if (!$self->isType($self->NLIST)) {
         throw_error("resource is not of type NLIST");
         return ();
     }
@@ -92,18 +94,16 @@ sub getHash {
     # create a hash of Elements objects indexed by name
 
     $path = $self->{PATH}->toString();
-    for ( $i = 0 ; $i <= ( $#{ $self->{ELEMENTS} } ) ; $i++ ) {
+    for ($i = 0; $i <= ($#{$self->{ELEMENTS}}); $i++) {
         $name = $self->{ELEMENTS}[$i];
-        if ( $path eq "/" ) {
+        if ($path eq "/") {
             $el_path = $path . $name;
-        }
-        else {
+        } else {
             $el_path = $path . "/" . $name;
         }
-        $ele =
-          EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
+        $ele = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
         unless ($ele) {
-            throw_error( "failed to create element $el_path)", $ec->error );
+            throw_error("failed to create element $el_path)", $ec->error);
             return ();
         }
         $hash{$name} = $ele;
@@ -123,13 +123,14 @@ subject to change.
 
 =cut
 
-sub getList {
+sub getList
+{
 
     my $self = shift;
-    my ( @array, $path, $el_path, $ele, $i );
+    my (@array, $path, $el_path, $ele, $i);
 
     # check that the resource type is list
-    if ( !$self->isType( $self->LIST ) ) {
+    if (!$self->isType($self->LIST)) {
         throw_error("resource is not of type LIST");
         return ();
     }
@@ -138,17 +139,15 @@ sub getList {
     # create an array of Elements objects
 
     $path = $self->{PATH}->toString();
-    for ( $i = 0 ; $i <= ( $#{ $self->{ELEMENTS} } ) ; $i++ ) {
-        if ( $path eq "/" ) {
+    for ($i = 0; $i <= ($#{$self->{ELEMENTS}}); $i++) {
+        if ($path eq "/") {
             $el_path = $path . $i;
-        }
-        else {
+        } else {
             $el_path = $path . "/" . $i;
         }
-        $ele =
-          EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
+        $ele = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
         unless ($ele) {
-            throw_error( "failed to create element $el_path", $ec->error );
+            throw_error("failed to create element $el_path", $ec->error);
             return ();
         }
         $array[$i] = $ele;
@@ -165,11 +164,12 @@ more elements, otherwise returns false
 
 =cut
 
-sub hasNextElement {
+sub hasNextElement
+{
 
     my $self = shift;
 
-    if ( $self->{CURRENT} < $#{ $self->{ELEMENTS} } ) {
+    if ($self->{CURRENT} < $#{$self->{ELEMENTS}}) {
         return (SUCCESS);
     }
 
@@ -183,13 +183,14 @@ Return the next element in the iteration
 
 =cut
 
-sub getNextElement {
+sub getNextElement
+{
 
     my $self = shift;
     my $element;
 
-    if ( !$self->hasNextElement() ) {
-        throw_error( "property has no more elements", $ec->error );
+    if (!$self->hasNextElement()) {
+        throw_error("property has no more elements", $ec->error);
         return ();
     }
     $self->{CURRENT}++;
@@ -206,27 +207,26 @@ that was returned by the last call of getNextElement()
 
 =cut
 
-sub getCurrentElement {
+sub getCurrentElement
+{
 
     my $self = shift;
-    my ( $element, @elements, $path, $el_path );
+    my ($element, @elements, $path, $el_path);
 
-    if ( $self->{CURRENT} == -1 ) {
-        throw_error( "no current element available", $ec->error );
+    if ($self->{CURRENT} == -1) {
+        throw_error("no current element available", $ec->error);
         return ();
     }
 
     $path = $self->{PATH}->toString();
-    if ( $path eq "/" ) {
-        $el_path = $path . $self->{ELEMENTS}[ $self->{CURRENT} ];
+    if ($path eq "/") {
+        $el_path = $path . $self->{ELEMENTS}[$self->{CURRENT}];
+    } else {
+        $el_path = $path . "/" . $self->{ELEMENTS}[$self->{CURRENT}];
     }
-    else {
-        $el_path = $path . "/" . $self->{ELEMENTS}[ $self->{CURRENT} ];
-    }
-    $element =
-      EDG::WP4::CCM::Element->createElement( $self->{CONFIG}, $el_path );
+    $element = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
     unless ($element) {
-        throw_error( "failed to create element $el_path", $ec->error );
+        throw_error("failed to create element $el_path", $ec->error);
         return ();
     }
 
@@ -241,7 +241,8 @@ getNextElement() will return first element in the iteration
 
 =cut
 
-sub reset {
+sub reset
+{
 
     my $self = shift;
 

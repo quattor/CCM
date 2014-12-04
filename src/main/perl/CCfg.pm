@@ -73,11 +73,12 @@ Readonly::Hash my %DEFAULT_CFG => {
 };
 
 # copy hash to hash ref
-my $cfg = { %DEFAULT_CFG };
+my $cfg = {%DEFAULT_CFG};
 
-sub _resolveTags ($) {
+sub _resolveTags ($)
+{
     my ($s) = @_;
-    if ( $s =~ /\$host/ ) {
+    if ($s =~ /\$host/) {
         my $h = hostname();
         unless ($h) {
             throw_error("could not resolve the hostname!");
@@ -86,7 +87,7 @@ sub _resolveTags ($) {
         $h = lc($h);    # use lowercase for host.
         $s =~ s/\$host/$h/g;
     }
-    if ( $s =~ /\$domain/ ) {
+    if ($s =~ /\$domain/) {
         my $d = hostdomain();
         unless ($d) {
             throw_error("could not resolve the domainname!");
@@ -97,31 +98,33 @@ sub _resolveTags ($) {
     return $s;
 }
 
-sub _readConfigFile ($) {
+sub _readConfigFile ($)
+{
     my ($f) = @_;
-    unless ( open( CONF, "<$f" ) ) {
+    unless (open(CONF, "<$f")) {
         throw_error("can't open config file: $f: $!");
         return ();
     }
     while (<CONF>) {
-        if (/^\s*\#/) { next; }
-        if (/^\s*$/)  { next; }
+        if (/^\s*\#/) {next;}
+        if (/^\s*$/)  {next;}
         if (/^\s*(\w+)\s+(\S+)\s*$/) {
             my $var = $1;
             my $val = $2;
             if (exists($DEFAULT_CFG{$var})) {
-                if ( $var eq 'profile' or 
-                     $var eq 'profile_failover' or
-                     $var eq 'context') {
+                if (   $var eq 'profile'
+                    or $var eq 'profile_failover'
+                    or $var eq 'context')
+                {
                     my $s = _resolveTags($val);
                     unless ($s) {
-                        throw_error( "_resolveTags ($val) for $var", $ec->error );
+                        throw_error("_resolveTags ($val) for $var", $ec->error);
                         return;
                     }
                     $cfg->{$var} = $s;
                 } else {
                     $cfg->{$var} = $val;
-                };
+                }
             } else {
                 throw_error("unknown config variable: $var (line $_)");
             }
@@ -143,36 +146,34 @@ locations the default values are used.
 
 =cut
 
-sub initCfg {
+sub initCfg
+{
     my ($cp) = @_;
     if ($cp) {
 
         # Accept the configuration be read from pipes (i.e, stdin)
-        unless ( -f $cp || -p $cp ) {
+        unless (-f $cp || -p $cp) {
             throw_error("configuration file not found");
             return ();
         }
-    }
-    else {
-        if ( -f "/etc/$CONFIG_FN" ) {
+    } else {
+        if (-f "/etc/$CONFIG_FN") {
             $cp = "/etc/$CONFIG_FN";
-        }
-        elsif ( -f $DEF_EDG_LOC . "/etc/$CONFIG_FN" ) {
+        } elsif (-f $DEF_EDG_LOC . "/etc/$CONFIG_FN") {
             $cp = $DEF_EDG_LOC . "/etc/$CONFIG_FN";
-        }
-        elsif ( defined( $ENV{"EDG_LOCATION"} )
-            && -f $ENV{"EDG_LOCATION"} . "/etc/$CONFIG_FN" )
+        } elsif (defined($ENV{"EDG_LOCATION"})
+            && -f $ENV{"EDG_LOCATION"} . "/etc/$CONFIG_FN")
         {
             $cp = $ENV{"EDG_LOCATION"} . "/etc/$CONFIG_FN";
-        }
-        else {
+        } else {
+
             #no default configuration file exists
             #default parameters values will be used
             return ();
         }
     }
-    unless ( _readConfigFile($cp) ) {
-        throw_error( "_readConfigFile($cp)", $ec->error );
+    unless (_readConfigFile($cp)) {
+        throw_error("_readConfigFile($cp)", $ec->error);
         return ();
     }
     return SUCCESS;
@@ -184,9 +185,10 @@ returns a value of the configuration parameter identified by $key.
 
 =cut
 
-sub getCfgValue ($) {
+sub getCfgValue ($)
+{
     my ($key) = @_;
-    return ( $cfg->{$key} );
+    return ($cfg->{$key});
 }
 
 =pod
