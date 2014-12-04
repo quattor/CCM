@@ -138,14 +138,6 @@ sub getCachePath
     return $self->{"cache_path"};
 }
 
-=item fetchForeignProfile ($host)
-
-=cut
-
-sub fetchForeignProfile
-{
-}
-
 =item getUnlockedConfiguration ($cred; $cid)
 
 Returns unlocked Configuration object. If the $cid parameter is
