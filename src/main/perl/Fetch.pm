@@ -854,39 +854,6 @@ sub Show ($;$$)
     }
 }
 
-sub FileToString ($)
-{
-
-    # Returns first line of file (minus newline) as string.
-
-    my ($f) = @_;
-
-    open(F, "<$f") or die("can't open $f: $!");
-    chomp(my $s = <F>);
-    close(F);
-    return $s;
-}
-
-sub StringToFile ($$)
-{
-
-    # Creates one-line file consisting of string plus newline.
-
-    my ($s, $f) = @_;
-
-    (open(F, ">$f") && (print F "$s\n") && close(F))
-        or return (ERROR, "can't write to $f: $!");
-}
-
-sub PreProcess ($$$$)
-{
-
-    # Merge profile and context into combined XML; assume this will be
-    # eventually be something like this.
-
-    system "$_[0] $_[1] $_[2] >$_[3]";
-}
-
 sub FilesDiffer ($$)
 {
 
@@ -1048,7 +1015,9 @@ sub enableForeignProfile()
     # Create global lock file
     if (!(-f "$cache_root/$GLOBAL_LOCK_FN")) {
         $self->debug(5, "Creating lock file in foreign cache root");
-        StringToFile("no", "$cache_root/$GLOBAL_LOCK_FN");
+        my $fh = CAF::FileWriter->new("$cache_root/$GLOBAL_LOCK_FN", log => $self);
+        print $fh "no\n";
+        $fh->close();
     }
 }
 
@@ -1119,7 +1088,7 @@ sub setConfig(;$)
 sub setProfileURL($)
 {
     my ($self, $prof) = @_;
-    $prof = trim($prof);
+    chomp($prof);
     my $base_url = $self->{"BASE_URL"};
     $self->debug(5, "base_url is not defined in configuration")
         unless (defined $base_url);
@@ -1284,24 +1253,6 @@ sub getForce($)
 {
     my ($self) = @_;
     return $self->{"FORCE"};
-}
-
-sub getHostName()
-{
-    my ($self) = @_;
-
-    # Finding hostname
-    my $host = basename($self->{"PROFILE_URL"});
-    $host =~ s/\.xml$//;
-    $host =~ s/^profile_//;
-    return $host;
-}
-
-sub trim($)
-{
-
-    $_[0] =~ s/^\s+|\s+$//g;
-    return $_[0];
 }
 
 =pod
