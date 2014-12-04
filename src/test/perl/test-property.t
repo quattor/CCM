@@ -8,7 +8,7 @@ use warnings;
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::Simple tests => 22;
+use Test::Simple tests => 21;
 use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
@@ -179,9 +179,4 @@ eok($ec, $value = $property->getLongValue(),
 
 eok($ec, $value = $property->getBooleanValue(),
     "EDG::WP4::CCM::Property->getBooleanValue()");
-
-# test getStreamValue()
-
-eok($ec, $value = $property->getBooleanValue(),
-    "EDG::WP4::CCM::Property->getStreamValue()");
 
