@@ -137,6 +137,7 @@ sub getCachePath {
 }
 
 =item fetchForeignProfile ($host)
+
 =cut
 
 sub fetchForeignProfile {
@@ -321,6 +322,12 @@ sub getCurrentCid {
     }
     return $cid;
 }
+
+=pod
+
+=back
+
+=cut
 
 1;
 

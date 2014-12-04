@@ -150,4 +150,10 @@ sub new ($$$) {           #T
     return $self;
 }
 
+=pod
+
+=back
+
+=cut
+
 1;

@@ -1299,4 +1299,10 @@ sub trim($) {
     return $_[0];
 }
 
+=pod
+
+=back
+
+=cut
+
 1;

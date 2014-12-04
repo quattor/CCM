@@ -189,5 +189,11 @@ sub getCfgValue ($) {
     return ( $cfg->{$key} );
 }
 
+=pod
+
+=back
+
+=cut
+
 1;
 

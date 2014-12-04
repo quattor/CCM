@@ -376,4 +376,10 @@ sub isLocked {    #T
     return $self->{"locked"};
 }
 
+=pod
+
+=back
+
+=cut
+
 1;

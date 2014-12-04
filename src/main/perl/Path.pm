@@ -117,4 +117,10 @@ sub down {
     return $self;
 }
 
+=pod
+
+=back
+
+=cut
+
 1;

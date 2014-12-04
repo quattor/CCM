@@ -18,9 +18,9 @@ EDG::WP4::CCM::DB
 This is a wrapper around all access to the profile database
 format, which copes with multiple possible data formats.
 
-=over
-
 =head1 Functions
+
+=over
 
 =cut
 
@@ -211,5 +211,11 @@ sub read {
 
     return;
 }
+
+=pod
+
+=back
+
+=cut
 
 1;

@@ -144,4 +144,10 @@ sub getBooleanValue {
 
 }
 
+=pod
+
+=back
+
+=cut
+
 1;
