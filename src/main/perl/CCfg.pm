@@ -11,6 +11,8 @@ use warnings;
 use LC::Exception qw(SUCCESS throw_error);
 use Net::Domain qw(hostname hostdomain);
 
+use CAF::FileReader;
+
 use parent qw(Exporter);
 use Readonly;
 
@@ -100,15 +102,17 @@ sub _resolveTags ($)
 
 sub _readConfigFile ($)
 {
-    my ($f) = @_;
-    unless (open(CONF, "<$f")) {
-        throw_error("can't open config file: $f: $!");
-        return ();
+    my ($fn) = @_;
+
+    if (! -f $fn) {
+        throw_error("non-existing config file $fn");
+        return;        
     }
-    while (<CONF>) {
-        if (/^\s*\#/) {next;}
-        if (/^\s*$/)  {next;}
-        if (/^\s*(\w+)\s+(\S+)\s*$/) {
+    my $fh = CAF::FileReader->new($fn);
+        
+    foreach my $line (split ("\n", "$fh")) {
+        next if ($line =~ m/^\s*(\#|$)/);
+        if ($line =~ m/^\s*(\w+)\s+(\S+)\s*$/) {
             my $var = $1;
             my $val = $2;
             if (exists($DEFAULT_CFG{$var})) {
@@ -126,14 +130,17 @@ sub _readConfigFile ($)
                     $cfg->{$var} = $val;
                 }
             } else {
-                throw_error("unknown config variable: $var (line $_)");
+                throw_error("unknown config variable in $fn: $var (line $line)");
+                return;
             }
             next;
         }
-        chomp;
-        throw_error("bad config file syntax: $_");
+        chomp($line);
+        throw_error("bad config file $fn syntax: $line");
+        return;
     }
-    close(CONF);
+    $fh->close();
+
     return SUCCESS;
 }
 
@@ -166,7 +173,6 @@ sub initCfg
         {
             $cp = $ENV{"EDG_LOCATION"} . "/etc/$CONFIG_FN";
         } else {
-
             #no default configuration file exists
             #default parameters values will be used
             return ();

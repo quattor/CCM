@@ -12,8 +12,8 @@ use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CacheManager qw ($CURRENT_CID_FN);
 use EDG::WP4::CCM::Element qw();
+use CAF::FileWriter;
 
-#use EDG::WP4::CCM::SyncFile qw (read);
 use EDG::WP4::CCM::Path qw ();
 use Scalar::Util qw (tainted);
 
@@ -183,18 +183,9 @@ sub _remove_pid_file ()
 sub _touch_file ($)
 {    #T
     my ($file_name) = @_;
-    unless (open(FILEHANDLE, "+> $file_name")) {
-        throw_error("open ($file_name)", $!);
-        return ();
-    }
-    unless (truncate(FILEHANDLE, 0)) {
-        throw_error("truncate ($file_name)", $!);
-        return ();
-    }
-    unless (close(FILEHANDLE)) {
-        throw_error("close ($file_name)", $!);
-        return ();
-    }
+    my $fh = CAF::FileWriter->new($file_name);
+    print $fh '';
+    $fh->close();
     return SUCCESS;
 }
 
@@ -229,6 +220,79 @@ sub getConfigurationId
         }
     }
     return $self->{"cid"};
+}
+
+#
+# subroutine update self->{"cid"} if current.cid contents of current.cid
+# are different from it
+# if cid changes it also creates new pidfile
+#
+
+sub _update_cid_pidf
+{    #T
+    my ($self) = @_;
+    my $cid = $self->{"cache_manager"}->getCurrentCid();
+    unless (defined($cid)) {
+        throw_error('$self->{"cache_manager"}->getCurrentCid()', $ec->error);
+        return ();
+    }
+    if ($self->{"cid"} != $cid) {
+        unless ($self->_remove_pid_file($self->{"cid"})) {
+            $ec->rethrow_error();
+            return ();
+        }
+        $self->{"cid"}      = $cid;
+        $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
+        unless ($self->_create_pid_file()) {
+            $ec->rethrow_error();
+            return ();
+        }
+    }
+    return SUCCESS;
+}
+
+=item lock ()
+
+Lock configuration (local lock).
+
+=cut
+
+sub lock
+{    #T
+    my ($self) = @_;
+    $self->{"locked"} = 1;
+    return SUCCESS;
+}
+
+=item unlock ()
+
+Unlock configuration (local unlock).
+
+=cut
+
+sub unlock
+{    #T
+    my ($self) = @_;
+    $self->{"locked"} = 0;
+    unless ($self->_update_cid_pidf()) {
+        $ec->rethrow_error();
+        return ();
+    }
+
+    #TODO: events notification
+    return SUCCESS;
+}
+
+=item isLocked ()
+
+Returns true if the configuration is locked, otherwise false
+
+=cut
+
+sub isLocked
+{    #T
+    my ($self) = @_;
+    return $self->{"locked"};
 }
 
 =item getElement ($path)
@@ -314,79 +378,6 @@ sub elementExists
         return ();
     }
     return $ex;
-}
-
-#
-# subroutine update self->{"cid"} if current.cid contents of current.cid
-# are different from it
-# if cid changes it also creates new pidfile
-#
-
-sub _update_cid_pidf
-{    #T
-    my ($self) = @_;
-    my $cid = $self->{"cache_manager"}->getCurrentCid();
-    unless (defined($cid)) {
-        throw_error('$self->{"cache_manager"}->getCurrentCid()', $ec->error);
-        return ();
-    }
-    if ($self->{"cid"} != $cid) {
-        unless ($self->_remove_pid_file($self->{"cid"})) {
-            $ec->rethrow_error();
-            return ();
-        }
-        $self->{"cid"}      = $cid;
-        $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
-        unless ($self->_create_pid_file()) {
-            $ec->rethrow_error();
-            return ();
-        }
-    }
-    return SUCCESS;
-}
-
-=item lock ()
-
-Lock configuration (local lock).
-
-=cut
-
-sub lock
-{    #T
-    my ($self) = @_;
-    $self->{"locked"} = 1;
-    return SUCCESS;
-}
-
-=item unlock ()
-
-Unlock configuration (local unlock).
-
-=cut
-
-sub unlock
-{    #T
-    my ($self) = @_;
-    $self->{"locked"} = 0;
-    unless ($self->_update_cid_pidf()) {
-        $ec->rethrow_error();
-        return ();
-    }
-
-    #TODO: events notification
-    return SUCCESS;
-}
-
-=item isLocked ()
-
-Returns true if the configuration is locked, otherwise false
-
-=cut
-
-sub isLocked
-{    #T
-    my ($self) = @_;
-    return $self->{"locked"};
 }
 
 =pod

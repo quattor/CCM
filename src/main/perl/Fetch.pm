@@ -120,6 +120,7 @@ sub new
     # remove starting and trailing spaces
 
     if (!$param->{CONFIG} && $param->{CFGFILE}) {
+
         # backwards compatability
         $param->{CONFIG} = $param->{CFGFILE};
     }
@@ -858,31 +859,16 @@ sub FilesDiffer ($$)
 
     # Return 1 if they differ, 0 if the same.
 
-    my ($a, $b) = @_;
+    my ($fn1, $fn2) = @_;
 
     # ensure names are defined and exist
-    if (   (not defined($a))
-        || (!-e "$a")
-        || (not defined($b))
-        || (!-e "$b"))
-    {
-        return 1;
-    }
-
-    # first compare sizes
-    return 1 if ((stat($a))[7] != (stat($b))[7]);
-
-    # now check line by line
-    open(A, "<$a") or die("can't open $a: $!");
-    open(B, "<$b") or die("can't open $b: $!");
-    my $aa;
-    my $bb;
-    while ($aa = <A>) {
-        $bb = <B>;
-        (close(A) && close(B) && return 1) if ($aa ne $bb);
-    }
-
-    close(A) && close(B) && return 0;
+    return 1 if (!(defined($fn1) && -e "$fn1" && defined($fn2) && -e "$fn2"));
+    my $fh1 = CAF::FileReader->new($fn1);
+    my $fh2 = CAF::FileReader->new($fn2);
+    my $differ = "$fh1" ne "$fh2";
+    $fh1->close();
+    $fh2->close();
+    return $differ;
 }
 
 sub AddPath
