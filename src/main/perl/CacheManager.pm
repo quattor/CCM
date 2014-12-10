@@ -30,6 +30,7 @@ EDG::WP4::CCM::CacheManager
   $cm = EDG::WP4::CCM::CacheManager->new(["/path/to/root/of/cache"]);
   $cfg = $cm->getUnlockedConfiguration($cred[, $cid]);
   $cfg = $cm->getLockedConfiguration($cred[, $cid]);
+  $cfg = $cm->getAnonymousConfiguration($cred[, $cid]);
   $bool = $cm->isLocked();
 
 =head1 DESCRIPTION
@@ -180,16 +181,39 @@ sub getLockedConfiguration
     return $cfg;
 }
 
+=item getAnonymousConfiguration ($cred; $cid)
+
+Returns unlocked anonymous Configuration object. 
+If the $cid parameter is ommited, the most recently 
+downloaded configuration (when the cache
+was not globally locked) is returned.
+
+Security and $cred parameter meaning are not defined.
+
+=cut
+
+sub getAnonymousConfiguration
+{    #T
+    my ($self, $cred, $cid) = @_;
+    my $cfg = $self->_getConfig(0, $cred, $cid, 1);
+    unless (defined($cfg)) {
+        $ec->rethrow_error();
+        return ();
+    }
+    return $cfg;
+}
+
 #
 # returns configuration
 # $lc - locked/unlocked config
 # $cred - credential
 # $cid - (optional) configuration id
+# $anonymous - (optional) anonymous flag
 #
 
 sub _getConfig
 {    #T
-    my ($self, $lc, $cred, $cid) = @_;
+    my ($self, $lc, $cred, $cid, $anonymous) = @_;
     my $locked = $self->isLocked();
     unless (defined($locked)) {
         throw_error("$self->isLocked()", $ec->error);
@@ -204,7 +228,7 @@ sub _getConfig
         }
     }
 
-    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc);
+    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();

@@ -114,10 +114,20 @@ mkdir("$cp/profile.2");
 ok(-d "$cp/profile.1", "cache manager profile.1 dir exists.");
 ok(-d "$cp/profile.2", "cache manager profile.2 dir exists.");
 
-my $cfg;
+my ($cfg, $pidfile);
+ok ($cfg = $cm->getAnonymousConfiguration (0), '$cm->getAnonymousConfiguration (0)');
+ok ($cfg->getConfigurationId() == 2, '$cfg -> getConfigurationId() == 2');
+is ($cfg->isLocked(), 0, '$cfg->isLocked() false');
+# no pid file should exist
+$pidfile = $cfg->_pid_filename();
+ok( ! -f $pidfile, "pid file $pidfile does not exist with anonymous configuration");
+
 ok ($cfg = $cm->getLockedConfiguration (0), '$cm->getLockedConfiguration (0)');
 ok ($cfg->getConfigurationId() == 2, '$cfg -> getConfigurationId() == 2');
 is ($cfg->isLocked(), 1, '$cfg->isLocked() true');
+# pid file should exist
+$pidfile = $cfg->_pid_filename();
+ok(-f $pidfile, "pidfile $pidfile exists with locked configuration");
 
 ok ($cfg = $cm->getLockedConfiguration (0,1), '$cm->getLockedConfiguration (0,1)');
 ok ($cfg->getConfigurationId() == 1, '$cfg -> getConfigurationId() == 1');
