@@ -4,13 +4,13 @@
 # ${author-info}
 # ${build-info}
 
-package EDG::WP4::CCM::JSONProfile;
+package EDG::WP4::CCM::JSONProfileSimple;
 
 =pod
 
 =head1 SYNOPSIS
 
-    EDG::WP4::CCM::JSONProfile->interpret_node($tag, $jsondoc);
+    EDG::WP4::CCM::JSONProfileSimple->interpret_node($tag, $jsondoc);
 
 =head1 DESCRIPTION
 
@@ -19,6 +19,7 @@ metadata, to be inserted in the cache DB.
 
 This metadata includes a checksum for each element in the profile, the
 Pan basic type, the element's name (that will help to reconstruct the path)...
+JSONProfileSimple only support 2 scalars: booleans and strings.
 
 Should be used by C<EDG::WP4::CCM::Fetch> only.
 
@@ -34,32 +35,24 @@ use JSON::XS;
 
 $SIG{__DIE__} = \&confess;
 
-# Warns in case a tag in the XML profile is not known (i.e, has not a
-# valid entry in the INTERPRETERS hash.
-sub warn_unknown
-{
-    my ($content, $tag) = @_;
 
-    warn "Cannot handle tag $tag!";
-}
-
-# Turns an nlist in the XML into a Perl hash reference with all the
-# types and metadata from the profile.
+# Turns an JSON Object (an unordered associative array) into a Perl hash 
+# reference with all the types and metadata from the profile.
 sub interpret_nlist
 {
-    my ($class, $tag, $content) = @_;
+    my ($class, $tag, $doc) = @_;
 
     my $nl = {};
 
     my $h;
 
-    while (my ($k, $v) = each(%$content)) {
+    while (my ($k, $v) = each(%$doc)) {
         $nl->{$k} = $class->interpret_node($k, $v);
     }
     return $nl;
 }
 
-# Turns a list in the profile into a perl array reference in which all
+# Turns a JSON Array (an ordered list) in the profile into a perl array reference in which all
 # the elements have the correct metadata associated.
 sub interpret_list
 {
@@ -78,12 +71,8 @@ sub interpret_list
 
 =head2 C<interpret_node>
 
-Interprets an XML tree, which is assumed to have a C<format="pan">
-attribute, returning the appropriate data structure with all the
-attributes and values.
-
 JSON profiles don't contain any basic type information, and JSON::XS
-may lose it. So, from now on, we'll store in the caches only two types
+may lose it. So, with JSONProfileSimple, we'll store in the caches only two types
 of scalars: booleans, which will be identical as they used to be, and
 strings.
 
