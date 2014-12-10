@@ -34,14 +34,14 @@ eok ($ec, EDG::WP4::CCM::CacheManager->new ("foo"),
 
 ok(! -d $cp, "cache manager test dir $cp does not yet exist.");
 
-eok ($ec, EDG::WP4::CCM::CacheManager::check_dir($cp, $cp), 
-     "CacheManager::check_dir($cp)");
+eok ($ec, EDG::WP4::CCM::CacheManager::_check_type("directory", $cp, $cp), 
+     "CacheManager::_check_type(directory, $cp)");
 
 mkdir($cp);
 ok(-d $cp, "cache manager test dir $cp exists.");
 
-ok (EDG::WP4::CCM::CacheManager::check_dir($cp, $cp), 
-     "CacheManager::check_dir($cp)");
+ok (EDG::WP4::CCM::CacheManager::_check_type("directory", $cp, $cp), 
+     "CacheManager::_check_type(directory, $cp)");
 
 mkdir("$cp/$DATA_DN");
 
@@ -61,13 +61,13 @@ make_file($ccidfn, "1\n");
 eok ($ec, EDG::WP4::CCM::CacheManager->new ("foo"), 
      "EDG::WP4::CCM::CacheManager->new (foo)");
 
-eok ($ec, EDG::WP4::CCM::CacheManager::check_file ($lcidfn, $lcidfn),
-     "EDG::WP4::CCM::CacheManager::check_file ($lcidfn, $lcidfn)");
+eok ($ec, EDG::WP4::CCM::CacheManager::_check_type("file", $lcidfn, $lcidfn),
+     "EDG::WP4::CCM::CacheManager::_check_type(file, $lcidfn, $lcidfn)");
 
 make_file($lcidfn, "1\n");
 
-ok (EDG::WP4::CCM::CacheManager::check_file ($lcidfn, $lcidfn),
-     "EDG::WP4::CCM::CacheManager::check_file ($lcidfn, $lcidfn)");
+ok (EDG::WP4::CCM::CacheManager::_check_type("file", $lcidfn, $lcidfn),
+     "EDG::WP4::CCM::CacheManager::_check_type(file, $lcidfn, $lcidfn)");
 
 my $cm;
 
