@@ -61,9 +61,12 @@ my $ACTIVE_FN     = "ccm-active-profile.";
 #   $cache_manager - CacheManager object
 #   $cid - configuration id
 #   $locked - true or false lock flag
+#   $anonymous - true or false anonymous flag
 #
-# ccm-active-profile-$cid.$pid is created in profile.$cid directory (where pid is process
-# id).
+# $ACTIVE_FN$cid.$pid is created in profile.$cid directory (where pid is process
+# id), unless the anonymous flag is set to true. In that case, the process is not
+# tracked and no attempt will be made to proctect this process from accessing 
+# outdated data (or even keep the data as long as it being accessed).
 #
 # If configuration with specified cid does not exists exception is
 # thrown.
@@ -71,7 +74,7 @@ my $ACTIVE_FN     = "ccm-active-profile.";
 
 sub new
 {    #T
-    my ($class, $cache_manager, $cid, $locked) = @_;
+    my ($class, $cache_manager, $cid, $locked, $anonymous) = @_;
     my $cache_path = $cache_manager->getCachePath();
     unless ($cache_path =~ m{^([-./\w]+)}) {
         throw_error("Cache path '$cache_path' is not an absolute path");
@@ -91,12 +94,14 @@ sub new
         "cache_path"    => $cache_path,
         "cfg_path"      => $cfg_path,
         "cid_to_number" => undef,
+        "anonymous"     => $anonymous,
     };
     unless (-d $cfg_path) {
         throw_error("configuration directory ($cfg_path) does not exist");
         return ();
     }
     bless($self, $class);
+
     unless ($self->_create_pid_file($self)) {
         $ec->rethrow_error();
         return ();
@@ -142,6 +147,9 @@ sub _create_pid_file
     my ($self) = @_;
     unless ($self->{"cid_to_number"}{$self->{"cid"}}) {
         $self->{"cid_to_number"}{$self->{"cid"}} += 1;
+        
+        return SUCCESS if $self->{anonymous};
+        
         my $pid_file = $self->_pid_filename();
         unless (_touch_file($pid_file)) {
             throw_error("_touch_file($pid_file)", $ec->error);
@@ -166,8 +174,10 @@ sub _remove_pid_file ()
     }
     $self->{"cid_to_number"}{$cid} -= 1;
     if ($self->{"cid_to_number"}{$cid} == 0) {
-        my $pid_file = $self->_pid_filename($cid);
 
+        return SUCCESS if $self->{anonymous};
+
+        my $pid_file = $self->_pid_filename($cid);
         if ((-f $pid_file) && !unlink($pid_file)) {
             throw_error("unlink($pid_file)", $!);
             return ();
