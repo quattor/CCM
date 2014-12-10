@@ -27,7 +27,7 @@ This module has only C<interpret_node> method for the outside world.
 =head2 Type information from JSON::XS
 
 JSON profiles don't contain any explicit type information (as opposed to the 
-XMLPAN output), e.g. JSON only support 'number' where XMLPAN has 'long' and 'double'.
+XMLPAN output), e.g. JSON only supports 'number' where XMLPAN has 'long' and 'double'.
 
 It is up to the JSON decoder to provide us with this additional distinction. 
 The JSON package C<JSON::XS> does not expose the scalar type information. 
@@ -90,9 +90,16 @@ sub interpret_list
     return $l;
 }
 
+# Map the C<B::SV> class from C<B::svref_2object> to a scalar type
+# C<IV> is 'long', C<PV> is 'double' and C<NV> is 'string'. 
+# Anything else will be mapped to string (including the combined 
+# classes C<PVNV> and C<PVIV>).
+# This only works due to the XS C API used by JSON::XS and if you call
+# B::svref_2object directly on the value without assigning it to a 
+# variable first. This is no magic function that will 
+# "just work" on anything you throw at it.
 sub get_scalar_type
 {
-    # get the B::svref_2object
     my $b_obj = shift;
     
     if (! blessed($b_obj)) {
@@ -121,7 +128,7 @@ C<b_obj> is returned by the C<B::svref_2object()> method on the C<doc>
 (ideally before C<doc> is assigned).
 
 The initial call from C<Fetch> doesn't pass the C<b_obj> value, but that is 
-acceptable since we do not expect the whole JSON profile to be a single value).
+acceptable since we do not expect the whole JSON profile to be a single scalar value.
 
 =cut
 

@@ -58,14 +58,14 @@ Readonly::Hash my %TYPES => {
 # make json string, canonical sorts the keys
 my $jxs = JSON::XS->new();
 $jxs->canonical(1);
-ok($jxs->get_canonical, "JSON::XS canoncial enabled for sorted keys encoding");
+ok($jxs->get_canonical(), "JSON::XS canoncial enabled for sorted keys encoding");
 
+# canonical encoding of Readonly seems troublesome. Use a copy instead.
 my $copy1 = {};
 foreach my $k (keys %DATA) {
     $copy1->{$k} = $DATA{$k};
 }
 
-# canonical encoding of Readonly seems troublesome. Use copy.
 my $jsonstring1 = $jxs->encode($copy1);
 my $json = $jxs->decode($jsonstring1);
 
