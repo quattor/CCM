@@ -469,6 +469,7 @@ sub process_profile
     my ($class, $t) = $self->choose_interpreter($profile);
     eval "require $class";
     die "Couldn't load interpreter $class: $@" if $@;
+    
     $t = $class->interpret_node(@$t);
     return $self->MakeDatabase($t, $cur{eidpath}, $cur{eiddata}, $self->{DBFORMAT});
 }
@@ -480,7 +481,7 @@ sub choose_interpreter
     my $tree;
     if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
         $tree = decode_json($profile);
-        return ('EDG::WP4::CCM::JSONProfile', ['profile', $tree]);
+        return ('EDG::WP4::CCM::JSONProfileSimple', ['profile', $tree]);
     }
 
     my $xmlParser = new XML::Parser(Style => 'Tree');
