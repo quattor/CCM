@@ -23,7 +23,7 @@ use Readonly;
 
 Tests for the JSON typed interpreter.
 
-The module and output are different from the JSONProfileSImple interpreter, 
+The module and output are different from the JSONProfileSimple interpreter, 
 as the JSONProfileSimple does not support all scalar types.
 The output should be equal to the XMLPanProfile interpreter.
 
@@ -69,7 +69,7 @@ foreach my $k (keys %DATA) {
 my $jsonstring1 = $jxs->encode($copy1);
 my $json = $jxs->decode($jsonstring1);
 
-# BTYPES mapping gtest with json decoded instance
+# test expected TYPES with json decoded instance
 foreach my $k (keys %$json) {
     is(EDG::WP4::CCM::JSONProfileTyped::get_scalar_type(B::svref_2object(\$json->{$k})), 
         $TYPES{$k}, 
