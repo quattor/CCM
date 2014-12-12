@@ -51,26 +51,35 @@ Module provides the Configuration class, to manipulate confgurations.
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 my $PROFILE_DIR_N = "profile.";
-my $ACTIVE_FN     = "ccm-active-profile.";
 
-# in this hash we keep track number of open configuration with given
-# cid. it is used for creation and removal of pid_files
+=item new
 
-#
-# Create Configuration object. It takes three arguments:
-#   $cache_manager - CacheManager object
-#   $cid - configuration id
-#   $locked - true or false lock flag
-#   $anonymous - true or false anonymous flag
-#
-# $ACTIVE_FN$cid.$pid is created in profile.$cid directory (where pid is process
-# id), unless the anonymous flag is set to true. In that case, the process is not
-# tracked and no attempt will be made to proctect this process from accessing 
-# outdated data (or even keep the data as long as it being accessed).
-#
-# If configuration with specified cid does not exists exception is
-# thrown.
-#
+Create Configuration object. It takes three arguments:
+    C<cache_manager>: the CacheManager object
+    C<cid>: the configuration id
+    C<locked>: boolean lock flag
+    C<anonymous>: boolean anonymous flag
+
+If a configuration with specified CID does not exists, an exception is
+thrown.
+
+When the C<locked> flag is set (or when the C<lock> method is called at any point), 
+the Configuration instance is bound to the the specific CID, even if this is not 
+the latest one (or when a new one is fetched during the lifetime of the process).
+An unlocked Configuration instance will always use the latest CID.
+
+Unless the anonymous flag is set to true, each process that creates a 
+Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid> 
+(with C<$cid> the CID and C<$pid> the process ID) under the C<profile.$cid> 
+directory in the C<CacheManager> cache path. The presence of this file protects 
+the process from getting this particular CID removed by the C<ccm-purge> command 
+(e.g. by the daily purge cron job).
+
+Processes that have no permission to create this file (or don't care about long 
+runtimes), can set the C<anonymous> flag and use the configuartion 
+(at their own risk).
+
+=cut
 
 sub new
 {    #T
@@ -133,8 +142,9 @@ sub getCacheManager ()
 sub _pid_filename
 {
     my ($self, $cid) = @_;
+    
     $cid = $self->{"cid"} if (!defined($cid));
-    return $self->{"cfg_path"} . "/${ACTIVE_FN}${cid}-" . getpid();
+    return $self->{"cfg_path"} . "/ccm-active-profile.${cid}-" . getpid();
 }
 
 #
@@ -147,9 +157,9 @@ sub _create_pid_file
     my ($self) = @_;
     unless ($self->{"cid_to_number"}{$self->{"cid"}}) {
         $self->{"cid_to_number"}{$self->{"cid"}} += 1;
-        
+
         return SUCCESS if $self->{anonymous};
-        
+
         my $pid_file = $self->_pid_filename();
         unless (_touch_file($pid_file)) {
             throw_error("_touch_file($pid_file)", $ec->error);
