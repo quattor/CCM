@@ -57,14 +57,26 @@ my $self = {
     "cache_path" => $cp,
     "cfg_path" => "$cp/profile.1",
     "cache_manager" => $cm,
+    "anonymous" => 1,
     };
 
 bless ($self, "EDG::WP4::CCM::Configuration");
 
+# Start with anonymous test
 my $tpf1 = "$cp/profile.1/ccm-active-profile.1-".getpid();
 ok (EDG::WP4::CCM::Configuration::_create_pid_file($self),
     "EDG::WP4::CCM::Configuration::_create_pid_file($self)");
-ok (-f $tpf1, "-f tpf1 $tpf1");
+ok (! -f $tpf1, "! -f tpf1 $tpf1 with anonymous");
+is($tpf1, $self->_pid_filename(), "Correct pid filename for tpf1 (_create_pid_file)");
+is ($self->{cid_to_number}{$self->{cid}}, 1 , "1 configuration instances active (i.e. tpf1)");
+
+# Test without anonymous / default behaviour
+$self->{anonymous} = undef;
+$self->{cid_to_number}{$self->{cid}} = undef;
+
+ok (EDG::WP4::CCM::Configuration::_create_pid_file($self),
+    "EDG::WP4::CCM::Configuration::_create_pid_file($self)");
+ok (-f $tpf1, "-f tpf1 $tpf1 without anonymous");
 is($tpf1, $self->_pid_filename(), "Correct pid filename for tpf1 (_create_pid_file)");
 is ($self->{cid_to_number}{$self->{cid}}, 1 , "1 configuration instances active (i.e. tpf1)");
 

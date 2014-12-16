@@ -30,6 +30,7 @@ EDG::WP4::CCM::CacheManager
   $cm = EDG::WP4::CCM::CacheManager->new(["/path/to/root/of/cache"]);
   $cfg = $cm->getUnlockedConfiguration($cred[, $cid]);
   $cfg = $cm->getLockedConfiguration($cred[, $cid]);
+  $cfg = $cm->getAnonymousConfiguration($cred[, $cid]);
   $bool = $cm->isLocked();
 
 =head1 DESCRIPTION
@@ -70,7 +71,7 @@ sub new
         $cache_path = getCfgValue("cache_root");
     }
 
-    unless (check_dir($cache_path, "main cache")) {
+    unless (_check_type("directory", $cache_path, "main cache")) {
         $ec->rethrow_error();
         return ();
     }
@@ -93,10 +94,10 @@ sub new
     $self->{"current_cid_file"} = EDG::WP4::CCM::SyncFile->new($cc);
     $self->{"latest_cid_file"}  = EDG::WP4::CCM::SyncFile->new($lc);
 
-    unless (check_dir($self->{"data_path"}, "data")
-        && check_file($gl, "global.lock")
-        && check_file($cc, "current.cid")
-        && check_file($lc, "latest.cid"))
+    unless (_check_type("directory", $self->{"data_path"}, "data")
+        && _check_type("file", $gl, "global.lock")
+        && _check_type("file", $cc, "current.cid")
+        && _check_type("file", $lc, "latest.cid"))
     {
         $ec->rethrow_error();
         return ();
@@ -106,24 +107,22 @@ sub new
     return $self;
 }
 
-sub check_dir ($$)
-{    #T
-    my ($dir, $name) = @_;
-    if (-d $dir) {
-        return SUCCESS;
-    } else {
-        throw_error("$name directory does not exist");
-        return ();
-    }
-}
 
-sub check_file ($$)
-{    #T
-    my ($file, $name) = @_;
-    if (-f $file) {
+# refined check for checking type=file or type=directory access
+sub _check_type
+{
+    my ($type, $obj, $name) = @_;
+
+    if (-e $obj && (($type eq "directory" && -d $obj) || ($type eq "file" && -f $obj) )) {
         return SUCCESS;
+    } elsif($!{ENOENT}) {
+        throw_error("$name $type does not exist ($type $obj)");
+        return ();
+    } elsif($!{EACCES}) {
+        throw_error("No permission for $name $type ($type $obj)");
+        return ();
     } else {
-        throw_error("$name file does not exist");
+        throw_error("Something wrong while trying to accessing $name $type ($type $obj): $!");
         return ();
     }
 }
@@ -180,16 +179,39 @@ sub getLockedConfiguration
     return $cfg;
 }
 
+=item getAnonymousConfiguration ($cred; $cid)
+
+Returns unlocked anonymous Configuration object. 
+If the $cid parameter is ommited, the most recently 
+downloaded configuration (when the cache
+was not globally locked) is returned.
+
+Security and $cred parameter meaning are not defined.
+
+=cut
+
+sub getAnonymousConfiguration
+{    #T
+    my ($self, $cred, $cid) = @_;
+    my $cfg = $self->_getConfig(0, $cred, $cid, 1);
+    unless (defined($cfg)) {
+        $ec->rethrow_error();
+        return ();
+    }
+    return $cfg;
+}
+
 #
 # returns configuration
 # $lc - locked/unlocked config
 # $cred - credential
 # $cid - (optional) configuration id
+# $anonymous - (optional) anonymous flag
 #
 
 sub _getConfig
 {    #T
-    my ($self, $lc, $cred, $cid) = @_;
+    my ($self, $lc, $cred, $cid, $anonymous) = @_;
     my $locked = $self->isLocked();
     unless (defined($locked)) {
         throw_error("$self->isLocked()", $ec->error);
@@ -204,7 +226,7 @@ sub _getConfig
         }
     }
 
-    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc);
+    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
