@@ -12,7 +12,7 @@ use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
-use File::Path qw(make_path);
+use myTest qw(compile_profile);
 
 =pod
 
@@ -24,19 +24,6 @@ The module and output are different from the XMLPanProfile interpreter,
 as the JSONProfileSimple does not support all 
 scalar types.
 
-=cut
-
-
-sub compile_profile
-{
-    my ($type) = @_;
-    make_path('target/test/json');
-    system("cd src/test/resources && panc --formats $type --output-dir ../../../target/test/json simpleprofile.pan");
-}
-
-
-
-=pod
 
 The test is trivial: just grab a Pan-formatted XML where long and doubles are stringified, 
 parse it and interpret it with the XML and with the JSONSimple interpreter. They
@@ -44,9 +31,9 @@ must be identical.
 
 =cut
 
-compile_profile("pan");
-compile_profile("json");
-my $fh = CAF::FileEditor->new("target/test/json/simpleprofile.xml");
+compile_profile("pan", "simpleprofile");
+compile_profile("json", "simpleprofile");
+my $fh = CAF::FileEditor->new("target/test/pan/simpleprofile.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 $fh = CAF::FileEditor->new("target/test/json/simpleprofile.json");
