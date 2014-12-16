@@ -17,10 +17,10 @@ use File::Path qw(make_path);
 Tests for the Pan XML interpreter.
 
 The module is a major refactoring of the previous interpreter, and the
-output must be identical in both case.
+output must be identical in both cases.
 
 For reference, we include here the previous implementation, that must
-be removed from L<EDG::WP4::CCM::Fetch>
+be removed from L<EDG::WP4::CCM::Fetch>, as the C<InterpretNode> method.
 
 =cut
 

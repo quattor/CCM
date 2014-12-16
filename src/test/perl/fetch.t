@@ -285,7 +285,7 @@ $f->{PROFILE_URL} =~ s{xml}{json}g;
 $pf = $f->download("profile");
 ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "JSON profile correctly parsed");
-is($class, 'EDG::WP4::CCM::JSONProfile', "JSON profile correctly diagnosed");
+is($class, 'EDG::WP4::CCM::JSONProfileSimple', "JSON profile correctly diagnosed");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 
