@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use myTest qw (eok make_file);
+use CCMTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
 use LC::File qw (differ);
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 

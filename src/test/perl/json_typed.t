@@ -12,7 +12,7 @@ use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
-use myTest qw(compile_profile);
+use CCMTest qw(compile_profile);
 use B;
 
 use Readonly;

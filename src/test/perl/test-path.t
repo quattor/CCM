@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use myTest qw (eok);
+use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::Path qw ();
 

@@ -18,7 +18,7 @@ use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Resource;
 use EDG::WP4::CCM::Path;
 
-use myTest qw (eok make_file);
+use CCMTest qw (eok make_file);
 
 my ($resource, $path, $string, $type);
 my ($derivation, $checksum, $description, $value);

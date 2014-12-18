@@ -7,7 +7,7 @@ use warnings;
 
 use POSIX qw (getpid);
 use Test::More;
-use myTest qw (eok make_file);
+use CCMTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 
 				      $CURRENT_CID_FN $LATEST_CID_FN);

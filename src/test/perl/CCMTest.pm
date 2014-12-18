@@ -1,8 +1,8 @@
 #
-# myTest.pm
+# CCMTest.pm
 #
 
-package   myTest;
+package   CCMTest;
 
 use strict;
 use warnings;

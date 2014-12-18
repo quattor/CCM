@@ -8,7 +8,7 @@ use EDG::WP4::CCM::XMLPanProfile;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
 use Test::Deep;
-use myTest qw(compile_profile);
+use CCMTest qw(compile_profile);
 
 =pod
 

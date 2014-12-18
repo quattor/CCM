@@ -18,7 +18,7 @@ use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Property;
 use EDG::WP4::CCM::Path;
 
-use myTest qw (eok make_file);
+use CCMTest qw (eok make_file);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
