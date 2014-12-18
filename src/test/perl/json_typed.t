@@ -12,7 +12,7 @@ use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
-use File::Path qw(make_path);
+use CCMTest qw(compile_profile);
 use B;
 
 use Readonly;
@@ -89,17 +89,6 @@ is_deeply($copy2, \%DATA, "copy of decode(encode) is original DATA");
 is($jsonstring1, $DATA_STRING, "Encoding of DATA returns expected string");
 is($jsonstring2, $DATA_STRING, "Encoding of original and copy is expected string");
 
-
-
-sub compile_profile
-{
-    my ($type, $simple) = @_;
-    make_path('target/test/json');
-    system("cd src/test/resources && panc --formats $type --output-dir ../../../target/test/json ${simple}profile.pan");
-}
-
-
-
 =pod
 
 The test is trivial: just grab a Pan-formatted XML, parse it and
@@ -108,16 +97,16 @@ must be identical.
 
 =cut
 
-my $simple = ''; # set to 'simple' for old 'all scalar are string' behaviour
+my $simple = 'profile'; # set to 'simpleprofile' for old 'all scalar are string' behaviour
 
 compile_profile("pan", $simple);
 compile_profile("json", $simple);
 
-my $fh = CAF::FileReader->new("target/test/json/${simple}profile.xml");
+my $fh = CAF::FileReader->new("target/test/pan/${simple}.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 
-$fh = CAF::FileReader->new("target/test/json/${simple}profile.json");
+$fh = CAF::FileReader->new("target/test/json/${simple}.json");
 note("Profile contents: $fh");
 $t = decode_json("$fh");
 my $our_result = EDG::WP4::CCM::JSONProfileTyped->interpret_node(profile => $t);

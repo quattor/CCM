@@ -1,19 +1,15 @@
 #
-# Test.pm
-#
-# $Id: myTest.pm,v 1.1 2006/06/26 14:20:41 gcancio Exp $
-#
-# Copyright (c) 2001 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
+# CCMTest.pm
 #
 
-package   myTest;
+package   CCMTest;
 
 use strict;
 use warnings;
 
 use LC::Exception qw(SUCCESS throw_error);
-use Test::More;# qw (ok);
+use Test::More;
+use File::Path qw(make_path);
 
 BEGIN{
  use      Exporter;
@@ -21,7 +17,7 @@ BEGIN{
 
  @ISA       = qw(Exporter);
  @EXPORT    = qw();           
- @EXPORT_OK = qw(eok make_file);
+ @EXPORT_OK = qw(eok make_file compile_profile);
  $VERSION   = 1.00;        
 }
 
@@ -45,6 +41,13 @@ sub make_file {
     open(my $fh, ">", $fn);
     print $fh $data if (defined($data));
     close($fh);
+}
+
+sub compile_profile
+{
+    my ($type, $name) = @_;
+    make_path("target/test/$type");
+    system("cd src/test/resources && panc --formats $type --output-dir ../../../target/test/$type $name.pan");
 }
 
 1;

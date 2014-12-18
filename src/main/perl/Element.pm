@@ -540,14 +540,22 @@ to Perl array references and PAN nlists map to Perl hash references.
 
 Note that links cannot be followed.
 
-
+If C<depth> is specified (and not C<undef>), only return the next C<depth>
+levels of nesting (and use the Element instances as values).
+A C<depth == 0> is the element itself, C<depth == 1> is the first level, ... 
 
 =cut
 
 sub getTree
 {
-    my $self = shift;
+    my ($self, $depth) = @_;
     my ($ret, $el);
+
+    my $nextdepth;
+    if (defined($depth)) {
+        return $self if ($depth <= 0);
+        $nextdepth = $depth - 1;
+    }
 
 SWITCH:
     {
@@ -555,7 +563,7 @@ SWITCH:
             $ret = [];
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                push(@$ret, $el->getTree);
+                push(@$ret, $el->getTree($nextdepth));
             }
             last SWITCH;
         };
@@ -563,7 +571,7 @@ SWITCH:
             $ret = {};
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                $$ret{$el->getName()} = $el->getTree;
+                $$ret{$el->getName()} = $el->getTree($nextdepth);
             }
             last SWITCH;
         };
@@ -577,6 +585,7 @@ SWITCH:
 
         last SWITCH;
     }
+
     return $ret;
 }
 

@@ -18,7 +18,7 @@ use EDG::WP4::CCM::Path;
 
 use Cwd;
 
-use myTest qw(make_file);
+use CCMTest qw(make_file);
 
 my $cdtmp = getcwd()."/target/tmp";
 mkdir($cdtmp) if (! -d $cdtmp);
