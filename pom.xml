@@ -6,7 +6,7 @@
   <artifactId>ccm</artifactId>
 
   <packaging>pom</packaging>
-  <version>14.10.1-SNAPSHOT</version>
+  <version>14.12.0-rc1</version>
   <name>Configuration Cache Manager for Quattor</name>
 
   <parent>
@@ -14,6 +14,12 @@
     <artifactId>build-profile</artifactId>
     <version>1.40</version>
   </parent>
+
+  <scm>
+    <connection>scm:git:git://github.com/quattor/CCM.git</connection>
+    <developerConnection>scm:git:git@github.com:quattor/CCM.git</developerConnection>
+    <url>https://github.com/quattor/CCM</url>
+  </scm>
 
   <licenses>
     <license>
