@@ -17,7 +17,7 @@ use Test::More tests => 50;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
-use File::Path qw(make_path remove_tree);
+use File::Path qw(mkpath remove_tree);
 use CAF::Object;
 use Carp qw(croak);
 use CAF::Reporter;
@@ -33,7 +33,7 @@ sub compile_profile
     $type ||= 'pan';
 
     my $filetype = $type eq 'json' ? 'json' : 'xml';
-    make_path("target/test/fetch");
+    mkpath("target/test/fetch");
     system (qq{cd src/test/resources &&
                panc --formats $type --output-dir ../../../target/test/fetch/ profile.pan &&
                touch -d 0 ../../../target/test/fetch/profile.$filetype});
@@ -54,7 +54,7 @@ sub setup_cache
 {
     my ($cachedir, $fetch) = @_;
 
-    make_path("$cachedir/data");
+    mkpath("$cachedir/data");
 }
 
 compile_profile();
