@@ -9,7 +9,7 @@ use warnings;
 
 use LC::Exception qw(SUCCESS throw_error);
 use Test::More;
-use File::Path qw(make_path);
+use File::Path qw(mkpath);
 
 BEGIN{
  use      Exporter;
@@ -46,7 +46,7 @@ sub make_file {
 sub compile_profile
 {
     my ($type, $name) = @_;
-    make_path("target/test/$type");
+    mkpath("target/test/$type");
     system("cd src/test/resources && panc --formats $type --output-dir ../../../target/test/$type $name.pan");
 }
 
