@@ -17,7 +17,7 @@ use Test::More tests => 50;
 use EDG::WP4::CCM::Fetch;
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
-use File::Path qw(mkpath remove_tree);
+use File::Path qw(mkpath rmtree);
 use CAF::Object;
 use Carp qw(croak);
 use CAF::Reporter;
@@ -46,7 +46,7 @@ sub cleanup_cache
 {
     my ($cache) = @_;
 
-    remove_tree($cache);
+    rmtree($cache);
 }
 
 # Creates a brand new cachedirectory
