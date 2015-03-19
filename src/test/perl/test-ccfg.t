@@ -50,7 +50,7 @@ my $fn = "$ccfgtmp/notexists";
 my $fh = CAF::FileReader->new($fn);
 ok(!-f $fn, "notexists file $fn doesn't exist");
 
-eok($ec, EDG::WP4::CCM::CCfg::_readConfigFile($fn), "_readConfigFile of not existing file");
+eok($ec, EDG::WP4::CCM::CCfg::initCfg($fn), "initCfg of not existing file");
 
 $fn = "$ccfgtmp/ccm_invalidkey.cfg";
 ok(-f $fn, "ccm_invalidkey file $fn does exist");
