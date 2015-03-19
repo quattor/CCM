@@ -104,10 +104,6 @@ sub _readConfigFile ($)
 {
     my ($fn) = @_;
 
-    if (! -f $fn) {
-        throw_error("non-existing config file $fn");
-        return;        
-    }
     my $fh = CAF::FileReader->new($fn);
         
     foreach my $line (split ("\n", "$fh")) {
@@ -160,7 +156,7 @@ sub initCfg
 
         # Accept the configuration be read from pipes (i.e, stdin)
         unless (-f $cp || -p $cp) {
-            throw_error("configuration file not found");
+            throw_error("configuration file $cp not found");
             return ();
         }
     } else {
