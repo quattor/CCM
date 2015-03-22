@@ -33,7 +33,7 @@ use strict;
 use warnings;
 
 use Getopt::Long;
-use EDG::WP4::CCM::CCfg qw(getCfgValue);
+use EDG::WP4::CCM::CCfg qw(getCfgValue @CFG_KEYS);
 use EDG::WP4::CCM::DB;
 use CAF::Lock qw(FORCE_IF_STALE);
 use CAF::FileEditor;
@@ -152,13 +152,10 @@ sub _config($)
         return ();
     }
 
-    foreach my $p (
-        qw(debug get_timeout cert_file ca_file ca_dir force base_url
-        profile_failover context_url cache_root cert_file key_file
-        ca_file ca_dir lock_retries lock_wait retrieve_retries
-        retrieve_wait preprocessor world_readable tmp_dir dbformat)
-        )
-    {
+    my @keys = qw(tmp_dir context_url);
+    push(@keys, @CFG_KEYS);
+    foreach my $p (@keys) {
+        # do not override any predefined uppercase attributes
         $self->{uc($p)} ||= $param->{uc($p)} || getCfgValue($p);
     }
 
