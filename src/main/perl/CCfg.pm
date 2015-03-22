@@ -60,6 +60,7 @@ Readonly::Hash my %DEFAULT_CFG => {
     "debug"            => undef,
     "force"            => undef,
     "get_timeout"      => 30,
+    "json_typed"       => 0,
     "keep_old"         => 2,
     "key_file"         => undef,
     "lock_retries"     => 3,

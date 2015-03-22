@@ -478,7 +478,13 @@ sub choose_interpreter
     my $tree;
     if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
         $tree = decode_json($profile);
-        return ('EDG::WP4::CCM::JSONProfileSimple', ['profile', $tree]);
+        my $module;
+        if ($self->{JSON_TYPED}) {
+            $module = 'EDG::WP4::CCM::JSONProfileTyped';
+        } else {
+            $module = 'EDG::WP4::CCM::JSONProfileSimple';
+        }
+        return ($module, ['profile', $tree]);
     }
 
     my $xmlParser = new XML::Parser(Style => 'Tree');
