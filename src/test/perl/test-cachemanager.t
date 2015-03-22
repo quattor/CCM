@@ -168,8 +168,4 @@ ok ($lcidf->read() == 4 && $ccidf->read() == 4,
 make_file("$cp/td.txt", "1\n");
 my $url = "file:///$cp/td.txt";
 
-my $file;
-ok ($file = $cm -> cacheFile ($url),
-   "cm->cacheFile ($url)");
-
 done_testing();
