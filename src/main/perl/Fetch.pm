@@ -269,8 +269,20 @@ sub retrieve
     $fh->close();
 
     my $modified = $rs->last_modified();
-    if (!(defined($modified) && utime($modified, $modified, $cache))) {
-        $self->warn("Unable to set mtime for $cache: $!");
+
+    if ($modified) {
+        my $now = time();
+        if ($time < $modified) {
+            $self->warn("Profile has last_modified timestamp ",
+                        $modified - $now,
+                        " seconds in future (timestamp $modified)");
+        }
+
+        if (! utime($modified, $modified, $cache)) {
+            $self->warn("Unable to set mtime for $cache: $!");
+        }
+    } else {
+        $self->warn("Unable to set mtime for $cache: last_modified is undefined");
     }
 
     $fh = CAF::FileReader->new($cache, log => $self);
