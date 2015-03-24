@@ -8,7 +8,7 @@ use warnings;
 use Test::More;
 use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::CCfg qw ();
+use EDG::WP4::CCM::CCfg qw (@CFG_KEYS);
 use Cwd;
 use Net::Domain qw(hostname hostdomain);
 
@@ -100,5 +100,11 @@ while (my ($k, $v) = each %expected) {
     is(EDG::WP4::CCM::CCfg::getCfgValue($k), $v, "Get ccm.conf ccfg param $k");
 }
 
+# Hard test for possible values (sorted)
+is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
+    context dbformat debug force get_timeout json_typed keep_old
+    key_file lock_retries lock_wait preprocessor profile profile_failover
+    purge_time retrieve_retries retrieve_wait trust world_readable
+    )], "CFG_KEYS exports all possible configuration keys");
 
 done_testing();

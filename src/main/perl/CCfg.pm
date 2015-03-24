@@ -50,29 +50,34 @@ my $DEF_EDG_LOC = "/usr";
 
 # Holds the default and all possible keys
 Readonly::Hash my %DEFAULT_CFG => {
+    "base_url"         => undef,
+    "ca_dir"           => undef,
+    "ca_file"          => undef,
+    "cache_root"       => "/var/lib/ccm",
+    "cert_file"        => undef,
+    "context"          => undef,
+    "dbformat"         => "GDBM_File",
     "debug"            => undef,
     "force"            => undef,
-    "profile"          => undef,
-    "profile_failover" => undef,
-    "context"          => undef,
-    "preprocessor"     => undef,
-    "cache_root"       => "/var/lib/ccm",
     "get_timeout"      => 30,
+    "json_typed"       => 0,
+    "keep_old"         => 2,
+    "key_file"         => undef,
     "lock_retries"     => 3,
     "lock_wait"        => 30,
+    "preprocessor"     => undef,
+    "profile"          => undef,
+    "profile_failover" => undef,
+    "purge_time"       => 86400,
     "retrieve_retries" => 3,
     "retrieve_wait"    => 30,
-    "cert_file"        => undef,
-    "key_file"         => undef,
-    "ca_file"          => undef,
-    "ca_dir"           => undef,
-    "base_url"         => undef,
-    "world_readable"   => undef,
-    "dbformat"         => "GDBM_File",
-    "keep_old"         => 2,
-    "purge_time"       => 86400,
     "trust"            => undef,
+    "world_readable"   => undef,
 };
+
+Readonly::Array our @CFG_KEYS => sort(keys(%DEFAULT_CFG));
+
+push(@EXPORT_OK, qw(@CFG_KEYS));
 
 # copy hash to hash ref
 my $cfg = {%DEFAULT_CFG};
