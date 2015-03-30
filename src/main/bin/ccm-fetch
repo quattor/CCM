@@ -116,6 +116,9 @@ sub app_options {
           { NAME   => 'purge_time=i',
             HELP   => 'Number of seconds before purging inactive profiles' },
 
+          { NAME   => 'json_typed',
+            HELP   => 'Extract typed data from JSON profiles' },
+
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
             HELP    => 'Turn on dubugging messages' });
