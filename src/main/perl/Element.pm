@@ -542,16 +542,42 @@ Note that links cannot be followed.
 
 If C<depth> is specified (and not C<undef>), only return the next C<depth>
 levels of nesting (and use the Element instances as values).
-A C<depth == 0> is the element itself, C<depth == 1> is the first level, ... 
+A C<depth == 0> is the element itself, C<depth == 1> is the first level, ...
+
+Named options
+
+=over
+
+=item convert_boolean
+
+Anonymous method to convert the argument (1 or 0 for resp true and false)
+to another boolean representation.
+
+=item convert_string
+
+Anonymous method to convert the argument (string value) to another
+representation/format.
+
+=item convert_long
+
+Anonymous method to convert the argument (integer/long value) to another
+representation/format.
+
+=item convert_double
+
+Anonymous method to convert the argument (float/double value) to another
+representation/format.
+
+=back
 
 =cut
 
 sub getTree
 {
-    my ($self, $depth) = @_;
-    my ($ret, $el);
+    my ($self, $depth, %opts) = @_;
 
-    my $nextdepth;
+    my ($ret, $el, $nextdepth, $convm);
+
     if (defined($depth)) {
         return $self if ($depth <= 0);
         $nextdepth = $depth - 1;
@@ -559,33 +585,62 @@ sub getTree
 
 SWITCH:
     {
+        # LIST to array ref
         $self->isType(LIST) && do {
             $ret = [];
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                push(@$ret, $el->getTree($nextdepth));
+                push(@$ret, $el->getTree($nextdepth, %opts));
             }
             last SWITCH;
         };
+
+        # NLIST to hashref
         $self->isType(NLIST) && do {
             $ret = {};
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                $$ret{$el->getName()} = $el->getTree($nextdepth);
+                $$ret{$el->getName()} = $el->getTree($nextdepth, %opts);
             }
             last SWITCH;
         };
+
+        # BOOLEAN via convert_bool method
         $self->isType(BOOLEAN) && do {
             $ret = $self->getValue eq 'true' ? 1 : 0;
+            $convm = $opts{convert_boolean};
             last SWITCH;
         };
 
-        # Default clause
+        # STRING to string
+        $self->isType(STRING) && do {
+            $ret = $self->getValue;
+            $ret = "$ret";
+            $convm = $opts{convert_string};
+            last SWITCH;
+        };
+
+        # LONG to integer/long
+        $self->isType(LONG) && do {
+            $ret = 0 + $self->getValue;
+            $convm = $opts{convert_long};
+            last SWITCH;
+        };
+
+        # DOUBLE to float/double
+        $self->isType(DOUBLE) && do {
+            $ret = 0.0 + $self->getValue;
+            $convm = $opts{convert_double};
+            last SWITCH;
+        };
+
+        # Default clause, should never be reached
         $ret = $self->getValue;
 
         last SWITCH;
     }
 
+    $ret = $convm->($ret) if defined($convm);
     return $ret;
 }
 
