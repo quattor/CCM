@@ -22,6 +22,7 @@ Readonly::Array my @FORMATS_OTHER => ();
 Readonly::Hash my %FORMATS_TEXTRENDER => {
     json => {}, # No opts
     yaml => {}, # No opts
+    pan => {},
 };
 
 my @FORMATS = keys %FORMATS_TEXTRENDER;
@@ -38,14 +39,14 @@ EDG::WP4::CCM::Format - CCM Format class
 Module provides the Format class, to generate a text
 representation of an element.
 
-The module supports stringification as a method to 
+The module supports stringification as a method to
 retrieve the generated text.
 
 =over
 
 =item new
 
-Create a C<EDG::WP4::CCM::Format> instance 
+Create a C<EDG::WP4::CCM::Format> instance
 with format C<format> from C<element> .
 
 Supported options are
@@ -87,7 +88,7 @@ return the text.
 sub get_text
 {
     my ($self) = @_;
-    
+
     my $trd_opts = $FORMATS_TEXTRENDER{$self->{format}};
     if (defined($trd_opts)) {
         $trd_opts->{depth} = $self->{depth} if defined $self->{depth};
@@ -96,7 +97,8 @@ sub get_text
                                        $self->{element},
                                        element => $trd_opts,
                                        # uppercase, no conflict with possible ncm-ccm?
-                                       relpath => 'CCM', 
+                                       relpath => 'CCM',
+                                       element => $trd_opts,
                                        );
         if (defined $trd->get_text()) {
             $self->{text} = "$trd";

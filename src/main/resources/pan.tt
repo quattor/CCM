@@ -1,0 +1,5 @@
+[% FOREACH pair IN data.pairs %]
+[%     pair.key %] [% INCLUDE 'CCM/pan.tt' data=pair.value FILTER indent(' ') %]
+[%     pair.key %] [%     pair.value.defined(0) ? '0th element exists' : 'no 0th element' %]
+[%     pair.key %] [%     pair.value.keys.defined(0) ? 'pair keys 0th' : 'no pair keys 0th' %]
+[%- END -%]
