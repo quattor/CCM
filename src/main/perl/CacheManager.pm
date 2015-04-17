@@ -257,62 +257,6 @@ sub isLocked
     }
 }
 
-#
-# public info?
-# cacheFile ($url)
-#
-
-sub cacheFile
-{    #T
-    my ($self, $url) = @_;
-    my $eu = _encodeUrl($url);
-    unless ($eu) {
-        throw_error("_encodeUrl($url)", $!);
-        return ();
-    }
-
-    my $fn = $self->{"cache_path"} . "/data/$eu";
-    my $ua = LWP::UserAgent->new();
-
-    #TODO retries/wait
-
-    $ua->timeout($self->{"get_timeout"});
-    my $req = HTTP::Request->new(GET => $url);
-
-    my $mtime;
-    if (-f $fn) {
-        $mtime = (stat($fn))[9];
-        unless (defined($mtime)) {
-            throw_error("stat($fn)", $!);
-            return ();
-        }
-        $req->headers->if_modified_since($mtime);
-    }
-    my $success = 0;
-    my $i       = 0;
-    my $res;
-    while (!$success && ($i < $self->{"retrieve_retries"})) {
-        $res = $ua->request($req, $fn);
-        if ($res->is_success) {
-            $success = 1;                     #was downloaded
-            $mtime   = $res->last_modified;
-            unless (utime($mtime, $mtime, $fn)) {
-                throw_error("utime($mtime, $mtime, $fn)", $!);
-                return ();
-            }
-        } elsif ($res->code == RC_NOT_MODIFIED) {
-            $success = 1;    #was not downloaded, becasue it is cache and unmodified
-        } else {
-            sleep($self->{"retrieve_wait"});
-            $i++;
-        }
-    }
-    unless ($success) {
-        throw_error("http request failed", $res->code);
-        return ();
-    }
-    return $fn;
-}
 
 #
 # _encodeUrl ($url)
