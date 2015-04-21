@@ -634,7 +634,8 @@ SWITCH:
             last SWITCH;
         };
 
-        # Default clause, should never be reached
+        # Default clause: should only be reached if PAN adds a new type
+        # which is not explicitly checked above.
         $ret = $self->getValue;
 
         last SWITCH;
