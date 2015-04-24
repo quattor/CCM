@@ -50,7 +50,7 @@ Readonly::Hash our %ELEMENT_CONVERT => {
 
 =head1 DESCRIPTION
 
-This class is an extension of the C<CAF::TextRender> class; with the main 
+This class is an extension of the C<CAF::TextRender> class; with the main
 difference the support of a C<EDG::WP4::CCM:Element> instance as contents.
 
 =head2 Private methods
@@ -93,7 +93,7 @@ All optinal arguments from C<CAF::TextRender> are supported unmodified:
 
 =back
 
-Extra optional arguments: 
+Extra optional arguments:
 
 =over
 
@@ -113,13 +113,13 @@ The predefined convert methods are:
 =item json
 
 Enable JSON output, in particular JSON boolean (the other types should
-already be in proper format). This is automatically enabled when the json 
+already be in proper format). This is automatically enabled when the json
 module is used (and not explicilty set).
 
 =item yaml
 
 Enable YAML output, in particular YAML boolean (the other types should
-already be in proper format). This is automatically enabled when the yaml 
+already be in proper format). This is automatically enabled when the yaml
 module is used (and not explicilty set).
 
 =item yesno
@@ -194,10 +194,10 @@ sub make_contents
         $self->debug(3, "Contents is a Element instance");
         my $depth = $self->{elementopts}->{depth};
 
-        if ($self->{module} && $self->{module} eq 'json' && 
+        if ($self->{module} && $self->{module} eq 'json' &&
             ! defined( $self->{elementopts}->{json})) {
             $self->{elementopts}->{json} = 1;
-        } elsif ($self->{module} && $self->{module} eq 'yaml' && 
+        } elsif ($self->{module} && $self->{module} eq 'yaml' &&
             ! defined( $self->{elementopts}->{yaml})) {
             $self->{elementopts}->{yaml} = 1;
         }
@@ -207,11 +207,11 @@ sub make_contents
         # predefined convert_
         if ($self->{elementopts}->{json}) {
             $opts{convert_boolean}  = $ELEMENT_CONVERT{json_boolean};
-        } 
-        
+        }
+
         if ($self->{elementopts}->{yaml}) {
             $opts{convert_boolean}  = $ELEMENT_CONVERT{yaml_boolean};
-        } 
+        }
 
         if ($self->{elementopts}->{yesno}) {
             $opts{convert_boolean}  = $ELEMENT_CONVERT{yesno_boolean};
@@ -233,10 +233,28 @@ sub make_contents
         }
 
         $contents = $self->{contents}->getTree($depth, %opts);
+
     } else {
         return $self->fail("Contents passed is neither a hashref or ",
                            "a EDG::WP4::CCM::Element instance ",
                            "(ref ", ref($self->{contents}), ")");
+    }
+
+
+    # Additional variables available to both regular hashref and element
+    my $extra_vars = {
+        # Make the full contents available (e.g. to access the root keys)
+        # Must be a copy
+        contents => { %$contents },
+        ref => sub { return ref($_[0]) },
+        is_scalar => sub { my $r = ref($_[0]); return (! $r);  },
+        is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
+        is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
+    };
+
+
+    while (my ($k, $v) = each %$extra_vars) {
+        $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
     }
 
     return $contents;
@@ -249,4 +267,3 @@ sub make_contents
 =cut
 
 1;
-

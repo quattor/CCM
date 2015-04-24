@@ -1,0 +1,18 @@
+[% # Test access to full contents via CONTENTS
+     FOR p IN CCM.contents.pairs -%]
+[%      p.key %] [% p.value %]
+[%  END %]
+
+[%- # Test ref/is_scalar/is_list/is_hash method 
+    tmphash = {
+      ascalar = f
+      alist = g
+      ahash = h
+   };
+-%]
+[% FOREACH p IN tmphash.pairs -%]
+[%      p.key %] ref [% CCM.ref(p.value) %]
+[%      p.key %] is_scalar [% CCM.is_scalar(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
+[% END %]

@@ -14,6 +14,8 @@ BEGIN {
 use Readonly;
 use Test::Quattor qw(textrender);
 use EDG::WP4::CCM::TextRender;
+use Test::Quattor::RegexpTest;
+use Cwd;
 
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
@@ -123,6 +125,31 @@ is($tinyout,
    'a="a"b="1"c=1d=YESe=NO',
    "Correct Config::tiny with YESNO and doublequote rendered");
 
+=pod
+
+=head2 Extra TT options
+
+Test the extra TT vars and methods
+
+=cut
+
+$el = $cfg->getElement("/");
+$trd = EDG::WP4::CCM::TextRender->new(
+    'extravars',
+    $el,
+    includepath => getcwd()."/src/test/resources",
+    relpath => 'rendertest',
+    eol => 0,
+    );
+is($trd->{fail}, undef, "Fail is undefined with new variables ".($trd->{fail} || "<undef>"));
+
+my $rt = Test::Quattor::RegexpTest->new(
+    regexp => 'src/test/resources/rendertest/regexptest',
+    text => "$trd",
+);
+$rt->test();
+
+is("$trd", "XYZ", "Fail");
 
 done_testing;
 
