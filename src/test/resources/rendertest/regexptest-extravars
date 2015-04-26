@@ -25,6 +25,7 @@ Test extravars
 ^aboolean is_scalar YES$
 ^aboolean is_list NO$
 ^aboolean is_hash NO$
+^aboolean get_type BOOLEAN$
 ^aboolean is_boolean YES$
 ^aboolean is_string NO$
 ^aboolean is_double NO$
@@ -33,6 +34,7 @@ Test extravars
 ^adouble is_scalar YES$
 ^adouble is_list NO$
 ^adouble is_hash NO$
+^adouble get_type DOUBLE$
 ^adouble is_boolean NO$
 ^adouble is_string NO$
 ^adouble is_double YES$
@@ -41,6 +43,7 @@ Test extravars
 ^along is_scalar YES$
 ^along is_list NO$
 ^along is_hash NO$
+^along get_type LONG$
 ^along is_boolean NO$
 ^along is_string NO$
 ^along is_double NO$
@@ -49,6 +52,7 @@ Test extravars
 ^astring is_scalar YES$
 ^astring is_list NO$
 ^astring is_hash NO$
+^astring get_type STRING$
 ^astring is_boolean NO$
 ^astring is_string YES$
 ^astring is_double NO$

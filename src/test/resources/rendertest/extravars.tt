@@ -29,6 +29,7 @@
 [%      p.key %] is_scalar [% CCM.is_scalar(p.value) ? "YES" : "NO" %]
 [%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
 [%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
+[%      p.key %] get_type [% p.value.get_type %]
 [%      p.key %] is_boolean [% p.value.is_boolean ? "YES" : "NO" %]
 [%      p.key %] is_string [% p.value.is_string ? "YES" : "NO" %]
 [%      p.key %] is_double [% p.value.is_double ? "YES" : "NO" %]
