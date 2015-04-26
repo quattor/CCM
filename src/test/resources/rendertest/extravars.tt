@@ -16,3 +16,21 @@
 [%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
 [%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
 [% END %]
+[%- # Test get_type/is_boolean/is_string/is_double/is_long method 
+    tmphash = {
+        aboolean = e
+        astring = a
+        adouble = f
+        along = c
+    }
+-%]
+[% FOREACH p IN tmphash.pairs -%]
+[%      p.key %] ref [% CCM.ref(p.value) %]
+[%      p.key %] is_scalar [% CCM.is_scalar(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_boolean [% p.value.is_boolean ? "YES" : "NO" %]
+[%      p.key %] is_string [% p.value.is_string ? "YES" : "NO" %]
+[%      p.key %] is_double [% p.value.is_double ? "YES" : "NO" %]
+[%      p.key %] is_long [% p.value.is_long ? "YES" : "NO" %]
+[% END %]

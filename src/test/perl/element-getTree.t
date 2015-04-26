@@ -94,34 +94,37 @@ is_deeply($lvl1->{g}->getTree, $rt->{g}, "getTree of lvl1 key=g returns same as 
 # test conversion
 $el = $cfg->getElement("/");
 my $newtree = $el->getTree(undef,
-                           convert_boolean => sub {
+                           convert_boolean => [sub {
                                my $value = shift;
-                               return $value ? "TRUE" : "FALSE";
-                           },
-                           convert_string => sub {
+                               return $value ? "true" : "false";
+                           }, sub {
+                               my $value = shift;
+                               return uc $value;
+                           }],
+                           convert_string => [sub {
                                my $value = shift;
                                return "\"$value\"";
-                           },
-                           convert_long => sub {
+                           }],
+                           convert_long => [sub {
                                my $value = shift;
                                my $long = B::svref_2object(\$value)->isa("B::IV") ? "" : "NO";
                                return "${long}LONG($value)";
-                           },
-                           convert_double => sub {
+                           }],
+                           convert_double => [sub {
                                 my $value = shift;
                                 my $long = B::svref_2object(\$value)->isa("B::NV") ? "" : "NO";
                                 return "${long}DOUBLE($value)";
-                           },
+                           }],
     );
 is_deeply($newtree, \%CONVTREE, "getTree with properties converted");
 
 # Test JSON formatted tree
 $el = $cfg->getElement("/");
 my $jsontree = $el->getTree(undef,
-                            convert_boolean => sub {
+                            convert_boolean => [sub {
                                 my $value = shift;
                                 return $value ? \1 : \0;
-                            },
+                            }],
     );
 
 my $profile = "target/test/profiles/element_test.json";

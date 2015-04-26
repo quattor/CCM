@@ -19,6 +19,7 @@ use Cwd;
 
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
+
 =pod
 
 =head2 Test contents failure
@@ -87,12 +88,9 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(1),
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(0),
    'no',
    'yesno with false value');
-is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{YESNO_boolean}->(1),
-   'YES',
-   'YESNO with true value');
-is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{YESNO_boolean}->(0),
-   'NO',
-   'YESNO with false value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{upper}->('abcdef'),
+   'ABCDEF',
+   'upper returns uppercase strings');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{singlequote_string}->("abc"),
    "'abc'",
    'singlequote');
@@ -144,12 +142,13 @@ $trd = EDG::WP4::CCM::TextRender->new(
 is($trd->{fail}, undef, "Fail is undefined with new variables ".($trd->{fail} || "<undef>"));
 
 my $rt = Test::Quattor::RegexpTest->new(
-    regexp => 'src/test/resources/rendertest/regexptest',
+    regexp => 'src/test/resources/rendertest/regexptest-extravars',
     text => "$trd",
 );
 $rt->test();
 
-is("$trd", "XYZ", "Fail");
+diag("$trd");
+diag explain $trd->{contents};
 
 done_testing;
 

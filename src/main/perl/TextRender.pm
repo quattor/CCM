@@ -8,7 +8,8 @@ package EDG::WP4::CCM::TextRender;
 use strict;
 use warnings;
 use CAF::TextRender qw($YAML_BOOL_PREFIX);
-
+use Readonly;
+use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
 use base qw(CAF::TextRender Exporter);
 
 our @EXPORT_OK = qw(%ELEMENT_CONVERT);
@@ -28,9 +29,9 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         my $value = shift;
         return $value ? 'yes' : 'no';
     },
-    'YESNO_boolean' => sub {
+    'upper' => sub {
         my $value = shift;
-        return $value ? 'YES' : 'NO';
+        return uc $value;
     },
     'doublequote_string' => sub {
         my $value = shift;
@@ -41,6 +42,7 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         return "'$value'";
     },
 };
+
 
 =pod
 
@@ -192,44 +194,63 @@ sub make_contents
         # UNIVERSAL::can also return true for scalars, so also test
         # if it's a reference to start with
         $self->debug(3, "Contents is a Element instance");
-        my $depth = $self->{elementopts}->{depth};
+        my $elopts = $self->{elementopts};
+        my $depth = $elopts->{depth};
 
         if ($self->{module} && $self->{module} eq 'json' &&
-            ! defined( $self->{elementopts}->{json})) {
-            $self->{elementopts}->{json} = 1;
+            ! defined( $elopts->{json})) {
+            $elopts->{json} = 1;
         } elsif ($self->{module} && $self->{module} eq 'yaml' &&
-            ! defined( $self->{elementopts}->{yaml})) {
-            $self->{elementopts}->{yaml} = 1;
+            ! defined( $elopts->{yaml})) {
+            $elopts->{yaml} = 1;
         }
 
         my %opts;
 
         # predefined convert_
-        if ($self->{elementopts}->{json}) {
-            $opts{convert_boolean}  = $ELEMENT_CONVERT{json_boolean};
+        if ($elopts->{json}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{json_boolean});
+        } elsif ($elopts->{yaml}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yaml_boolean});
         }
 
-        if ($self->{elementopts}->{yaml}) {
-            $opts{convert_boolean}  = $ELEMENT_CONVERT{yaml_boolean};
+        if ($elopts->{yesno} || $elopts->{YESNO}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yesno_boolean});
         }
 
-        if ($self->{elementopts}->{yesno}) {
-            $opts{convert_boolean}  = $ELEMENT_CONVERT{yesno_boolean};
-        } elsif ($self->{elementopts}->{YESNO}) {
-            $opts{convert_boolean}  = $ELEMENT_CONVERT{YESNO_boolean};
+        if ($elopts->{YESNO}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
         }
 
-        if ($self->{elementopts}->{doublequote}) {
-            $opts{convert_string}  = $ELEMENT_CONVERT{doublequote_string};
-        } elsif ($self->{elementopts}->{singlequote}) {
-            $opts{convert_string}  = $ELEMENT_CONVERT{singlequote_string};
+        if ($elopts->{doublequote}) {
+            push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
+        } elsif ($elopts->{singlequote}) {
+            push(@{$opts{convert_string}}, $ELEMENT_CONVERT{singlequote_string});
         }
 
         # The convert_ anonymous methods precede the predefined ones
         foreach my $type (qw(boolean string long double)) {
             my $am_name = "convert_$type";
-            my $am = $self->{elementopts}->{$am_name};
-            $opts{$am_name} = $am if (defined ($am));
+            my $am = $elopts->{$am_name};
+            # Convert to arrayrefs
+            if (defined ($am)) {
+                if (ref($am) ne 'ARRAY') {
+                    push(@{$opts{$am_name}}, $am);
+                } else {
+                    push(@{$opts{$am_name}}, @$am);
+                }
+            }
+        }
+
+        # Last step: add convert methods for scalar types to CCM::TT::Scalar
+        # if the render method is TT
+        if ($self->{method_is_tt}) {
+            foreach my $type (qw(boolean string long double)) {
+                push(@{$opts{"convert_$type"}}, sub {
+                    my $scalartype = $ELEMENT_TYPES{(uc $type)};
+                    return EDG::WP4::CCM::TT::Scalar->new($_[0], $scalartype);
+                     });
+            }
         }
 
         $contents = $self->{contents}->getTree($depth, %opts);
@@ -247,11 +268,10 @@ sub make_contents
         # Must be a copy
         contents => { %$contents },
         ref => sub { return ref($_[0]) },
-        is_scalar => sub { my $r = ref($_[0]); return (! $r);  },
+        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
         is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
     };
-
 
     while (my ($k, $v) = each %$extra_vars) {
         $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
