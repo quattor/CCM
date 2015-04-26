@@ -550,25 +550,28 @@ Named options
 
 =item convert_boolean
 
-Anonymous method to convert the argument (1 or 0 for resp true and false)
-to another boolean representation.
+Array ref of anonymous methods to convert the argument
+(1 or 0 for resp true and false) to another boolean representation.
 
 =item convert_string
 
-Anonymous method to convert the argument (string value) to another
-representation/format.
+Array ref of anonymous methods to convert the argument
+(string value) to another representation/format.
 
 =item convert_long
 
-Anonymous method to convert the argument (integer/long value) to another
-representation/format.
+Array ref of anonymous methods to convert the argument
+(integer/long value) to another representation/format.
 
 =item convert_double
 
-Anonymous method to convert the argument (float/double value) to another
-representation/format.
+Array ref of anonymous methods to convert the argument
+(float/double value) to another representation/format.
 
 =back
+
+The arrayref of anonymous methods are applied as follows: 
+convert methods C<[a, b, c]> will produce C<$new = c(b(a($old)))>.
 
 =cut
 
@@ -576,7 +579,8 @@ sub getTree
 {
     my ($self, $depth, %opts) = @_;
 
-    my ($ret, $el, $nextdepth, $convm);
+    my ($ret, $el, $nextdepth);
+    my $convm = [];
 
     if (defined($depth)) {
         return $self if ($depth <= 0);
@@ -641,7 +645,14 @@ SWITCH:
         last SWITCH;
     }
 
-    $ret = $convm->($ret) if defined($convm);
+    foreach my $method (@$convm) {
+        if(ref($method) eq 'CODE') {
+            $ret = $method->($ret);
+        } else {
+            throw_error("wrong type ".ref($method)." for convert_method");
+        }
+    }
+
     return $ret;
 }
 
