@@ -1,0 +1,55 @@
+Test extravars
+---
+---
+^a a$
+^b 1$
+^c 1$
+^d 1$
+^e 0$
+^f 1.5$
+^g ARRAY\(.*\)$
+^h HASH\(.*\)$
+^ahash ref HASH$
+^ahash is_scalar NO$
+^ahash is_list NO$
+^ahash is_hash YES$
+^alist ref ARRAY$
+^alist is_scalar NO$
+^alist is_list YES$
+^alist is_hash NO$
+^ascalar ref EDG::WP4::CCM::TT::Scalar$
+^ascalar is_scalar YES$
+^ascalar is_list NO$
+^ascalar is_hash NO$
+^aboolean ref EDG::WP4::CCM::TT::Scalar$
+^aboolean is_scalar YES$
+^aboolean is_list NO$
+^aboolean is_hash NO$
+^aboolean is_boolean YES$
+^aboolean is_string NO$
+^aboolean is_double NO$
+^aboolean is_long NO$
+^adouble ref EDG::WP4::CCM::TT::Scalar$
+^adouble is_scalar YES$
+^adouble is_list NO$
+^adouble is_hash NO$
+^adouble is_boolean NO$
+^adouble is_string NO$
+^adouble is_double YES$
+^adouble is_long NO$
+^along ref EDG::WP4::CCM::TT::Scalar$
+^along is_scalar YES$
+^along is_list NO$
+^along is_hash NO$
+^along is_boolean NO$
+^along is_string NO$
+^along is_double NO$
+^along is_long YES$
+^astring ref EDG::WP4::CCM::TT::Scalar$
+^astring is_scalar YES$
+^astring is_list NO$
+^astring is_hash NO$
+^astring is_boolean NO$
+^astring is_string YES$
+^astring is_double NO$
+^astring is_long NO$

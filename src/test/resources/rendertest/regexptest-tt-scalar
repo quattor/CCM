@@ -1,0 +1,23 @@
+Test TT Scalar methods
+---
+---
+^stringification arbitrarytext$
+^vmethod item arbitrarytext$
+^vmethod list arbitrarytext$
+^vmethod hash arbitrarytext$
+^vmethod length 13$
+^vmethod size 1$
+^vmethod defined 1$
+^vmethod match a_a$
+^vmethod search 1$
+^vmethod repeat arbitrarytextarbitrarytextarbitrarytext$
+^vmethod replace r_abitrr_aytext$
+^vmethod remove rbitrrytext$
+^vmethod split _rbitr_rytext$
+^vmethod chunk arbi_trar_ytex_t$
+^vmethod substr aryt$
+^vmethod get_type ARBITRARY$
+^vmethod is_boolean NO$
+^vmethod is_string NO$
+^vmethod is_double NO$
+^vmethod is_long NO$
