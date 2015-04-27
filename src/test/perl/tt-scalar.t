@@ -33,13 +33,15 @@ is($ELEMENT_TYPES{LONG}, 'LONG', 'ELEMENT_TYPES LONG exported');
 =cut
 
 my $arb = 'arbitrarytext';
-my $sc_arb = EDG::WP4::CCM::TT::Scalar->new($arb, 'ARBITRARY');
+my $arbt = 'ARBITRARY';
+my $sc_arb = EDG::WP4::CCM::TT::Scalar->new($arb, $arbt);
 isa_ok($sc_arb, "EDG::WP4::CCM::TT::Scalar",
        "EDG::WP4::CCM::TT::Scalar instance created");
 is($sc_arb->{VALUE}, $arb, "VALUE attribute found");
-is($sc_arb->{TYPE}, 'ARBITRARY', "TYPE attribute found");
+is($sc_arb->{TYPE}, $arbt, "TYPE attribute found");
 is("$sc_arb", "$arb", "Stringification returns VALUE in string context");
-is($sc_arb->get_type(), 'ARBITRARY', "TYPE attribute found");
+is($sc_arb->get_type(), $arbt, "TYPE attribute found");
+is($sc_arb->get_value(), $arb, "value / VALUE attribute returned");
 ok(! $sc_arb->is_boolean(), "ARBITRARY is not a boolean");
 ok(! $sc_arb->is_string(), "ARBITRARY is not a string");
 ok(! $sc_arb->is_double(), "ARBITRARY is not a double");
@@ -67,12 +69,70 @@ foreach my $vm (@vmethods) {
 
 =pod
 
+=head2 Test scalar operations
+
+=cut
+
+my $true = EDG::WP4::CCM::TT::Scalar->new(1, $ELEMENT_TYPES{BOOLEAN});
+ok($true->is_boolean(), "is a boolean");
+ok($true, "is a boolean and is true");
+
+my $false = EDG::WP4::CCM::TT::Scalar->new(0, $ELEMENT_TYPES{BOOLEAN});
+ok($true->is_boolean(), "is a boolean");
+ok(! $false, "is a boolean and is false");
+
+my $double = EDG::WP4::CCM::TT::Scalar->new(1.5, $ELEMENT_TYPES{DOUBLE});
+ok($double->is_double(), "is a double");
+is($double, 1.5, "is a double and has correct value");
+is(1 + $double, 2.5, "is a double and has correct left addition (numify/0+)");
+is($double + 1, 2.5, "is a double and has correct right addition (+; with fallback to numify)");
+is(1 - $double, -0.5, "is a double and has correct left subtract");
+is($double - 1, 0.5, "is a double and has correct right subtract");
+is(3 * $double, 4.5, "is a double and has correct left multiply");
+is($double * 3, 4.5, "is a double and has correct right multiply");
+is(4.5 / $double, 3 , "is a double and has correct left division");
+is($double / 3, 0.5, "is a double and has correct right division");
+
+my $long = EDG::WP4::CCM::TT::Scalar->new(2, $ELEMENT_TYPES{LONG});
+ok($long->is_long(), "is a long");
+is($long, 2, "is a long and has correct value");
+is(1 + $long, 3, "is a long and has correct left addition (numify/0+)");
+is($long + 1, 3, "is a long and has correct right addition (+; with fallback to numify)");
+is(1 - $long, -1, "is a long and has correct left subtract");
+is($long - 1, 1, "is a long and has correct right subtract");
+is(3 * $long, 6, "is a long and has correct left multiply");
+is($long * 3, 6, "is a long and has correct right multiply");
+is(4.5 / $long, 2.25 , "is a long and has correct left division");
+is($long / 4, 0.5, "is a long and has correct right division");
+
+# combine instances
+is($long + $double, 3.5, "Addition of instances ok");
+is($long * $double, 3, "Multiplication of instances ok");
+is($long - $double, 0.5, "Subtraction of instances ok");
+is($double / $long, 0.75, "Division of instances ok");
+
+# compare
+ok($long > 1, "long numeric right compare");
+ok($long == 2, "long string right equality");
+ok($long eq "2", "long string right compare");
+ok(3 > $double, "double numeric left compare");
+ok($double == 1.5, "double numeric left compare");
+ok($double eq "1.5", "double string left compare");
+ok($long > $double, "numeric instance compare");
+ok(!($double > $long), "numeric instance compare inverted");
+
+=pod
+
 =head2 Test element rendering
 
 =cut
 
 my $el = {
     arbitrary => $sc_arb,
+    true => $true,
+    false => $false,
+    double => $double,
+    long => $long,
 };
 
 my $trd = EDG::WP4::CCM::TextRender->new(

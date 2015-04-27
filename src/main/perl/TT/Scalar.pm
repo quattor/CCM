@@ -13,7 +13,13 @@ use Template::VMethods;
 
 use base qw(Exporter);
 
-use overload ('""' => '_stringify');
+# Overload the stringification
+# Following the 'perldoc overload' section on
+# 'Magic Autogeneration'; this should be sufficient
+# for the other scalar operation numify '0+' and logic 'bool'
+# Enable fallback for the case $obj+1 (instead of defining +
+# operator; use numify) and others like '$obj eq something'
+use overload '""' => '_stringify', 'fallback' => 1;
 
 our @EXPORT_OK =qw(%ELEMENT_TYPES);
 
@@ -85,6 +91,21 @@ sub get_type
 {
     my $self = shift;
     return $self->{TYPE};
+}
+
+=pod
+
+=item get_value
+
+Return value (i.e. the VALUE attribute)
+(can be useful in case the overloading behaves unexpected)
+
+=cut
+
+sub get_value
+{
+    my $self = shift;
+    return $self->{VALUE};
 }
 
 =pod
