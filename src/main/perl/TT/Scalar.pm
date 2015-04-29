@@ -16,9 +16,11 @@ use base qw(Exporter);
 # Overload the stringification
 # Following the 'perldoc overload' section on
 # 'Magic Autogeneration'; this should be sufficient
-# for the other scalar operation numify '0+' and logic 'bool'
-# Enable fallback for the case $obj+1 (instead of defining +
-# operator; use numify) and others like '$obj eq something'
+# for the other scalar operations numify (via '0+')
+# and logic (via 'bool').
+# Enable fallback for the case '$obj+1'
+# (instead of defining + operator, numify is used as fallback)
+# and others like '$obj eq something'.
 use overload '""' => '_stringify', 'fallback' => 1;
 
 our @EXPORT_OK =qw(%ELEMENT_TYPES);
@@ -34,12 +36,12 @@ Readonly::Hash our %ELEMENT_TYPES => {
 
 =head1 NAME
 
-    CCM::TT::Scalar - Class to expose scalar/property Element attributes within TT.
+    CCM::TT::Scalar - Class to access scalar/property Element attributes within TT.
 
 =head1 DESCRIPTION
 
-This is a wrapper class to access some scalar/property Element properties (in particular
-the type) available within TT.
+This is a wrapper class to access some scalar/property Element attributes
+(in particular the type) within TT.
 
 =head2 Methods
 
@@ -47,7 +49,7 @@ the type) available within TT.
 
 =item new
 
-Create a new instance with C<value> and C<type>
+Create a new instance with C<value> and C<type>.
 
 =cut
 
@@ -58,7 +60,7 @@ sub new
     # TODO if we limit the types, what sort of error checking do we need?
     my $self = {
         VALUE => $value,
-        TYPE => uc $type,
+        TYPE => $type,
     };
     bless $self, $class;
 
