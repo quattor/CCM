@@ -609,40 +609,34 @@ SWITCH:
             last SWITCH;
         };
 
-        # BOOLEAN via convert_bool method
+        # BOOLEAN to 1/0
         $self->isType(BOOLEAN) && do {
             $ret = $self->getValue eq 'true' ? 1 : 0;
             $convm = $opts{convert_boolean};
             last SWITCH;
         };
 
-        # STRING to string
+        # No predefined conversion for any other type
+        $ret = $self->getValue;
+
+        # STRING
         $self->isType(STRING) && do {
-            $ret = $self->getValue;
-            $ret = "$ret";
             $convm = $opts{convert_string};
             last SWITCH;
         };
 
-        # LONG to integer/long
+        # LONG
         $self->isType(LONG) && do {
-            $ret = 0 + $self->getValue;
             $convm = $opts{convert_long};
             last SWITCH;
         };
 
-        # DOUBLE to float/double
+        # DOUBLE
         $self->isType(DOUBLE) && do {
-            $ret = 0.0 + $self->getValue;
             $convm = $opts{convert_double};
             last SWITCH;
         };
 
-        # Default clause: should only be reached if PAN adds a new type
-        # which is not explicitly checked above.
-        $ret = $self->getValue;
-
-        last SWITCH;
     }
 
     foreach my $method (@$convm) {

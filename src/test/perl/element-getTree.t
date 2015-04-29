@@ -103,14 +103,23 @@ my $newtree = $el->getTree(undef,
                            }],
                            convert_string => [sub {
                                my $value = shift;
+                               return "$value";
+                           }, sub {
+                               my $value = shift;
                                return "\"$value\"";
                            }],
                            convert_long => [sub {
+                               my $value = shift;
+                               return 0 + $value;
+                           }, sub {
                                my $value = shift;
                                my $long = B::svref_2object(\$value)->isa("B::IV") ? "" : "NO";
                                return "${long}LONG($value)";
                            }],
                            convert_double => [sub {
+                               my $value = shift;
+                               return 0.0 + $value;
+                           }, sub {
                                 my $value = shift;
                                 my $long = B::svref_2object(\$value)->isa("B::NV") ? "" : "NO";
                                 return "${long}DOUBLE($value)";
@@ -124,6 +133,18 @@ my $jsontree = $el->getTree(undef,
                             convert_boolean => [sub {
                                 my $value = shift;
                                 return $value ? \1 : \0;
+                            }],
+                            convert_string => [sub {
+                                my $value = shift;
+                                return "$value";
+                            }],
+                            convert_long => [sub {
+                                my $value = shift;
+                                return 0 + $value;
+                            }],
+                            convert_double => [sub {
+                                my $value = shift;
+                                return 0.0 + $value;
                             }],
     );
 
