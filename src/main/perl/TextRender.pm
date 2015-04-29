@@ -33,6 +33,10 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         my $value = shift;
         return uc $value;
     },
+    'lower' => sub {
+        my $value = shift;
+        return lc $value;
+    },
     'doublequote_string' => sub {
         my $value = shift;
         return "\"$value\"";
@@ -40,6 +44,26 @@ Readonly::Hash our %ELEMENT_CONVERT => {
     'singlequote_string' => sub {
         my $value = shift;
         return "'$value'";
+    },
+    'cast_boolean' => sub {
+        my $value = shift;
+        # Closest to a perl internal true/false
+        return $value ? (0 == 0) : (0 == 1);
+    },
+    'cast_string' => sub {
+        my $value = shift;
+        # explicit stringification
+        return "$value";
+    },
+    'cast_long' => sub {
+        my $value = shift;
+        # the 0+ operator of value is used
+        return 0 + $value;
+    },
+    'cast_double' => sub {
+        my $value = shift;
+        # the 0+ operator of value is used
+        return 0.0 + $value;
     },
 };
 
@@ -77,7 +101,7 @@ options.
 
 =back
 
-All optinal arguments from C<CAF::TextRender> are supported unmodified:
+All optional arguments from C<CAF::TextRender> are supported unmodified:
 
 =over
 
@@ -105,24 +129,34 @@ A hashref holding any C<getTree> options to pass. These can be the
 anonymous convert methods C<convert_boolean>, C<convert_string>,
 C<convert_long> and C<convert_double>; or one of the
 predefined convert methods (key is the name, value a boolean
-wheter or not to use them). The C<convert_> methods take precedence over
-the predefined ones in case there is any overlap.
+wheter or not to use them).
+
+The C<convert_> methods are added as last methods.
 
 The predefined convert methods are:
 
 =over
 
+=item cast
+
+Convert the scalar values to a more exact internal representation.
+The internal representaiton is important when passed on to other
+non-pure perl code, in particular the C<XS> modules like C<JSON::XS>
+and C<YAML::XS>.
+
 =item json
 
-Enable JSON output, in particular JSON boolean (the other types should
-already be in proper format). This is automatically enabled when the json
-module is used (and not explicilty set).
+Enable JSON output, in particular JSON boolean (C<cast> is implied,
+so the other types should already be in proper format).
+This is automatically enabled when the json
+module is used (and not explicitly set).
 
 =item yaml
 
-Enable YAML output, in particular YAML boolean (the other types should
-already be in proper format). This is automatically enabled when the yaml
-module is used (and not explicilty set).
+Enable YAML output, in particular YAML boolean (C<cast> is implied,
+so the other types should already be in proper format).
+This is automatically enabled when the yaml
+module is used (and not explicitly set).
 
 =item yesno
 
@@ -175,6 +209,64 @@ sub _initialize
     return $self->SUPER::_initialize($module, $contents, %opts);
 }
 
+# Modify the elementopts attribute based on selected module
+sub _modify_elementopts_module
+{
+    my ($self) = @_;
+
+    my $elopts = $self->{elementopts};
+    if ($self->{module} && $self->{module} eq 'json' &&
+        ! defined( $elopts->{json})) {
+        $elopts->{json} = 1;
+    } elsif ($self->{module} && $self->{module} eq 'yaml' &&
+             ! defined( $elopts->{yaml})) {
+        $elopts->{yaml} = 1;
+    }
+}
+
+# Returns the hash with getTree options generated
+# from the predefined convert options
+sub _make_predefined_options
+{
+    my ($self) = @_;
+
+    my $elopts = $self->{elementopts};
+    my %opts;
+
+    if ($elopts->{cast} || $elopts->{json} || $elopts->{yaml}) {
+        push(@{$opts{convert_string}}, $ELEMENT_CONVERT{cast_string});
+        push(@{$opts{convert_long}}, $ELEMENT_CONVERT{cast_long});
+        push(@{$opts{convert_double}}, $ELEMENT_CONVERT{cast_double});
+
+        # Booleans already converted to 0 or 1
+        # For JSON and YAML, the casted booleans are not in the correct
+        # internal format
+        my $bool_conv = $ELEMENT_CONVERT{cast_boolean};
+        if ($elopts->{json}) {
+            $bool_conv = $ELEMENT_CONVERT{json_boolean};
+        } elsif ($elopts->{yaml}) {
+            $bool_conv = $ELEMENT_CONVERT{yaml_boolean};
+        }
+
+        push(@{$opts{convert_boolean}}, $bool_conv);
+    }
+
+    if ($elopts->{yesno} || $elopts->{YESNO}) {
+        push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yesno_boolean});
+        if ($elopts->{YESNO}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
+        }
+    }
+
+    if ($elopts->{doublequote}) {
+        push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
+    } elsif ($elopts->{singlequote}) {
+        push(@{$opts{convert_string}}, $ELEMENT_CONVERT{singlequote_string});
+    }
+
+    return %opts;
+}
+
 # Return the validated contents. Either the contents are a hashref
 # (in that case they are left untouched) or a C<EDG::WP4::CCM::Element> instance
 # in which case C<getTree> is called together with the relevant C<elementopts>
@@ -188,47 +280,21 @@ sub make_contents
 
     if($ref && ($ref eq "HASH")) {
         $contents = $self->{contents};
-    } elsif ($ref && UNIVERSAL::can($self->{contents},'can') &&
+    } elsif ($ref && UNIVERSAL::can($self->{contents}, 'can') &&
              $self->{contents}->isa('EDG::WP4::CCM::Element')) {
         # Test for a blessed reference with UNIVERSAL::can
         # UNIVERSAL::can also return true for scalars, so also test
         # if it's a reference to start with
+
         $self->debug(3, "Contents is a Element instance");
         my $elopts = $self->{elementopts};
         my $depth = $elopts->{depth};
 
-        if ($self->{module} && $self->{module} eq 'json' &&
-            ! defined( $elopts->{json})) {
-            $elopts->{json} = 1;
-        } elsif ($self->{module} && $self->{module} eq 'yaml' &&
-            ! defined( $elopts->{yaml})) {
-            $elopts->{yaml} = 1;
-        }
+        $self->_modify_elementopts_module();
 
-        my %opts;
+        my %opts = $self->_make_predefined_options();
 
-        # predefined convert_
-        if ($elopts->{json}) {
-            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{json_boolean});
-        } elsif ($elopts->{yaml}) {
-            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yaml_boolean});
-        }
-
-        if ($elopts->{yesno} || $elopts->{YESNO}) {
-            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yesno_boolean});
-        }
-
-        if ($elopts->{YESNO}) {
-            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
-        }
-
-        if ($elopts->{doublequote}) {
-            push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
-        } elsif ($elopts->{singlequote}) {
-            push(@{$opts{convert_string}}, $ELEMENT_CONVERT{singlequote_string});
-        }
-
-        # The convert_ anonymous methods precede the predefined ones
+        # The convert_ anonymous methods are added last
         foreach my $type (qw(boolean string long double)) {
             my $am_name = "convert_$type";
             my $am = $elopts->{$am_name};
@@ -267,12 +333,15 @@ sub make_contents
         # Make the full contents available (e.g. to access the root keys)
         # Must be a copy
         contents => { %$contents },
+
         ref => sub { return ref($_[0]) },
         is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
         is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
     };
 
+    # Add them to the CCM namespace
+    # To be used in TT as follows: [% CCM.is_hash(myvar) ? "hooray" %]
     while (my ($k, $v) = each %$extra_vars) {
         $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
     }

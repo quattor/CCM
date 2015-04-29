@@ -4,6 +4,7 @@ use warnings;
 use Test::More;
 
 use EDG::WP4::CCM::CCfg;
+use B;
 
 BEGIN {
     # Force typed json for improved testing
@@ -91,12 +92,51 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(0),
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{upper}->('abcdef'),
    'ABCDEF',
    'upper returns uppercase strings');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{lower}->('ABCDEF'),
+   'abcdef',
+   'lower returns lowercase strings');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{singlequote_string}->("abc"),
    "'abc'",
    'singlequote');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{doublequote_string}->("abc"),
    '"abc"',
    'doublequote');
+
+# Test the cast methods
+my $string = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_string}->(100);
+ok(! B::svref_2object(\$string)->isa("B::IV"), 'cast string of integer is no integer anymore');
+ok(B::svref_2object(\$string)->isa("B::PV"), 'cast string of integer is a string');
+# Run this lasts, who knows what the test framework does with it
+# that could change the internal representation
+is($string, "100", 'cast string returns correct value');
+
+my $long = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_long}->("100");
+ok(! B::svref_2object(\$long)->isa("B::PV"), 'cast long of string is no string anymore');
+ok(B::svref_2object(\$long)->isa("B::IV"), 'cast long of string is an integer');
+# Run this lasts, who knows what the test framework does with it
+# that could change the internal representation
+is($long, 100, 'cast long returns correct value');
+
+my $double = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_double}->("10.0");
+ok(! B::svref_2object(\$double)->isa("B::PV"), 'cast double of string is no string anymore');
+ok(B::svref_2object(\$double)->isa("B::NV"), 'cast double of string is a double');
+# Run this lasts, who knows what the test framework does with it
+# that could change the internal representation
+is($double, 10.0, 'cast double returns correct value');
+
+my $boolean = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_boolean}->(0);
+# can't really test if it it an integer anymore via isa('B::IV'); but an integer is no PVNV
+ok(B::svref_2object(\$boolean)->isa("B::PVNV"), 'cast boolean of integer 0 is a boolean');
+# Run this lasts, who knows what the test framework does with it
+# that could change the internal representation
+ok(! $boolean, 'cast boolean returns correct value false');
+
+$boolean = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_boolean}->(1);
+# can't really test if it it an integer anymore via isa('B::IV'); but an integer is no PVNV
+ok(B::svref_2object(\$boolean)->isa("B::PVNV"), 'cast boolean of integer 1 is a boolean');
+# Run this lasts, who knows what the test framework does with it
+# that could change the internal representation
+ok($boolean, 'cast boolean returns correct value true');
 
 # Test with tiny, has to be single level hash
 $el = $cfg->getElement("/h");
