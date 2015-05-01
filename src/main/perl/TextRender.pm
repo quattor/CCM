@@ -10,6 +10,7 @@ use warnings;
 use CAF::TextRender qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
+use EDG::WP4::CCM::Element qw(escape unescape);
 use base qw(CAF::TextRender Exporter);
 
 our @EXPORT_OK = qw(%ELEMENT_CONVERT);
@@ -338,6 +339,8 @@ sub make_contents
         is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
         is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
+        escape => \&escape,
+        unescape => \&unescape,
     };
 
     # Add them to the CCM namespace

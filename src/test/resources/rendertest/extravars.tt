@@ -1,5 +1,7 @@
-[% # Test access to full contents via CONTENTS
-     FOR p IN CCM.contents.pairs -%]
+CCM.contents.defined [% CCM.contents.defined ? "YES" : "NO" %]
+CCM.contents [% CCM.contents %]
+[% # Test access to full contents via CCM.contents
+     FOREACH p IN CCM.contents.pairs -%]
 [%      p.key %] [% p.value %]
 [%  END %]
 
@@ -16,6 +18,11 @@
 [%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
 [%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
 [% END %]
+
+[%- escaped = CCM.escape("with whitespsace and /") -%]
+escape [% escaped %]
+unescape [% CCM.unescape(escaped) %]
+
 [%- # Test get_type/is_boolean/is_string/is_double/is_long method 
     tmphash = {
         aboolean = e

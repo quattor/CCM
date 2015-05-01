@@ -1,6 +1,8 @@
 Test extravars
 ---
 ---
+^CCM.contents.defined YES$
+^CCM.contents HASH\(.*\)$
 ^a a$
 ^b 1$
 ^c 1$
@@ -21,6 +23,8 @@ Test extravars
 ^ascalar is_scalar YES$
 ^ascalar is_list NO$
 ^ascalar is_hash NO$
+^escape with_20whitespsace_20and_20_2f$
+^unescape with whitespsace and /$
 ^aboolean ref EDG::WP4::CCM::TT::Scalar$
 ^aboolean is_scalar YES$
 ^aboolean is_list NO$
