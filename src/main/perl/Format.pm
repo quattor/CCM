@@ -9,9 +9,9 @@ use strict;
 use warnings;
 
 use parent qw(CAF::Object Exporter);
-use CAF::TextRender;
+use EDG::WP4::CCM::TextRender;
 
-use overload '""' => "get_text";
+use overload '""' => "_stringify";
 
 use LC::Exception qw (SUCCESS);
 
@@ -22,7 +22,7 @@ Readonly::Array my @FORMATS_OTHER => ();
 Readonly::Hash my %FORMATS_TEXTRENDER => {
     json => {}, # No opts
     yaml => {}, # No opts
-    pan => {},
+    pan => { truefalse => 1},
 };
 
 my @FORMATS = keys %FORMATS_TEXTRENDER;
@@ -69,7 +69,7 @@ sub _initialize
     $self->{format} = $format;
 
     # The actual text
-    $self->{text} = '';
+    $self->{text} = undef;
 
     $self->{log} = $opts{log} if $opts{log};
 
@@ -80,8 +80,9 @@ sub _initialize
 
 =item get_text
 
-Generate the text by recursive walk of the element and
-return the text.
+Generate the text by selecting the correct format method.
+
+Returns undef on failure.
 
 =cut
 
@@ -89,28 +90,46 @@ sub get_text
 {
     my ($self) = @_;
 
+    # Reset the actual text
+    $self->{text} = undef;
+
     my $trd_opts = $FORMATS_TEXTRENDER{$self->{format}};
     if (defined($trd_opts)) {
         $trd_opts->{depth} = $self->{depth} if defined $self->{depth};
         # Format is the TextRender module
-        my $trd = CAF::TextRender->new($self->{format},
-                                       $self->{element},
-                                       element => $trd_opts,
-                                       # uppercase, no conflict with possible ncm-ccm?
-                                       relpath => 'CCM',
-                                       element => $trd_opts,
-                                       );
+        my $trd = EDG::WP4::CCM::TextRender->new(
+            $self->{format},
+            $self->{element},
+            # uppercase, no conflict with possible ncm-ccm?
+            relpath => 'CCM',
+            element => $trd_opts,
+            );
         if (defined $trd->get_text()) {
             $self->{text} = "$trd";
         } else {
-            $self->error("Failed to render format $self->{format}: $trd->{fail}");
+            $self->error("Failed to textrender format $self->{format}: $trd->{fail}");
         }
     } elsif (grep {$_ eq $self->{format}} @FORMATS_OTHER) {
+        $self->error("Unimplemented format $self->{format}");
     } else {
         $self->error("Unsupported format $self->{format}");
     }
 
     return $self->{text};
+}
+
+
+sub _stringify
+{
+    my $self = shift;
+
+    # Either first run or failure
+    if(! defined($self->{text})) {
+        $self->get_text();
+    }
+
+    # Always return a string for stringification
+    return defined($self->{text}) ? $self->{text} : '';
 }
 
 =pod
