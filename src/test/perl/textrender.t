@@ -89,6 +89,12 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(1),
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(0),
    'no',
    'yesno with false value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(1),
+   'true',
+   'truefalse with true value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(0),
+   'false',
+   'truefalse with false value');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{upper}->('abcdef'),
    'ABCDEF',
    'upper returns uppercase strings');

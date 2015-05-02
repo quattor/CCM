@@ -30,6 +30,10 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         my $value = shift;
         return $value ? 'yes' : 'no';
     },
+    'truefalse_boolean' => sub {
+        my $value = shift;
+        return $value ? 'true' : 'false';
+    },
     'upper' => sub {
         my $value = shift;
         return uc $value;
@@ -166,6 +170,10 @@ Convert boolean to (lowercase) 'yes' and 'no'.
 =item YESNO
 
 Convert boolean to (uppercase) 'YES' and 'NO'.
+
+=item truefalse
+
+Convert boolean to (lowercase) 'true' and 'false'.
 
 =item doublequote
 
