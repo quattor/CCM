@@ -198,6 +198,19 @@ sub getCfgValue ($)
     return ($cfg->{$key});
 }
 
+# private method to set values, for testing only
+sub _setCfgValue
+{
+    my ($key, $value) = @_;
+    if (defined($cfg->{$key})) {
+        $cfg->{$key} = $value;
+    } else {
+        throw_error("Not a valid config key $key");
+    }
+    # Use the method rather then direct call or simply return value
+    return getCfgValue($key);
+}
+
 =pod
 
 =back

@@ -79,6 +79,7 @@
                   <directory>src/main/perl</directory>
                   <includes>
                     <include>*.pm</include>
+                    <include>**/*.pm</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -152,6 +153,7 @@
                   <directory>src/main/perl</directory>
                   <includes>
                     <include>*.pm</include>
+                    <include>**/*.pm</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -271,7 +273,7 @@
         <mappings>
           <mapping>
             <directory>/usr/lib/perl/EDG/WP4/CCM</directory>
-            <filemode>644</filemode>
+            <filemode>755</filemode>
             <username>root</username>
             <groupname>root</groupname>
             <directoryIncluded>false</directoryIncluded>

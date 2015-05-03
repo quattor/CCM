@@ -542,16 +542,46 @@ Note that links cannot be followed.
 
 If C<depth> is specified (and not C<undef>), only return the next C<depth>
 levels of nesting (and use the Element instances as values).
-A C<depth == 0> is the element itself, C<depth == 1> is the first level, ... 
+A C<depth == 0> is the element itself, C<depth == 1> is the first level, ...
+
+Named options
+
+=over
+
+=item convert_boolean
+
+Array ref of anonymous methods to convert the argument
+(1 or 0 for resp true and false) to another boolean representation.
+
+=item convert_string
+
+Array ref of anonymous methods to convert the argument
+(string value) to another representation/format.
+
+=item convert_long
+
+Array ref of anonymous methods to convert the argument
+(integer/long value) to another representation/format.
+
+=item convert_double
+
+Array ref of anonymous methods to convert the argument
+(float/double value) to another representation/format.
+
+=back
+
+The arrayref of anonymous methods are applied as follows: 
+convert methods C<[a, b, c]> will produce C<$new = c(b(a($old)))>.
 
 =cut
 
 sub getTree
 {
-    my ($self, $depth) = @_;
-    my ($ret, $el);
+    my ($self, $depth, %opts) = @_;
 
-    my $nextdepth;
+    my ($ret, $el, $nextdepth);
+    my $convm = [];
+
     if (defined($depth)) {
         return $self if ($depth <= 0);
         $nextdepth = $depth - 1;
@@ -559,31 +589,62 @@ sub getTree
 
 SWITCH:
     {
+        # LIST to array ref
         $self->isType(LIST) && do {
             $ret = [];
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                push(@$ret, $el->getTree($nextdepth));
+                push(@$ret, $el->getTree($nextdepth, %opts));
             }
             last SWITCH;
         };
+
+        # NLIST to hashref
         $self->isType(NLIST) && do {
             $ret = {};
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                $$ret{$el->getName()} = $el->getTree($nextdepth);
+                $$ret{$el->getName()} = $el->getTree($nextdepth, %opts);
             }
             last SWITCH;
         };
+
+        # BOOLEAN to 1/0
         $self->isType(BOOLEAN) && do {
             $ret = $self->getValue eq 'true' ? 1 : 0;
+            $convm = $opts{convert_boolean};
             last SWITCH;
         };
 
-        # Default clause
+        # No predefined conversion for any other type
         $ret = $self->getValue;
 
-        last SWITCH;
+        # STRING
+        $self->isType(STRING) && do {
+            $convm = $opts{convert_string};
+            last SWITCH;
+        };
+
+        # LONG
+        $self->isType(LONG) && do {
+            $convm = $opts{convert_long};
+            last SWITCH;
+        };
+
+        # DOUBLE
+        $self->isType(DOUBLE) && do {
+            $convm = $opts{convert_double};
+            last SWITCH;
+        };
+
+    }
+
+    foreach my $method (@$convm) {
+        if(ref($method) eq 'CODE') {
+            $ret = $method->($ret);
+        } else {
+            throw_error("wrong type ".ref($method)." for convert_method");
+        }
     }
 
     return $ret;

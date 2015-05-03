@@ -1,0 +1,44 @@
+CCM.contents.defined [% CCM.contents.defined ? "YES" : "NO" %]
+CCM.contents [% CCM.contents %]
+[% # Test access to full contents via CCM.contents
+     FOREACH p IN CCM.contents.pairs -%]
+[%      p.key %] [% p.value %]
+[%  END %]
+
+[%- # Test ref/is_scalar/is_list/is_hash method 
+    tmphash = {
+      ascalar = f
+      alist = g
+      ahash = h
+   };
+-%]
+[% FOREACH p IN tmphash.pairs -%]
+[%      p.key %] ref [% CCM.ref(p.value) %]
+[%      p.key %] is_scalar [% CCM.is_scalar(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
+[% END %]
+
+[%- escaped = CCM.escape("with whitespsace and /") -%]
+escape [% escaped %]
+unescape [% CCM.unescape(escaped) %]
+
+[%- # Test get_type/is_boolean/is_string/is_double/is_long method 
+    tmphash = {
+        aboolean = e
+        astring = a
+        adouble = f
+        along = c
+    }
+-%]
+[% FOREACH p IN tmphash.pairs -%]
+[%      p.key %] ref [% CCM.ref(p.value) %]
+[%      p.key %] is_scalar [% CCM.is_scalar(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_list [% CCM.is_list(p.value) ? "YES" : "NO" %]
+[%      p.key %] is_hash [% CCM.is_hash(p.value) ? "YES" : "NO" %]
+[%      p.key %] get_type [% p.value.get_type %]
+[%      p.key %] is_boolean [% p.value.is_boolean ? "YES" : "NO" %]
+[%      p.key %] is_string [% p.value.is_string ? "YES" : "NO" %]
+[%      p.key %] is_double [% p.value.is_double ? "YES" : "NO" %]
+[%      p.key %] is_long [% p.value.is_long ? "YES" : "NO" %]
+[% END %]

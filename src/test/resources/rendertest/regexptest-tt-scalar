@@ -1,0 +1,79 @@
+Test TT Scalar methods
+---
+---
+^stringification arbitrarytext$
+^vmethod item arbitrarytext$
+^vmethod list arbitrarytext$
+^vmethod hash arbitrarytext$
+^vmethod length 13$
+^vmethod size 1$
+^vmethod defined 1$
+^vmethod match a_a$
+^vmethod search 1$
+^vmethod repeat arbitrarytextarbitrarytextarbitrarytext$
+^vmethod replace r_abitrr_aytext$
+^vmethod remove rbitrrytext$
+^vmethod split _rbitr_rytext$
+^vmethod chunk arbi_trar_ytex_t$
+^vmethod substr aryt$
+^vmethod get_type ARBITRARY$
+^vmethod is_boolean NO$
+^vmethod is_string NO$
+^vmethod is_double NO$
+^vmethod is_long NO$
+^true get_type BOOLEAN$
+^true get_value 1$
+^true is_boolean YES$
+^true is_string NO$
+^true is_double NO$
+^true is_long NO$
+^true value YES$
+^false get_type BOOLEAN$
+^false get_value 0$
+^false is_boolean YES$
+^false is_string NO$
+^false is_double NO$
+^false is_long NO$
+^false value NO$
+^double get_type DOUBLE$
+^double get_value 1\.5$
+^double is_boolean NO$
+^double is_string NO$
+^double is_double YES$
+^double is_long NO$
+^double value 1\.5$
+^double value\+1 2\.5$
+^double 1\+value 2\.5$
+^double value-1 0\.5$
+^double 1-value -0\.5$
+^double value\*3 4\.5$
+^double 3\*value 4\.5$
+^double value/3 0\.5$
+^double 4.5/value 3$
+^long get_type LONG$
+^long get_value 2$
+^long is_boolean NO$
+^long is_string NO$
+^long is_double NO$
+^long is_long YES$
+^long value 2$
+^long value\+1 3$
+^long 1\+value 3$
+^long value-1 1$
+^long 1-value -1$
+^long value\*3 6$
+^long 3\*value 6$
+^long value/4 0\.5$
+^long 4\.5/value 2\.25$
+^long \+ double 3\.5$
+^long \* double 3$
+^long - double 0\.5$
+^double / long 0\.75$
+^long > 1 YES$
+^long == 2 YES$
+^long == "2" YES$
+^3 > double YES$
+^double == 1.5 YES$
+^double == "1.5" YES$
+^long > double YES$
+^double > long NO$

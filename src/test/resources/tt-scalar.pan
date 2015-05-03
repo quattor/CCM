@@ -1,4 +1,4 @@
-object template element_test;
+object template tt-scalar;
 
 "/a" = list("1", "2", "3");
 "/b" = "hello"; # string
