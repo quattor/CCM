@@ -1,7 +1,6 @@
 [%- IF CCM.is_scalar(data) -%]
 [%-     type = data.get_type -%]
-[%-     value = data.is_string ? '"' _ data _ '"' : data -%]
-"[% path.join('/') %]" = [% value %]; # [% type FILTER lower %]
+"[% path.join('/') %]" = [% data %]; # [% type FILTER lower %]
 [% # the only newline, one per element -%]
 [%- ELSIF CCM.is_list(data) -%]
 [%-     index = 0 -%]

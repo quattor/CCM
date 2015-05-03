@@ -22,7 +22,7 @@ Readonly::Array my @FORMATS_OTHER => ();
 Readonly::Hash my %FORMATS_TEXTRENDER => {
     json => {}, # No opts
     yaml => {}, # No opts
-    pan => { truefalse => 1},
+    pan => { truefalse => 1, doublequote => 1},
 };
 
 my @FORMATS = keys %FORMATS_TEXTRENDER;

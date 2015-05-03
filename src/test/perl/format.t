@@ -69,7 +69,7 @@ isa_ok($fmt, 'EDG::WP4::CCM::Format', "a EDG::WP4::CCM::Format instance");
 $txt = "$fmt";
 $txt =~ s/\s//g; # squash all whitespace
 is($txt,
-   '"/a"=1;#long"/b"=1.5;#double"/c/f"=0;#boolean"/c/t"=1;#boolean"/d"="test";#string',
+   '"/a"=1;#long"/b"=1.5;#double"/c/f"=false;#boolean"/c/t"=true;#boolean"/d"="test";#string',
    "pan format");
 
 ok(! $log->{LOGCOUNT}->{ERROR}, "No errors logged for pan format");
