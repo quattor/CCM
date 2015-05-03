@@ -1,1 +1,1 @@
-[% INCLUDE CCM/pan_element.tt data=CCM.contents path=[''] -%]
+[% INCLUDE CCM/pan_element.tt data=CCM.contents path=CCM.element.path -%]
