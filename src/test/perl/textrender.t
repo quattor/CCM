@@ -169,6 +169,22 @@ is($tinyout,
    'a="a"b="1"c=1d=YESe=NO',
    "Correct Config::tiny with YESNO and doublequote rendered");
 
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'truefalse' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=truee=false',
+   "Correct Config::tiny with truefalse rendered");
+
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'TRUEFALSE' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=TRUEe=FALSE',
+   "Correct Config::tiny with TRUEFALSE rendered");
+
 =pod
 
 =head2 Extra TT options

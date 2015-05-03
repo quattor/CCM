@@ -175,6 +175,10 @@ Convert boolean to (uppercase) 'YES' and 'NO'.
 
 Convert boolean to (lowercase) 'true' and 'false'.
 
+=item TRUEFALSE
+
+Convert boolean to (uppercase) 'TRUE' and 'FALSE'.
+
 =item doublequote
 
 Convert string to doublequoted string.
@@ -265,7 +269,13 @@ sub _make_predefined_options
         if ($elopts->{YESNO}) {
             push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
         }
+    } elsif ($elopts->{truefalse} || $elopts->{TRUEFALSE}) {
+        push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{truefalse_boolean});
+        if ($elopts->{TRUEFALSE}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
+        }
     }
+
 
     if ($elopts->{doublequote}) {
         push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
