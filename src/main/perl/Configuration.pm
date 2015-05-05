@@ -63,20 +63,20 @@ Create Configuration object. It takes three arguments:
 If a configuration with specified CID does not exists, an exception is
 thrown.
 
-When the C<locked> flag is set (or when the C<lock> method is called at any point), 
-the Configuration instance is bound to the the specific CID, even if this is not 
+When the C<locked> flag is set (or when the C<lock> method is called at any point),
+the Configuration instance is bound to the the specific CID, even if this is not
 the latest one (or when a new one is fetched during the lifetime of the process).
 An unlocked Configuration instance will always use the latest CID.
 
-Unless the anonymous flag is set to true, each process that creates a 
-Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid> 
-(with C<$cid> the CID and C<$pid> the process ID) under the C<profile.$cid> 
-directory in the C<CacheManager> cache path. The presence of this file protects 
-the process from getting this particular CID removed by the C<ccm-purge> command 
+Unless the anonymous flag is set to true, each process that creates a
+Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid>
+(with C<$cid> the CID and C<$pid> the process ID) under the C<profile.$cid>
+directory in the C<CacheManager> cache path. The presence of this file protects
+the process from getting this particular CID removed by the C<ccm-purge> command
 (e.g. by the daily purge cron job).
 
-Processes that have no permission to create this file (or don't care about long 
-runtimes), can set the C<anonymous> flag and use the configuartion 
+Processes that have no permission to create this file (or don't care about long
+runtimes), can set the C<anonymous> flag and use the configuartion
 (at their own risk).
 
 =cut
@@ -142,7 +142,7 @@ sub getCacheManager ()
 sub _pid_filename
 {
     my ($self, $cid) = @_;
-    
+
     $cid = $self->{"cid"} if (!defined($cid));
     return $self->{"cfg_path"} . "/ccm-active-profile.${cid}-" . getpid();
 }
@@ -398,6 +398,27 @@ sub elementExists
         return ();
     }
     return $ex;
+}
+
+=item getTree ($path)
+
+returns C<getTree> of the element identified by C<$path>.
+Any other optional arguments are passed to C<getTree>.
+
+If the path does not exist, undef is returned.
+
+=cut
+
+sub getTree
+{
+    my ($self, $path, @args) = @_;
+
+    return if (! $self->elementExists($path));
+
+    my $el = $self->getElement($path);
+    return if(! $el);
+
+    return $el->getTree(@args);
 }
 
 =pod
