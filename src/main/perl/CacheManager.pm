@@ -56,16 +56,18 @@ my $UNLOCKED = "no";
 
 =item new ($cache_path)
 
-Create new CacheManager object. 
-$config_file is an optional parameter that points to the ccc.conf file.
+Create new CacheManager object with C<$cache_path>.
+
+C<$config_file> is an optional parameter that points
+to the CCM config file.
 
 =cut
 
 sub new
 {    #T
-    my ($class, $cache_path) = @_;
+    my ($class, $cache_path, $config_file) = @_;
 
-    initCfg();
+    initCfg($config_file);
 
     unless (defined($cache_path)) {
         $cache_path = getCfgValue("cache_root");
@@ -181,8 +183,8 @@ sub getLockedConfiguration
 
 =item getAnonymousConfiguration ($cred; $cid)
 
-Returns unlocked anonymous Configuration object. 
-If the $cid parameter is ommited, the most recently 
+Returns unlocked anonymous Configuration object.
+If the $cid parameter is ommited, the most recently
 downloaded configuration (when the cache
 was not globally locked) is returned.
 
@@ -292,4 +294,3 @@ sub getCurrentCid
 =cut
 
 1;
-
