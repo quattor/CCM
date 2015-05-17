@@ -8,7 +8,7 @@ use warnings;
 use Test::More;
 use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::CCfg qw (@CONFIG_OPTIONS $CONFIG_FN
+use EDG::WP4::CCM::CCfg qw (@CONFIG_OPTIONS $CONFIG_FN @CFG_KEYS
     initCfg getCfgValue setCfgValue resetCfg);
 use Cwd;
 use Net::Domain qw(hostname hostdomain);
@@ -179,6 +179,13 @@ foreach my $opt (@CONFIG_OPTIONS) {
 
 # Exported default config file
 is($CONFIG_FN, "/etc/ccm.conf", "Expected default ccm config file");
+
+# Hard test for possible values (sorted)
+is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
+context dbformat debug force get_timeout json_typed keep_old
+key_file lock_retries lock_wait preprocessor profile profile_failover
+purge_time retrieve_retries retrieve_wait trust world_readable
+)], "CFG_KEYS exports all possible configuration keys");
 
 
 done_testing();

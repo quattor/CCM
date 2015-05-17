@@ -202,11 +202,14 @@ Readonly::Array our @CONFIG_OPTIONS => (
     },
 );
 
-push(@EXPORT_OK, qw(@CONFIG_OPTIONS $CONFIG_FN));
+Readonly::Array our @CFG_KEYS => sort map {$_->{option}} @CONFIG_OPTIONS;
+
+push(@EXPORT_OK, qw(@CONFIG_OPTIONS $CONFIG_FN @CFG_KEYS));
 
 # Holds the default and all possible keys
 Readonly::Hash my %DEFAULT_CFG =>
     map {$_->{option} => $_->{DEFAULT}} @CONFIG_OPTIONS;
+
 
 # copy hash to hash ref
 # TODO this is a global config instance,
