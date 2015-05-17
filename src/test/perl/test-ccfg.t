@@ -8,9 +8,10 @@ use warnings;
 use Test::More;
 use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::CCfg qw (@CFG_KEYS);
+use EDG::WP4::CCM::CCfg qw (@CONFIG_OPTIONS $CONFIG_FN);
 use Cwd;
 use Net::Domain qw(hostname hostdomain);
+use Readonly;
 
 my $host   = hostname();
 my $domain = hostdomain();
@@ -100,11 +101,38 @@ while (my ($k, $v) = each %expected) {
     is(EDG::WP4::CCM::CCfg::getCfgValue($k), $v, "Get ccm.conf ccfg param $k");
 }
 
-# Hard test for possible values (sorted)
-is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
-    context dbformat debug force get_timeout json_typed keep_old
-    key_file lock_retries lock_wait preprocessor profile profile_failover
-    purge_time retrieve_retries retrieve_wait trust world_readable
-    )], "CFG_KEYS exports all possible configuration keys");
+# Hard test for possible values
+# (based on original 15.4 code)
+Readonly::Hash my %DEFAULT_CFG => {
+    "base_url" => undef,
+    "ca_dir" => undef,
+    "ca_file" => undef,
+    "cache_root" => "/var/lib/ccm",
+    "cert_file" => undef,
+    "context" => undef,
+    "dbformat" => "GDBM_File",
+    "debug" => undef,
+    "force" => undef,
+    "get_timeout" => 30,
+    "json_typed" => 0,
+    "keep_old" => 2,
+    "key_file" => undef,
+    "lock_retries" => 3,
+    "lock_wait" => 30,
+    "preprocessor" => undef,
+    "profile" => undef,
+    "profile_failover" => undef,
+    "purge_time" => 86400,
+    "retrieve_retries" => 3,
+    "retrieve_wait" => 30,
+    "trust" => undef,
+    "world_readable" => undef,
+};
+my %default_cfg = map {$_->{option} => $_->{DEFAULT}} @CONFIG_OPTIONS;
+is_deeply(\%DEFAULT_CFG, \%default_cfg,
+          "Expected default configuration options");
+
+# Exported default config file
+is($CONFIG_FN, "/etc/ccm.conf", "Expected default ccm config file");
 
 done_testing();
