@@ -272,7 +272,7 @@ sub retrieve
 
     if ($modified) {
         my $now = time();
-        if ($time < $modified) {
+        if ($now < $modified) {
             $self->warn("Profile has last_modified timestamp ",
                         $modified - $now,
                         " seconds in future (timestamp $modified)");
