@@ -206,7 +206,7 @@ sub getAnonymousConfiguration
 #
 # returns configuration
 # $lc - locked/unlocked config
-# $cred - credential
+# $cred - credential [unused / unsupported in current code; pass undef]
 # $cid - (optional) configuration id
 # $anonymous - (optional) anonymous flag
 #
