@@ -347,7 +347,7 @@ sub getCfgValue ($)
 sub _setCfgValue
 {
     my ($key, $value) = @_;
-    if (defined($cfg->{$key})) {
+    if (exists($cfg->{$key})) {
         $cfg->{$key} = $value;
     } else {
         throw_error("Not a valid config key $key");
