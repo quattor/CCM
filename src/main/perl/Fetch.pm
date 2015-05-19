@@ -55,6 +55,7 @@ use GSSAPI;
 use JSON::XS v2.3.0 qw(decode_json);
 use Carp qw(carp confess);
 use HTTP::Message;
+use Taint::Runtime qw(taint_start taint_stop);
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -489,12 +490,15 @@ sub choose_interpreter
 
     my $tree;
     if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
-        $tree = decode_json($profile);
         my $module;
         if ($self->{JSON_TYPED}) {
             $module = 'EDG::WP4::CCM::JSONProfileTyped';
+            taint_stop;
+            $tree = decode_json($profile);
+            taint_start;
         } else {
             $module = 'EDG::WP4::CCM::JSONProfileSimple';
+            $tree = decode_json($profile);
         }
         return ($module, ['profile', $tree]);
     }
