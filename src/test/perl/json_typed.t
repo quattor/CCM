@@ -6,9 +6,7 @@ use warnings;
 use Test::More;
 use EDG::WP4::CCM::XMLPanProfile;
 use EDG::WP4::CCM::JSONProfileTyped;
-use EDG::WP4::CCM::Fetch;
 use CAF::FileReader;
-use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
@@ -113,11 +111,7 @@ my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 $fh = CAF::FileReader->new("target/test/json/${simple}.json");
 note("Profile contents: $fh");
 # This is what Fetch choose_interpreter does
-taint_stop();
-ok(! taint_enabled(), "taint disabled for json_typed decode_json");
-$t = decode_json("$fh");
-taint_start();
-ok(taint_enabled(), "taint reenabled for json_typed testing");
+$t = EDG::WP4::CCM::Fetch::_decode_json("$fh", 1);
 
 my $our_result = EDG::WP4::CCM::JSONProfileTyped->interpret_node(profile => $t);
 

@@ -52,10 +52,9 @@ use File::Temp qw (tempfile tempdir);
 use File::Path qw(mkpath rmtree);
 use Encode qw(encode_utf8);
 use GSSAPI;
-use JSON::XS v2.3.0 qw(decode_json);
+use JSON::XS v2.3.0 qw(decode_json encode_json);
 use Carp qw(carp confess);
 use HTTP::Message;
-use Taint::Runtime qw(taint_start taint_stop taint_enabled);
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -479,9 +478,32 @@ sub process_profile
     my ($class, $t) = $self->choose_interpreter($profile);
     eval "require $class";
     die "Couldn't load interpreter $class: $@" if $@;
-    
+
     $t = $class->interpret_node(@$t);
     return $self->MakeDatabase($t, $cur{eidpath}, $cur{eiddata}, $self->{DBFORMAT});
+}
+
+# custom json_decode that untaints the profile text when using json_typed
+sub _decode_json
+{
+    my ($profile, $typed) = @_;
+
+    my $tree;
+    if ($typed) {
+        my $tmptree = decode_json($profile);
+        # Regenerated profile should be identical
+        # (except for some panc xml-encoded string issues,
+        #   alphabetic hash order and the prettyfied format)
+        #   alphabetic hash order can be fixed with '->canonical(1)', but why bother
+        # This assumption is the main reason json_typed works at all.
+        # This should also untaint the profile
+        my $tmpprofile = encode_json($tmptree);
+        $tree = decode_json($tmpprofile);
+    } else {
+        $tree = decode_json($profile);
+    }
+
+    return $tree;
 }
 
 sub choose_interpreter
@@ -490,17 +512,8 @@ sub choose_interpreter
 
     my $tree;
     if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
-        my $module;
-        if ($self->{JSON_TYPED}) {
-            $module = 'EDG::WP4::CCM::JSONProfileTyped';
-            my $t_enabled = taint_enabled();
-            taint_stop();
-            $tree = decode_json($profile);
-            taint_start() if $t_enabled;
-        } else {
-            $module = 'EDG::WP4::CCM::JSONProfileSimple';
-            $tree = decode_json($profile);
-        }
+        my $module = "EDG::WP4::CCM::JSONProfile" . ($self->{JSON_TYPED} ? 'Typed' : 'Simple' );
+        $tree = _decode_json($profile, $self->{JSON_TYPED});
         return ($module, ['profile', $tree]);
     }
 
