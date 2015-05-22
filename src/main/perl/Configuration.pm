@@ -79,6 +79,9 @@ Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid>
 directory in the C<CacheManager> cache path. The presence of this file protects
 the process from getting this particular CID removed by the C<ccm-purge> command
 (e.g. by the daily purge cron job).
+If the anonymous flag is set to -1, the permissions of the user to create this file
+are verified, and if the user can write to this file, the anonymous flag is set to
+false (this is only verified once during initialisation).
 
 Processes that have no permission to create this file (or don't care about long
 runtimes), can set the C<anonymous> flag and use the configuration
@@ -100,7 +103,13 @@ sub new
         return ();
     }
     $cid = $1;
+
     my $cfg_path = "$cache_path/${PROFILE_DIR_N}$cid";
+    unless (-d $cfg_path) {
+        throw_error("configuration directory ($cfg_path) does not exist");
+        return ();
+    }
+
     my $self     = {
         "cid"           => $cid,
         "locked"        => $locked,
@@ -108,15 +117,15 @@ sub new
         "cache_path"    => $cache_path,
         "cfg_path"      => $cfg_path,
         "cid_to_number" => undef, # counter to keep track of number of times a CID is in use
-        "anonymous"     => $anonymous,
+        "anonymous"     => defined($anonymous) ? $anonymous : 0, # clean 0
     };
-    unless (-d $cfg_path) {
-        throw_error("configuration directory ($cfg_path) does not exist");
-        return ();
-    }
+
     bless($self, $class);
 
-    unless ($self->_create_pid_file($self)) {
+    $self->{anonymous} = ($self->_can_create_pid_file() ? 0 : 1)
+        if ($self->{anonymous} == -1);
+
+    unless ($self->_create_pid_file()) {
         $ec->rethrow_error();
         return ();
     }
@@ -152,6 +161,31 @@ sub _pid_filename
     return $self->{"cfg_path"} . "/ccm-active-profile.${cid}-" . getpid();
 }
 
+# Return if current process can create the pid file in the
+# directory of the configuration or not.
+# It does this by trying to create an empty file
+# with as filename the pid_filename with additional '.writetest' suffix.
+# This test file is removed afterwards.
+# If cleanup fails, error is thrown and failure status via undef is returned.
+sub _can_create_pid_file
+{
+    my ($self) = @_;
+
+    my $fn = $self->_pid_filename($self->{"cid"}) . ".writetest";
+
+    unless (_touch_file($fn)) {
+        $ec->ignore_error();
+        return 0;
+    }
+
+    if ((-f $fn) && ! unlink($fn)) {
+        throw_error("unlink($fn)", $!);
+        return;
+    }
+
+    return 1;
+};
+
 #
 # sub creates pid file (if needed) in the directory of the configuration
 # it updates %cid_to_number
@@ -167,7 +201,7 @@ sub _create_pid_file
 
         my $pid_file = $self->_pid_filename();
         unless (_touch_file($pid_file)) {
-            throw_error("_touch_file($pid_file)", $ec->error);
+            $ec->rethrow_error();
             return ();
         }
     }
@@ -211,6 +245,14 @@ sub _touch_file ($)
     my $fh = CAF::FileWriter->new($file_name);
     print $fh '';
     $fh->close();
+
+    my $err = $ec->error();
+    if(defined($err)) {
+        $ec->ignore_error();
+        throw_error("_touch_file($file_name) failed ", $err->reason);
+        return;
+    }
+
     return SUCCESS;
 }
 

@@ -139,6 +139,61 @@ sub getCachePath
     return $self->{"cache_path"};
 }
 
+=item getConfiguration ($cred, $cid)
+
+Returns narrowest-possible Configuration object.
+
+If C<cid> is defined, return a locked Configuration with this C<cid>.
+(If C<cid> is -1, return a locked Configuration with the CacheManager's
+current CID).
+
+Otherwise an unlocked Configuration is used (and the write permission
+for the anonymous flag are checked against the CacheManager's current CID).
+
+The Configuration instance is created with anonymous flag equal to C<-1>
+(i.e. the Configuration instance will determine if the Configuration
+is anonymous or not based on the write permissions of the current process).
+
+The C<locked> and C<anonymous> flags can also be forced via named arguments (e.g.
+C<<locked => 1>> or C<<anonymous => 1>>).
+
+Security and C<$cred> parameter meaning are not defined
+(but is kept for compatibility with other
+C<get{Locked,Unlock,Anonymous}Configuration> methods).
+
+=cut
+
+sub getConfiguration
+{
+    my ($self, $cred, $cid, %opts) = @_;
+
+    my ($anonymous, $locked);
+
+    if(exists($opts{anonymous})) {
+        $anonymous = $opts{anonymous};
+    } else {
+        $anonymous = -1;
+    };
+
+    if(exists($opts{locked})) {
+        $locked = $opts{locked};
+    } else {
+        $locked = defined($cid) ? 1 : 0;
+    }
+
+    if (defined($cid) && ($cid == -1)) {
+        # _getConfig uses currentCid when cid is undef
+        $cid = undef;
+    }
+
+    my $cfg = $self->_getConfig($locked, $cred, $cid, $anonymous);
+    unless (defined($cfg)) {
+        $ec->rethrow_error();
+        return ();
+    }
+    return $cfg;
+}
+
 =item getUnlockedConfiguration ($cred; $cid)
 
 Returns unlocked Configuration object. If the $cid parameter is
@@ -207,7 +262,7 @@ sub getAnonymousConfiguration
 # returns configuration
 # $lc - locked/unlocked config
 # $cred - credential [unused / unsupported in current code; pass undef]
-# $cid - (optional) configuration id
+# $cid - (optional) configuration id (use current CID if undefined)
 # $anonymous - (optional) anonymous flag
 #
 
@@ -221,9 +276,9 @@ sub _getConfig
     }
 
     unless (defined($cid)) {
-        $cid = $self->{"current_cid_file"}->read();
+        $cid = $self->getCurrentCid();
         unless (defined($cid)) {
-            throw_error('$self{"current_cid_file"}->read()', $ec->error);
+            $ec->rethrow_error();
             return ();
         }
     }
