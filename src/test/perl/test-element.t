@@ -75,7 +75,7 @@ sub gen_dbm ($$) {
     # description
     $key = 0x40000001;
     $hash{pack("L", $key)} = "an example of string";
-    
+
     # value
     $key = 0x00000002;
     $hash{pack("L", $key)} = "a list";
@@ -205,11 +205,27 @@ $prof_dir  = $config->getConfigPath();
 is($prof_dir, "$cache_dir/$profile", "Element->getConfiguration()");
 
 $path = $element->getPath();
+
+my $preppath = $config->_prepareElement("$path");
+isa_ok($preppath, "EDG::WP4::CCM::Path",
+       "_prepareElement returns EDG::WP4::CCM::Path instance");
+is("$preppath", "$path", "_prepareElement path has expected value");
+
 ok($config->elementExists("$path"), "config->elementExists true for path $path");
 ok(! $config->elementExists("/fake$path"), "config->elementExists false for path /fake$path");
-is($config->getValue("$path"), 'a string', "config->getValue of $path as expected");
+
+my $cfg_el = $config->getElement("$path");
+my $pathdata = 'a string';
+
+isa_ok($cfg_el, "EDG::WP4::CCM::Element",
+       "config->getElement returns EDG::WP4::CCM::Element instance");
 # is a property, not a hash or list
-is_deeply($config->getTree("$path"), 'a string', "config->getTree of $path as expected");
+is($cfg_el->getValue(), $pathdata, "getVale from element instance as expected");
+is_deeply($cfg_el->getTree(), $pathdata, "getTree from element instance as expected");
+
+is($config->getValue("$path"), $pathdata, "config->getValue of $path as expected");
+# is a property, not a hash or list
+is_deeply($config->getTree("$path"), $pathdata, "config->getTree of $path as expected");
 ok(! defined($config->getTree("/fake$path")), "config->getTree of /fake$path undefined");
 
 done_testing();
