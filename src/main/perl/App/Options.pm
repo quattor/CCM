@@ -77,7 +77,7 @@ sub setCCMConfig
 
     $msg = "for profileID ". (defined($profileID) ? $profileID : "<none>");
     $self->verbose("getting anonymous CCM configuration $msg.");
-    $self->{CCM_CONFIG} = $self->{CACHEMGR}->getAnonymousConfiguration(undef, $profileID);
+    $self->{CCM_CONFIG} = $self->{CACHEMGR}->getConfiguration(undef, $profileID);
     unless (defined $self->{CCM_CONFIG}) {
         throw_error ("Cannot get configuration via CCM $msg.");
         return;
