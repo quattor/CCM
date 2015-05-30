@@ -11,9 +11,25 @@ use CAF::TextRender qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Element qw(escape unescape);
+use XML::Parser;
 use base qw(CAF::TextRender Exporter);
 
 our @EXPORT_OK = qw(%ELEMENT_CONVERT);
+
+# private instance for xml_string processing
+my $_xml_parser = XML::Parser->new(Style => 'Tree');
+
+# test if C<txt> is valid xml by trying to parse it with XML::Parser
+sub _is_valid_xml
+{
+    my $txt = shift;
+
+    # XML::Parser->parse uses 'die' with invalid xml.
+    my $tag = "really_really_random_tag";
+
+    my $t = eval {$_xml_parser->parse("<$tag>$txt</$tag>");};
+    return $@ ? 0 : 1;
+}
 
 Readonly::Hash our %ELEMENT_CONVERT => {
     'json_boolean' => sub {
@@ -69,6 +85,23 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         my $value = shift;
         # the 0+ operator of value is used
         return 0.0 + $value;
+    },
+    'xml_primitive_string' => sub {
+        # Ideally, this is done with some CPAN module,
+        # but would introduce (non-standard) dependencies
+
+        my $value = shift;
+        return $value if _is_valid_xml($value);
+
+        # wrap it in CDATA, see http://stackoverflow.com/a/5337851
+        my $text = $value;
+        # use global flag for repeated replacements
+        $text =~ s/\]\]>/]]>]]&gt;<![CDATA[/g;
+        $text = "<![CDATA[$text]]>";
+        return $text if _is_valid_xml($text);
+
+        # ?
+        die("xml_primitive_string: Unable to create valid xml from '$value'");
     },
 };
 

@@ -58,10 +58,10 @@ is("$trd",
    '{"a":"a","b":"1","c":1,"d":true,"e":false,"f":1.5,"g":["g1","g2"],"h":{"a":"a","b":"1","c":1,"d":true,"e":false}}'."\n",
    "Correct JSON rendered");
 
-isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}, 
-       "EDG::WP4::CCM::Path", 
+isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path},
+       "EDG::WP4::CCM::Path",
        "path is a CCM::Path instance");
-is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/', 
+is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/',
    "Correct path /");
 
 # extra_vars
@@ -161,6 +161,24 @@ ok(B::svref_2object(\$boolean)->isa("B::PVNV"), 'cast boolean of integer 1 is a 
 # that could change the internal representation
 ok($boolean, 'cast boolean returns correct value true');
 
+# Test xml stringification
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("text"), "'text' is valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("<![CDATA[text]]>"), "CDATA 'text' is valid xml string");
+
+ok(! EDG::WP4::CCM::TextRender::_is_valid_xml("text < othertext"), "'text < othertext' is not valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("text &gt; othertext"), "'text &gt; othertext' is not valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("<![CDATA[text < othertext]]>"), "CDATA 'text < othertext' is valid xml string");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text"),
+   "my text", "Correct conversion to valid xml 'my text'");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text < othertext"),
+   "<![CDATA[my text < othertext]]>", "Correct conversion to valid xml 'my text < othertext'");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text ]]> < othertext ]]>"),
+   "<![CDATA[my text ]]>]]&gt;<![CDATA[ < othertext ]]>]]&gt;<![CDATA[]]>",
+   "Correct conversion to valid xml 'my text ]]> < othertext ]]>'");
+
 # Test with tiny, has to be single level hash
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el);
@@ -170,10 +188,10 @@ is($tinyout,
    "a=ab=1c=1d=1e=0",
    "Correct Config::tiny without element options rendered");
 
-isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}, 
-       "EDG::WP4::CCM::Path", 
+isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path},
+       "EDG::WP4::CCM::Path",
        "path is a CCM::Path instance");
-is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/h', 
+is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/h',
    "Correct path /h");
 
 $el = $cfg->getElement("/h");
@@ -236,4 +254,3 @@ diag("$trd");
 diag explain $trd->{contents};
 
 done_testing;
-
