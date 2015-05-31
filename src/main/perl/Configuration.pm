@@ -10,12 +10,11 @@ use warnings;
 
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::CacheManager qw ($CURRENT_CID_FN);
-use EDG::WP4::CCM::Element qw();
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Element;
 use CAF::FileWriter;
 
-use EDG::WP4::CCM::Path qw ();
-use Scalar::Util qw (tainted);
+use EDG::WP4::CCM::Path;
 
 use parent qw(Exporter);
 
