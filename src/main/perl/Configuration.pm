@@ -49,8 +49,6 @@ Module provides the Configuration class, to manipulate confgurations.
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-my $PROFILE_DIR_N = "profile.";
-
 =item new
 
 Create Configuration object. It takes three arguments:
@@ -91,19 +89,21 @@ runtimes), can set the C<anonymous> flag and use the configuration
 sub new
 {    #T
     my ($class, $cache_manager, $cid, $locked, $anonymous) = @_;
+
     my $cache_path = $cache_manager->getCachePath();
     unless ($cache_path =~ m{^([-./\w]+)}) {
         throw_error("Cache path '$cache_path' is not an absolute path");
         return ();
     }
     $cache_path = $1;
+
     unless ($cid =~ m{^(\d+)$}) {
         throw_error("CID '$cid' must be a number");
         return ();
     }
     $cid = $1;
 
-    my $cfg_path = "$cache_path/${PROFILE_DIR_N}$cid";
+    my $cfg_path = $cache_manager->getConfigurationPath($cid);
     unless (-d $cfg_path) {
         throw_error("configuration directory ($cfg_path) does not exist");
         return ();
@@ -297,7 +297,7 @@ sub getConfigurationId
 sub _update_cid_pidf
 {    #T
     my ($self) = @_;
-    my $cid = $self->{"cache_manager"}->getCurrentCid();
+    my $cid = $self->{cache_manager}->getCurrentCid();
     unless (defined($cid)) {
         throw_error('$self->{"cache_manager"}->getCurrentCid()', $ec->error);
         return ();
@@ -308,7 +308,7 @@ sub _update_cid_pidf
             return ();
         }
         $self->{"cid"}      = $cid;
-        $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
+        $self->{"cfg_path"} = $self->{cache_manager}->getConfigurationPath($cid);
         unless ($self->_create_pid_file()) {
             $ec->rethrow_error();
             return ();

@@ -473,6 +473,7 @@ sub getLatestCid
     }
     return $cid;
 }
+
 =pod
 
 =back
