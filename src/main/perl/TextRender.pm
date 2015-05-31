@@ -297,6 +297,10 @@ sub _make_predefined_options
         push(@{$opts{convert_boolean}}, $bool_conv);
     }
 
+    if ($elopts->{xml}) {
+        push(@{$opts{convert_string}}, $ELEMENT_CONVERT{xml_primitive_string});
+    }
+
     if ($elopts->{yesno} || $elopts->{YESNO}) {
         push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yesno_boolean});
         if ($elopts->{YESNO}) {

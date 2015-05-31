@@ -24,7 +24,7 @@ my ($el, $fmt);
 my $caf_trd = mock();
 my $log = Test::Quattor::Object->new();
 
-=pod 
+=pod
 
 =head2 json
 
@@ -38,7 +38,7 @@ is("$fmt",
    "JSON format");
 ok(! $log->{LOGCOUNT}->{ERROR}, "No errors logged for JSON format");
 
-=pod 
+=pod
 
 =head2 yaml
 
@@ -55,7 +55,7 @@ is($txt,
 ok(! $log->{LOGCOUNT}->{ERROR}, "No errors logged for YAML format");
 
 
-=pod 
+=pod
 
 =head2 pan
 
@@ -71,6 +71,25 @@ $txt =~ s/\s//g; # squash all whitespace
 is($txt,
    '"/a"=1;#long"/b"=1.5;#double"/c/f"=false;#boolean"/c/t"=true;#boolean"/d"="test";#string',
    "pan format");
+
+ok(! $log->{LOGCOUNT}->{ERROR}, "No errors logged for pan format");
+
+=pod
+
+=head2 pancxml
+
+Test pancxml format (more tests in TT testsuite)
+
+=cut
+
+$el = $cfg->getElement("/");
+$fmt = EDG::WP4::CCM::Format->new('pancxml', $el, log => $log);
+isa_ok($fmt, 'EDG::WP4::CCM::Format', "a EDG::WP4::CCM::Format instance");
+$txt = "$fmt";
+$txt =~ s/\s//g; # squash all whitespace
+is($txt,
+   '<?xmlversion="1.0"encoding="UTF-8"?><nlistformat="pan"name="profile"><longname="a">1</long><doublename="b">1.5</double><nlistname="c"><booleanname="f">false</boolean><booleanname="t">true</boolean></nlist><stringname="d">test</string></nlist>',
+   "pancxml format");
 
 ok(! $log->{LOGCOUNT}->{ERROR}, "No errors logged for pan format");
 
