@@ -12,8 +12,26 @@ use CAF::Application qw($OPTION_CFGFILE);
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CCfg qw(@CONFIG_OPTIONS $CONFIG_FN setCfgValue);
+use EDG::WP4::CCM::Element qw(escape);
+use Readonly;
 
 our @ISA = qw(CAF::Application CAF::Reporter);
+
+Readonly::Hash my %PATH_SELECTION_METHODS => {
+    profpath => {
+        help => 'profile path',
+        method => sub { return $_[0]; },
+    },
+    component => {
+        help => 'component',
+        method => sub { return "/software/components/". $_[0]; },
+    },
+    metaconfig => {
+        help => 'metaconfig service',
+        method => sub { return "/software/components/metaconfig/services/". escape($_[0]) . "/contents"; },
+    },
+};
+
 
 =head1 NAME
 
@@ -71,6 +89,14 @@ sub app_options {
 
     );
 
+    # profile path selection options
+    foreach my $sel (sort keys %PATH_SELECTION_METHODS) {
+        push(@options, {
+             NAME => "$sel=s@",
+             HELP => "Select the ".$PATH_SELECTION_METHODS{$sel}->{help}."(s)",
+             });
+    }
+
     # Add support for all CCfg CONFIG_OPTIONS
     foreach my $opt (@CONFIG_OPTIONS) {
         # don't modify the original hasrefs
@@ -94,6 +120,10 @@ sub app_options {
 Set the CCM Configuration instance for CID C<cid> under CCM_CONFIG attribute
 using CacheManager's C<getConfiguration> method.
 
+If C<cid> is not defined, the C<cid> value from the C<--cid>-option will be used.
+(To use the current CID when another cid value set via C<--cid>-option, pass an empty
+string or the string 'current').
+
 A CacheManager instance under CACHEMGR attribute is created if none exists
 or C<force_cache> is set to true.
 
@@ -104,6 +134,8 @@ Returns SUCCESS on success, undef on failure.
 sub setCCMConfig
 {
     my ($self, $cid, $force_cache) = @_;
+
+    my $msg;
 
     if((! defined($self->{CACHEMGR})) || $force_cache) {
         my $configfile = $self->option($OPTION_CFGFILE);
@@ -119,7 +151,7 @@ sub setCCMConfig
             setCfgValue($option, $self->option($option), 1);
         }
 
-        my $msg = "cache manager with cacheroot $cacheroot and configfile $configfile";
+        $msg = "cache manager with cacheroot $cacheroot and configfile $configfile";
         $self->verbose("Accessing CCM $msg.");
         $self->{CACHEMGR} = EDG::WP4::CCM::CacheManager->new($cacheroot, $configfile);
         unless (defined $self->{'CACHEMGR'}) {
@@ -127,6 +159,8 @@ sub setCCMConfig
             return;
         }
     }
+
+    $cid = $self->option('cid') if(! defined($cid));
 
     $msg = "for CID ". (defined($cid) ? $cid : "<undef>");
     $self->verbose("getting CCM configuration $msg.");
@@ -145,9 +179,34 @@ returns the CCM configuration instance
 
 =cut
 
-sub getCCMConfig {
+sub getCCMConfig
+{
     my $self = shift;
     return $self->{CCM_CONFIG};
+}
+
+=item gatherPaths
+
+Retrun arrayref of selected profile path (via the PATH_SELECTION_METHODS)
+
+=cut
+
+sub gatherPaths
+{
+    my $self = shift;
+
+    my @paths;
+    # profile path selection options
+    foreach my $sel (sort keys %PATH_SELECTION_METHODS) {
+        my $values = $self->option($sel);
+        my $method = $PATH_SELECTION_METHODS{$sel}->{method};
+        if (defined($values)) {
+            foreach my $val (@$values) {
+                push(@paths, $method->($val))
+            }
+        }
+    }
+    return \@paths;
 }
 
 =pod
