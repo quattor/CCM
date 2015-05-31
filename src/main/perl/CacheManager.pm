@@ -14,11 +14,13 @@ use MIME::Base64 qw(encode_base64);
 use LWP::UserAgent;
 use HTTP::Status;
 use parent qw(Exporter);
-
+use Readonly;
 use File::Temp;
 
 our @EXPORT    = qw();
-our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN);
+our @EXPORT_OK = qw($GLOBAL_LOCK_FN
+    $CURRENT_CID_FN $LATEST_CID_FN
+    $DATA_DN $PROFILE_DIR_N);
 our $VERSION   = '${project.version}';
 
 =head1 NAME
@@ -47,10 +49,12 @@ the NVA cache.
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-our $GLOBAL_LOCK_FN = "global.lock";
-our $CURRENT_CID_FN = "current.cid";
-our $LATEST_CID_FN  = "latest.cid";
-our $DATA_DN        = "data";
+Readonly our $GLOBAL_LOCK_FN => "global.lock";
+Readonly our $CURRENT_CID_FN => "current.cid";
+Readonly our $LATEST_CID_FN  => "latest.cid";
+Readonly our $DATA_DN        => "data";
+Readonly our $PROFILE_DIR_N  => "profile.";
+
 my $LOCKED   = "yes";
 my $UNLOCKED = "no";
 
@@ -129,9 +133,11 @@ sub _check_type
     }
 }
 
-#
-# returns path of the cache
-#
+=item getCachePath
+
+returns path of the cache
+
+=cut
 
 sub getCachePath
 {
@@ -139,15 +145,120 @@ sub getCachePath
     return $self->{"cache_path"};
 }
 
+=item getConfigurationPath
+
+For given C<cid>, return the basepath of the Configuration data.
+(No checks are made e.g. if the directory exists,
+simply returns the directory name).
+
+=cut
+
+sub getConfigurationPath
+{
+    my ($self, $cid) = @_;
+
+    my $cache_path = $self->getCachePath();
+
+    return "$cache_path/$PROFILE_DIR_N$cid";
+}
+
+=item getCids
+
+Return arrayref to sorted list of all found/valid CIDs.
+
+Returns undef in case of problem.
+
+=cut
+
+sub getCids
+{
+    my ($self, $cid) = @_;
+
+    my $cache_path = $self->getCachePath();
+
+    my $cid_pattern = '(?:^|/)' . $PROFILE_DIR_N . '(\d+)$';
+
+    return if( ! opendir(DIR , $cache_path));
+
+    my @cids = sort map { m/$cid_pattern/; $1 } grep { m/$cid_pattern/ && -d "$cache_path/$_" } readdir(DIR);
+    close(DIR);
+
+    return \@cids;
+}
+
+=item getCid
+
+For given C<cid>, validate and check the CID.
+
+Returns undef for a non-existing CID.
+
+Also handles special values for C<cid>:
+
+=over
+
+=item undef, "current" or empty string
+
+If CID is undef, the string "current" or an empty string, the current CID
+(from the "current.cid" file) is returned.
+
+=item "latest" or "-"
+
+If CID is the string "latest" or "-", the latest CID
+(from the "latest.cid" file) is returned.
+
+=item negative value (e.g. -1)
+
+If CID is negative C<-N>, the N-th most recent CID value is returned
+(e.g. -1 returns the most recent CID, -2 the CID before the most recent, ...).
+
+(A distinction is made between "most recent" and "latest", as the "latest" CID
+is held in the "latest.cid" file).
+
+=back
+
+=cut
+
+sub getCid
+{
+    my ($self, $cid) = @_;
+
+    my $cids = $self->getCids();
+
+    if((!defined($cid)) || $cid eq "" || $cid eq "current") {
+        $cid = $self->getCurrentCid();
+    } elsif($cid eq "latest" || $cid eq "-") {
+        $cid = $self->getLatestCid();
+    }
+
+    # Not a signed integer
+    return if ($cid !~ m/^-?\d+$/);
+
+    if ($cid < 0) {
+        # TODO: -1 should be equal to getLatestCid?
+        my $ind = $cid + scalar @$cids;
+
+        # TODO: or set to oldest?
+        return if ($ind < 0);
+
+        $cid = $cids->[$ind];
+    }
+
+    if (grep {$_ == $cid} @$cids) {
+        return $cid ;
+    } else {
+        # Whatever it is, it's not a valid cid
+        return;
+    }
+}
+
 =item getConfiguration ($cred, $cid)
 
 Returns narrowest-possible Configuration object.
 
 If C<cid> is defined, return a locked Configuration with this C<cid>.
-(If C<cid> is -1, return a locked Configuration with the CacheManager's
-current CID).
+(Special values for C<cid> are handled by the C<getCid> method).
 
-Otherwise an unlocked Configuration is used (and the write permission
+If C<cid> is undefined, an unlocked Configuration is used (and the write permission
 for the anonymous flag are checked against the CacheManager's current CID).
 
 The Configuration instance is created with anonymous flag equal to C<-1>
@@ -181,12 +292,13 @@ sub getConfiguration
         $locked = defined($cid) ? 1 : 0;
     }
 
-    if (defined($cid) && ($cid == -1)) {
-        # _getConfig uses currentCid when cid is undef
-        $cid = undef;
+    my $actual_cid = $self->getCid($cid);
+    if (! defined($actual_cid)) {
+        throw_error("can't getConfiguration with invalid cid '$cid'");
+        return ();
     }
 
-    my $cfg = $self->_getConfig($locked, $cred, $cid, $anonymous);
+    my $cfg = $self->_getConfig($locked, $cred, $actual_cid, $anonymous);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
@@ -327,9 +439,12 @@ sub _encodeUrl ($)
     return $eu;
 }
 
-#
-# returns current cid (from cid file)
-#
+
+=item getCurrentCid
+
+returns current cid (from cid file)
+
+=cut
 
 sub getCurrentCid
 {
@@ -342,6 +457,22 @@ sub getCurrentCid
     return $cid;
 }
 
+=item getLatestCid
+
+returns latest cid (from cid file)
+
+=cut
+
+sub getLatestCid
+{
+    my ($self) = @_;
+    my $cid = $self->{"latest_cid_file"}->read();
+    unless (defined($cid)) {
+        throw_error('$self->{"latest_cid_file"}}->read()', $ec);
+        return ();
+    }
+    return $cid;
+}
 =pod
 
 =back
