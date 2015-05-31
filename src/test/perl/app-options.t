@@ -8,6 +8,8 @@ use EDG::WP4::CCM::CCfg qw(@CONFIG_OPTIONS $CONFIG_FN);
 use EDG::WP4::CCM::Element qw(escape);
 use Test::MockModule;
 
+my $optmock = Test::MockModule->new('EDG::WP4::CCM::App::Options');
+
 my $apppath = "target/sbin/ccm";
 my $opts = EDG::WP4::CCM::App::Options->new(
     $apppath,
@@ -23,6 +25,7 @@ my %optshash = map { $_->{NAME} => $_->{DEFAULT} } @$options;
 my $custom = {
     'cfgfile=s' => $CONFIG_FN,
     'cid=s' => undef,
+    'showcids' => undef,
     'profpath=s@' => undef,
     'component=s@' => undef,
     'metaconfig=s@' => undef,
@@ -53,7 +56,7 @@ foreach my $k (sort keys %$ccmcfgopts) {
 # Cannot use Test::Quattor import due to CAF mocking
 my $ppc_cfg = prepare_profile_cache('app_options');
 
-# --cid is not really tested as latest, curent and most recent are all the same profile
+# --cid is not really tested as latest, current and most recent are all the same profile
 my $newopts = EDG::WP4::CCM::App::Options->new(
     $apppath,
     '--cfgfile', 'src/test/resources/ccm.cfg',
@@ -90,5 +93,24 @@ is_deeply($newopts->gatherPaths(),
            '/d/e/f',
           ],
           "Expected gatherPaths");
+
+# showcids action
+my @print;
+$optmock->mock('_print', sub {shift; @print = @_;});
+
+my $showcids = EDG::WP4::CCM::App::Options->new(
+    $apppath,
+    '--cfgfile', 'src/test/resources/ccm.cfg',
+    '--cache_root', $ppc_cfg->{cache_path},
+    '--showcids',
+    );
+isa_ok($showcids, "EDG::WP4::CCM::App::Options",
+       "EDG::WP4::CCM::App::Options instance created");
+
+# hmm, there's only one (so no comma-join is tested)
+ok($showcids->action(), "action with showcids returns success");
+is_deeply(\@print, [2, "\n"], "showcids gives correct result");
+
+$optmock->unmock('_print');
 
 done_testing();

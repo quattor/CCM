@@ -32,6 +32,9 @@ Readonly::Hash my %PATH_SELECTION_METHODS => {
     },
 };
 
+Readonly::Hash my %ACTIONS => {
+    showcids => 'Show valid CIDs',
+};
 
 =head1 NAME
 
@@ -88,6 +91,14 @@ sub app_options {
         },
 
     );
+
+    # Actions
+    foreach my $act (sort keys %ACTIONS) {
+        push(@options, {
+             NAME => "$act",
+             HELP => $PATH_SELECTION_METHODS{$act},
+             });
+    }
 
     # profile path selection options
     foreach my $sel (sort keys %PATH_SELECTION_METHODS) {
@@ -207,6 +218,63 @@ sub gatherPaths
         }
     }
     return \@paths;
+}
+
+# wrapper around print (for easy unittesting)
+sub _print
+{
+    my ($self, @args) = @_;
+    print @_;
+}
+
+=item action_showcids
+
+the showcids action prints all sorted profile CIDs as comma-separated list
+
+=cut
+
+sub action_showcids
+{
+    my $self = shift;
+
+    $self->setCCMConfig();
+
+    my $cids = $self->{CACHEMGR}->getCids();
+
+    $self->_print(join(',', @$cids), "\n");
+
+    return SUCCESS;
+}
+
+=item action
+
+Run first of the predefined actions via the action_<actionname> methods
+
+=cut
+
+sub action
+{
+    my $self = shift;
+
+    # defined actions
+    my @acts = map {$_ if $self->option($_)} sort keys %ACTIONS;
+    my $act;
+
+    # very primitive for now: run first found
+    if (@acts && $acts[0] =~ m/^(\w+)$/) {
+        $act = $1;
+    }
+
+    if ($act) {
+        my $method = $self->can("action_$act");
+        return if(! $method);
+
+        # execute it
+        return $method->($self);
+    }
+
+    # return SUCCESS if no actions selected (nothing goes wrong)
+    return SUCCESS;
 }
 
 =pod
