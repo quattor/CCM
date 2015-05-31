@@ -15,6 +15,7 @@ use Test::Quattor qw(format);
 use EDG::WP4::CCM::Format;
 use Test::Quattor::Object;
 use Test::Quattor::TextRender::Base;
+use XML::Parser;
 
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
@@ -85,6 +86,12 @@ Test pancxml format (more tests in TT testsuite)
 $el = $cfg->getElement("/");
 $fmt = EDG::WP4::CCM::Format->new('pancxml', $el, log => $log);
 isa_ok($fmt, 'EDG::WP4::CCM::Format', "a EDG::WP4::CCM::Format instance");
+
+my $p = XML::Parser->new(Style => 'Tree');
+my $t;
+eval { $t = $p->parse("$fmt"); };
+ok(! @$, "No XML parsing errors");
+
 $txt = "$fmt";
 $txt =~ s/\s//g; # squash all whitespace
 is($txt,
