@@ -9,7 +9,7 @@ use POSIX qw (getpid);
 use Test::More;
 use CCMTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN 
+use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
 				      $CURRENT_CID_FN $LATEST_CID_FN);
 use EDG::WP4::CCM::Configuration;
 use Cwd;
@@ -41,12 +41,12 @@ ok(-d "$cp/profile.2", "cache manager profile.2 dir exists.");
 
 my ($cfgl, $cfgl_pfn, $cfgl_pfn_new, $cfgu, $cfgu_pfn, $cm);
 
-ok ($cm = EDG::WP4::CCM::CacheManager->new($cp), 
+ok ($cm = EDG::WP4::CCM::CacheManager->new($cp),
     "EDG::WP4::CCM::CacheManager->new($cp)");
 
 is($cm->getCurrentCid(), '2', 'cache_manager cid is 2');
 
-ok (EDG::WP4::CCM::Configuration::_touch_file("$cp/tf") && -f "$cp/tf", 
+ok (EDG::WP4::CCM::Configuration::_touch_file("$cp/tf") && -f "$cp/tf",
     "EDG::WP4::CCM::Configuration::_touch_file($cp/tf)");
 unlink ("$cp/tf");
 
@@ -61,6 +61,19 @@ my $self = {
     };
 
 bless ($self, "EDG::WP4::CCM::Configuration");
+
+# Test _can_create_pidfile
+ok (EDG::WP4::CCM::Configuration::_can_create_pid_file($self),
+    "EDG::WP4::CCM::Configuration::_can_create_pid_file($self) ok for path with proper permissions");
+# broken symlink, even root can't write to those and CAF::FileWriter in _touch_file will create any subdirs
+ok(symlink("target/really_missing", "target/does_not"), "broken symlink created");
+$self->{cfg_path} = "target/does_not";
+ok (! EDG::WP4::CCM::Configuration::_can_create_pid_file($self),
+    "EDG::WP4::CCM::Configuration::_can_create_pid_file($self) returns 0 for nonexisting path");
+ok(unlink("target/does_not"), "cleaned up broken symlink");
+
+# reset to working path
+$self->{cfg_path} = "$cp/profile.1";
 
 # Start with anonymous test
 my $tpf1 = "$cp/profile.1/ccm-active-profile.1-".getpid();
@@ -118,9 +131,9 @@ is ($cfgl->isLocked(), 1, '$cfgl->isLocked() gives 1');
 is ($cfgu->isLocked(), 0, '$cfgu->isLocked() gives 0');
 
 # Nothing changed so far
-is ($cfgl->{cache_manager}->getCurrentCid(), 2, 
+is ($cfgl->{cache_manager}->getCurrentCid(), 2,
     '$cfgl->{cache_manager}->getCurrentCid()==2');
-is ($cfgu->{cache_manager}->getCurrentCid(), 2, 
+is ($cfgu->{cache_manager}->getCurrentCid(), 2,
     '$cfgl->{cache_manager}->getCurrentCid()==2');
 
 # triggers a _update_cid_pidf for unlocked
@@ -144,10 +157,10 @@ ok(! -f $cfgl_pfn, "old cfgl pid filename does not exist anymore");
 ok(-f $cfgl_pfn_new, "(new) cfgl pid filename found");
 is($cfgl_pfn_new, $cfgu_pfn, "new cfgl pid filename same as cfgu");
 
-is ($cfgl->{cid}, 2, "cfgl cid updated"); 
-is ($cfgl->{cid_to_number}{$cfgl->{cid}}, 1, 
+is ($cfgl->{cid}, 2, "cfgl cid updated");
+is ($cfgl->{cid_to_number}{$cfgl->{cid}}, 1,
     "1 configuration instance active (i.e. cfgl)");
-is ($cfgl->{cid_to_number}{1}, 0, 
+is ($cfgl->{cid_to_number}{1}, 0,
     "0 configuration instances active on same old cfgl profile/pid/cid as cfgl, counter decreased");
 
 
@@ -156,7 +169,7 @@ ok ($cfgu->lock() && $cfgu->isLocked(), '$cfgu->lock');
 ok (-f $cfgu_pfn, "cfgu pid filename still found after unlock");
 
 is ($cfgl->getConfigurationId(), 2, '$cfgl->getConfigurationId()==2');
-is ($cfgl->{cid_to_number}{$cfgl->{cid}}, 1, 
+is ($cfgl->{cid_to_number}{$cfgl->{cid}}, 1,
     "2 configuration instances active on same profile/pid/cid as cfgl, counter not updated ");
 
 is ($cfgu->{cid_to_number}{$cfgu->{cid}}, 1 ,
@@ -186,10 +199,10 @@ TODO: {
     # not ok 20 - cfg1 = undef && -f /tmp/c-test/profile.2/ccm-active-profile.2-10625
     #   Failed test 'cfg1 = undef && -f /tmp/c-test/profile.2/ccm-active-profile.2-10625'
     #   at ./test-configuration.pl line 101.
-    
+
     # why would the file still exists? nothing protects it against removal?
     # cfgl can't see the counters of cfgu.
-    
+
     ok (-f $cfgl_pfn_new, "cfg1 = undef && -f $cfgl_pfn_new");
 
     ok (-f $cfgu_pfn, "before cfg2 = undef && !-f $cfgu_pfn");
@@ -197,5 +210,24 @@ TODO: {
 
 $cfgu = ();
 ok (!-f $cfgu_pfn, "cfg2 = undef && !-f $cfgu_pfn");
+
+
+# More anonymous testing
+my $cfga_0 = EDG::WP4::CCM::Configuration->new ($cm, 1, 1);
+isa_ok($cfga_0, "EDG::WP4::CCM::Configuration", "cfga_0 is a EDG::WP4::CCM::Configuration");
+is($cfga_0->{anonymous}, 0, "cfga_0 is not anonymous");
+$cfga_0 = ();
+
+my $cfga_1 = EDG::WP4::CCM::Configuration->new ($cm, 1, 1, 1);
+isa_ok($cfga_1, "EDG::WP4::CCM::Configuration", "cfga_1 is a EDG::WP4::CCM::Configuration");
+is($cfga_1->{anonymous}, 1, "cfga_1 is anonymous");
+$cfga_1 = ();
+
+my $cfga_m1 = EDG::WP4::CCM::Configuration->new ($cm, 1, 1, -1);
+isa_ok($cfga_m1, "EDG::WP4::CCM::Configuration", "cfga_m1 is a EDG::WP4::CCM::Configuration");
+ok($cfga_m1->_can_create_pid_file(), "cfga_m1 can create the CID_pid file");
+is($cfga_m1->{anonymous}, 0, "cfga_m1 is not anonymous (can create the CID_pid file)");
+$cfga_m1 = ();
+
 
 done_testing();

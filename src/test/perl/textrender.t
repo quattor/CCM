@@ -58,6 +58,23 @@ is("$trd",
    '{"a":"a","b":"1","c":1,"d":true,"e":false,"f":1.5,"g":["g1","g2"],"h":{"a":"a","b":"1","c":1,"d":true,"e":false}}'."\n",
    "Correct JSON rendered");
 
+isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}, 
+       "EDG::WP4::CCM::Path", 
+       "path is a CCM::Path instance");
+is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/', 
+   "Correct path /");
+
+# extra_vars
+# calls are tested via TT tests
+my @extra_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}};
+is_deeply(\@extra_vars,
+          ['contents', 'element', 'escape', 'is_hash', 'is_list', 'is_scalar', 'ref', 'unescape'],
+          "Correct CCM VARIABLES keys");
+my @extra_el_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}};
+is_deeply(\@extra_el_vars,
+          ['path'],
+          "Correct CCM VARIABLES element keys");
+
 # not quoted / true
 my $fakeyamlbool = ' '.$EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yaml_boolean}->(1)."\nx";
 is($trd->_yaml_replace_boolean_prefix($fakeyamlbool),
@@ -89,6 +106,12 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(1),
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(0),
    'no',
    'yesno with false value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(1),
+   'true',
+   'truefalse with true value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(0),
+   'false',
+   'truefalse with false value');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{upper}->('abcdef'),
    'ABCDEF',
    'upper returns uppercase strings');
@@ -147,6 +170,12 @@ is($tinyout,
    "a=ab=1c=1d=1e=0",
    "Correct Config::tiny without element options rendered");
 
+isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}, 
+       "EDG::WP4::CCM::Path", 
+       "path is a CCM::Path instance");
+is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/h', 
+   "Correct path /h");
+
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'yesno' => 1, 'singlequote' => 1});
 $tinyout = "$trd";
@@ -162,6 +191,22 @@ $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    'a="a"b="1"c=1d=YESe=NO',
    "Correct Config::tiny with YESNO and doublequote rendered");
+
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'truefalse' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=truee=false',
+   "Correct Config::tiny with truefalse rendered");
+
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'TRUEFALSE' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=TRUEe=FALSE',
+   "Correct Config::tiny with TRUEFALSE rendered");
 
 =pod
 

@@ -60,7 +60,7 @@ sub app_options {
 
           { NAME    => 'cache_root=s',
             DEFAULT => '/var/lib/ccm',
-            HELP    => 'Path of executable to be used to preprocess a profile with a context' },
+            HELP    => 'Basepath for the configuration cache' },
 
           { NAME    => 'get_timeout=i',
             DEFAULT => '30',
@@ -121,7 +121,7 @@ sub app_options {
 
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
-            HELP    => 'Turn on dubugging messages' });
+            HELP    => 'Turn on debugging messages' });
 
     return \@options;
 }

@@ -15,6 +15,8 @@ our @EXPORT    = qw();
 our @EXPORT_OK = qw();
 our $VERSION   = '${project.version}';
 
+use overload '""' => 'toString';
+
 =head1 NAME
 
 EDG::WP4::CCM::Path - Path class
@@ -123,6 +125,26 @@ sub down
     push(@$self, $chunk);
     return $self;
 }
+
+=item merge (@subpaths)
+
+Return a new instance with optional subpaths added
+
+=cut
+
+
+sub merge
+{
+
+    my ($self, @subpaths) = @_;
+
+    my $newpath = EDG::WP4::CCM::Path->new("$self");
+    foreach my $subpath (@subpaths) {
+        $newpath->down($subpath);
+    }
+    return $newpath
+}
+
 
 =pod
 

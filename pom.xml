@@ -12,7 +12,7 @@
   <parent>
     <groupId>org.quattor.maven</groupId>
     <artifactId>build-profile</artifactId>
-    <version>1.42</version>
+    <version>1.44</version>
   </parent>
 
   <scm>
@@ -160,6 +160,26 @@
               </resources>
             </configuration>
           </execution>
+            <execution>
+              <id>filter-tt-sources</id>
+              <phase>process-sources</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <encoding>UTF-8</encoding>
+                <outputDirectory>${project.build.directory}/share/templates/quattor/CCM</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>src/main/resources</directory>
+                    <filtering>false</filtering>
+                    <includes>
+                      <include>**/*.tt</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
         </executions>
       </plugin>
       <plugin>

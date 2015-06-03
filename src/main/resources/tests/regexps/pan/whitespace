@@ -1,0 +1,13 @@
+Whitespace pan output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+there are 15 lines of output with newline, so 16 EOL
+---
+renderpath=/
+rendermodule=pan
+contentspath=/
+element=truefalse,doublequote
+unordered
+---
+\n\z
+\n ### COUNT 15
+$ ### COUNT 16
