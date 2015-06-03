@@ -61,3 +61,5 @@ Test extravars
 ^astring is_string YES$
 ^astring is_double NO$
 ^astring is_long NO$
+^path /$
+^newpath /x/y/z$

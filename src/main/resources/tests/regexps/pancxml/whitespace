@@ -1,0 +1,13 @@
+Whitespace pancxml output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+there are 15 lines of output with newline, so 16 EOL
+---
+renderpath=/
+rendermodule=pancxml
+contentspath=/
+element=truefalse,xml
+unordered
+---
+\n\z
+\n ### COUNT 40
+$ ### COUNT 41

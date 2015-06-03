@@ -1,0 +1,21 @@
+[%- IF CCM.is_scalar(data);
+        pantype = data.get_type FILTER lower;
+    ELSIF CCM.is_list(data);
+        pantype = 'list';
+    ELSIF CCM.is_hash(data);
+        pantype = 'nlist';
+    END
+-%]
+<[%- pantype -%][%- format ? ' format="' _  format _ '"' : '' -%][%- name ? ' name="' _  name _ '"' : '' -%]>
+[%- IF CCM.is_scalar(data) -%]
+[%- data -%]
+[%- ELSIF CCM.is_list(data) %]
+[%     FOREACH value IN data -%]
+[%-          INCLUDE CCM/pancxml_element.tt data=value name='' format='' FILTER indent -%]
+[%-      END -%]
+[%- ELSIF CCM.is_hash(data) %]
+[%     FOREACH pair IN data.pairs -%]
+[%-          INCLUDE CCM/pancxml_element.tt data=pair.value name=pair.key format='' FILTER indent -%]
+[%-      END -%]
+[%- END -%]
+</[%- pantype -%]>
