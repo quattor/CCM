@@ -1,0 +1,50 @@
+Base pancxml output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+(data comes from xml output of 'panc pancxml.pan')
+---
+renderpath=/
+rendermodule=pancxml
+contentspath=/
+element=truefalse,xml
+---
+^<\?xml version="1.0" encoding="UTF-8"\?>$
+^<nlist format="pan" name="profile">$
+^    <nlist name="data">$
+^        <nlist name="hash">$
+^            <string name="x">OK</string>$
+^        </nlist>$
+^        <list name="listtruefalse">$
+^            <boolean>true</boolean>$
+^            <boolean>false</boolean>$
+^        </list>$
+^        <long name="one">1</long>$
+^        <double name="oneandahalf">1.5</double>$
+^    </nlist>$
+^    <nlist name="special">$
+^        <string name="escaped_20data">escaped data</string>$
+^        <string name="not_escaped_d">not_escaped_d</string>$
+^    </nlist>$
+^    <nlist name="z">$
+^        <nlist name="deep">$
+^            <string name="a">a</string>$
+^            <list name="list">$
+^                <nlist>$
+^                    <nlist name="a">$
+^                        <string name="b">a</string>$
+^                    </nlist>$
+^                </nlist>$
+^                <nlist>$
+^                    <long name="atest">1</long>$
+^                    <double name="btest">1.5</double>$
+^                    <boolean name="ctest">true</boolean>$
+^                    <boolean name="dtest">false</boolean>$
+^                    <string name="etest">ok</string>$
+^                </nlist>$
+^                <nlist>$
+^                    <long name="fake">1</long>$
+^                </nlist>$
+^            </list>$
+^        </nlist>$
+^    </nlist>$
+^</nlist>$
+
