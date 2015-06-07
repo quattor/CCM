@@ -105,6 +105,15 @@ Readonly::Hash our %ELEMENT_CONVERT => {
     },
 };
 
+# Update the ccm_format pod with new formats
+Readonly::Hash my %TEXTRENDER_FORMATS => {
+    json => {}, # No opts
+    yaml => {}, # No opts
+    pan => { truefalse => 1, doublequote => 1},
+    pancxml => { truefalse => 1, xml => 1 },
+};
+
+Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
 
 =pod
 
@@ -412,6 +421,62 @@ sub make_contents
     }
 
     return $contents;
+}
+
+=pod
+
+=item ccm_format
+
+Returns the CCM::TextRender instance for predefined C<format> and C<element>.
+Returns undef incase the format is not defined. An array with valid formats is
+exported via C<@CCM_FORMATS>.
+
+Supported formats are:
+
+=over
+
+=item json
+
+=item yaml
+
+=item pan
+
+=item pancxml
+
+=back
+
+Usage example:
+
+    use EDG::WP4::CCM::TextRender qw(ccm_format);
+    my $format = 'json';
+    my $element = $config->getElement("/");
+    my $trd = ccm_format($format, $element);
+
+    if (defined $trd->get_text());
+        print "$trd";
+    } else {
+        $logger->error("Failed to textrender format $format: $trd->{fail}")
+    }
+
+=cut
+
+sub ccm_format
+{
+    my ($format, $element) = @_;
+
+    my $trd_opts = $TEXTRENDER_FORMATS{$format};
+    return if (! defined($trd_opts));
+
+    # Format is the TextRender module
+    my $trd = EDG::WP4::CCM::TextRender->new(
+        $format,
+        $element,
+        # uppercase, no conflict with possible ncm-ccm?
+        relpath => 'CCM',
+        element => $trd_opts,
+        );
+
+    return $trd;
 }
 
 =pod
