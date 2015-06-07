@@ -279,6 +279,17 @@ sub make_contents
 
     my $ref = ref($self->{contents});
 
+    # Additional variables available to both regular hashref and element
+    my $extra_vars = {
+        ref => sub { return ref($_[0]) },
+        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
+        is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
+        is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
+        escape => \&escape,
+        unescape => \&unescape,
+    };
+
+
     if($ref && ($ref eq "HASH")) {
         $contents = $self->{contents};
     } elsif ($ref && UNIVERSAL::can($self->{contents}, 'can') &&
@@ -322,6 +333,11 @@ sub make_contents
 
         $contents = $self->{contents}->getTree($depth, %opts);
 
+        # Add the path as an arrayref that can be joined to the correct path
+        $extra_vars->{element} = {
+            path => $self->{contents}->getPath(),
+        }
+
     } else {
         return $self->fail("Contents passed is neither a hashref or ",
                            "a EDG::WP4::CCM::Element instance ",
@@ -329,21 +345,12 @@ sub make_contents
     }
 
 
-    # Additional variables available to both regular hashref and element
-    my $extra_vars = {
-        # Make the full contents available (e.g. to access the root keys)
-        # Must be a copy
-        contents => { %$contents },
 
-        ref => sub { return ref($_[0]) },
-        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
-        is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
-        is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
-        escape => \&escape,
-        unescape => \&unescape,
-    };
+    # Make the full contents available (e.g. to access the root keys)
+    # Must be a copy
+    $extra_vars->{contents} = { %$contents };
 
-    # Add them to the CCM namespace
+    # Add extra_vars to the CCM namespace
     # To be used in TT as follows: [% CCM.is_hash(myvar) ? "hooray" %]
     while (my ($k, $v) = each %$extra_vars) {
         $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
