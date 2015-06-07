@@ -106,6 +106,12 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(1),
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(0),
    'no',
    'yesno with false value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(1),
+   'true',
+   'truefalse with true value');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{truefalse_boolean}->(0),
+   'false',
+   'truefalse with false value');
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{upper}->('abcdef'),
    'ABCDEF',
    'upper returns uppercase strings');
@@ -155,6 +161,24 @@ ok(B::svref_2object(\$boolean)->isa("B::PVNV"), 'cast boolean of integer 1 is a 
 # that could change the internal representation
 ok($boolean, 'cast boolean returns correct value true');
 
+# Test xml stringification
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("text"), "'text' is valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("<![CDATA[text]]>"), "CDATA 'text' is valid xml string");
+
+ok(! EDG::WP4::CCM::TextRender::_is_valid_xml("text < othertext"), "'text < othertext' is not valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("text &gt; othertext"), "'text &gt; othertext' is not valid xml string");
+ok(EDG::WP4::CCM::TextRender::_is_valid_xml("<![CDATA[text < othertext]]>"), "CDATA 'text < othertext' is valid xml string");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text"),
+   "my text", "Correct conversion to valid xml 'my text'");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text < othertext"),
+   "<![CDATA[my text < othertext]]>", "Correct conversion to valid xml 'my text < othertext'");
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text ]]> < othertext ]]>"),
+   "<![CDATA[my text ]]>]]&gt;<![CDATA[ < othertext ]]>]]&gt;<![CDATA[]]>",
+   "Correct conversion to valid xml 'my text ]]> < othertext ]]>'");
+
 # Test with tiny, has to be single level hash
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el);
@@ -186,6 +210,22 @@ is($tinyout,
    'a="a"b="1"c=1d=YESe=NO',
    "Correct Config::tiny with YESNO and doublequote rendered");
 
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'truefalse' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=truee=false',
+   "Correct Config::tiny with truefalse rendered");
+
+$el = $cfg->getElement("/h");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'TRUEFALSE' => 1});
+$tinyout = "$trd";
+$tinyout =~ s/\s//g; # squash whitespace
+is($tinyout,
+   'a=ab=1c=1d=TRUEe=FALSE',
+   "Correct Config::tiny with TRUEFALSE rendered");
+
 =pod
 
 =head2 Extra TT options
@@ -214,4 +254,3 @@ diag("$trd");
 diag explain $trd->{contents};
 
 done_testing;
-
