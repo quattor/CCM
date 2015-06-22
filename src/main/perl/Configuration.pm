@@ -400,6 +400,27 @@ sub elementExists
     return $ex;
 }
 
+=item getTree ($path)
+
+returns C<getTree> of the element identified by C<$path>.
+Any other optional arguments are passed to C<getTree>.
+
+If the path does not exist, undef is returned.
+
+=cut
+
+sub getTree
+{
+    my ($self, $path, @args) = @_;
+
+    return if (! $self->elementExists($path));
+
+    my $el = $self->getElement($path);
+    return if(! $el);
+
+    return $el->getTree(@args);
+}
+
 =pod
 
 =back
