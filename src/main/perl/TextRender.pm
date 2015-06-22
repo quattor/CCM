@@ -11,9 +11,25 @@ use CAF::TextRender qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Element qw(escape unescape);
+use XML::Parser;
 use base qw(CAF::TextRender Exporter);
 
-our @EXPORT_OK = qw(%ELEMENT_CONVERT);
+our @EXPORT_OK = qw(%ELEMENT_CONVERT @CCM_FORMATS ccm_format);
+
+# private instance for xml_string processing
+my $_xml_parser = XML::Parser->new(Style => 'Tree');
+
+# test if C<txt> is valid xml by trying to parse it with XML::Parser
+sub _is_valid_xml
+{
+    my $txt = shift;
+
+    # XML::Parser->parse uses 'die' with invalid xml.
+    my $tag = "really_really_random_tag";
+
+    my $t = eval {$_xml_parser->parse("<$tag>$txt</$tag>");};
+    return $@ ? 0 : 1;
+}
 
 Readonly::Hash our %ELEMENT_CONVERT => {
     'json_boolean' => sub {
@@ -29,6 +45,10 @@ Readonly::Hash our %ELEMENT_CONVERT => {
     'yesno_boolean' => sub {
         my $value = shift;
         return $value ? 'yes' : 'no';
+    },
+    'truefalse_boolean' => sub {
+        my $value = shift;
+        return $value ? 'true' : 'false';
     },
     'upper' => sub {
         my $value = shift;
@@ -66,8 +86,34 @@ Readonly::Hash our %ELEMENT_CONVERT => {
         # the 0+ operator of value is used
         return 0.0 + $value;
     },
+    'xml_primitive_string' => sub {
+        # Ideally, this is done with some CPAN module,
+        # but would introduce (non-standard) dependencies
+
+        my $value = shift;
+        return $value if _is_valid_xml($value);
+
+        # wrap it in CDATA, see http://stackoverflow.com/a/5337851
+        my $text = $value;
+        # use global flag for repeated replacements
+        $text =~ s/\]\]>/]]>]]&gt;<![CDATA[/g;
+        $text = "<![CDATA[$text]]>";
+        return $text if _is_valid_xml($text);
+
+        # ?
+        die("xml_primitive_string: Unable to create valid xml from '$value'");
+    },
 };
 
+# Update the ccm_format pod with new formats
+Readonly::Hash my %TEXTRENDER_FORMATS => {
+    json => {}, # No opts
+    yaml => {}, # No opts
+    pan => { truefalse => 1, doublequote => 1},
+    pancxml => { truefalse => 1, xml => 1 },
+};
+
+Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
 
 =pod
 
@@ -167,6 +213,14 @@ Convert boolean to (lowercase) 'yes' and 'no'.
 
 Convert boolean to (uppercase) 'YES' and 'NO'.
 
+=item truefalse
+
+Convert boolean to (lowercase) 'true' and 'false'.
+
+=item TRUEFALSE
+
+Convert boolean to (uppercase) 'TRUE' and 'FALSE'.
+
 =item doublequote
 
 Convert string to doublequoted string.
@@ -252,12 +306,22 @@ sub _make_predefined_options
         push(@{$opts{convert_boolean}}, $bool_conv);
     }
 
+    if ($elopts->{xml}) {
+        push(@{$opts{convert_string}}, $ELEMENT_CONVERT{xml_primitive_string});
+    }
+
     if ($elopts->{yesno} || $elopts->{YESNO}) {
         push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{yesno_boolean});
         if ($elopts->{YESNO}) {
             push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
         }
+    } elsif ($elopts->{truefalse} || $elopts->{TRUEFALSE}) {
+        push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{truefalse_boolean});
+        if ($elopts->{TRUEFALSE}) {
+            push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
+        }
     }
+
 
     if ($elopts->{doublequote}) {
         push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
@@ -278,6 +342,17 @@ sub make_contents
     my $contents;
 
     my $ref = ref($self->{contents});
+
+    # Additional variables available to both regular hashref and element
+    my $extra_vars = {
+        ref => sub { return ref($_[0]) },
+        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
+        is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
+        is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
+        escape => \&escape,
+        unescape => \&unescape,
+    };
+
 
     if($ref && ($ref eq "HASH")) {
         $contents = $self->{contents};
@@ -322,6 +397,11 @@ sub make_contents
 
         $contents = $self->{contents}->getTree($depth, %opts);
 
+        # Add the path as an arrayref that can be joined to the correct path
+        $extra_vars->{element} = {
+            path => $self->{contents}->getPath(),
+        }
+
     } else {
         return $self->fail("Contents passed is neither a hashref or ",
                            "a EDG::WP4::CCM::Element instance ",
@@ -329,27 +409,74 @@ sub make_contents
     }
 
 
-    # Additional variables available to both regular hashref and element
-    my $extra_vars = {
-        # Make the full contents available (e.g. to access the root keys)
-        # Must be a copy
-        contents => { %$contents },
 
-        ref => sub { return ref($_[0]) },
-        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
-        is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
-        is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
-        escape => \&escape,
-        unescape => \&unescape,
-    };
+    # Make the full contents available (e.g. to access the root keys)
+    # Must be a copy
+    $extra_vars->{contents} = { %$contents };
 
-    # Add them to the CCM namespace
+    # Add extra_vars to the CCM namespace
     # To be used in TT as follows: [% CCM.is_hash(myvar) ? "hooray" %]
     while (my ($k, $v) = each %$extra_vars) {
         $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
     }
 
     return $contents;
+}
+
+=pod
+
+=item ccm_format
+
+Returns the CCM::TextRender instance for predefined C<format> and C<element>.
+Returns undef incase the format is not defined. An array with valid formats is
+exported via C<@CCM_FORMATS>.
+
+Supported formats are:
+
+=over
+
+=item json
+
+=item yaml
+
+=item pan
+
+=item pancxml
+
+=back
+
+Usage example:
+
+    use EDG::WP4::CCM::TextRender qw(ccm_format);
+    my $format = 'json';
+    my $element = $config->getElement("/");
+    my $trd = ccm_format($format, $element);
+
+    if (defined $trd->get_text());
+        print "$trd";
+    } else {
+        $logger->error("Failed to textrender format $format: $trd->{fail}")
+    }
+
+=cut
+
+sub ccm_format
+{
+    my ($format, $element) = @_;
+
+    my $trd_opts = $TEXTRENDER_FORMATS{$format};
+    return if (! defined($trd_opts));
+
+    # Format is the TextRender module
+    my $trd = EDG::WP4::CCM::TextRender->new(
+        $format,
+        $element,
+        # uppercase, no conflict with possible ncm-ccm?
+        relpath => 'CCM',
+        element => $trd_opts,
+        );
+
+    return $trd;
 }
 
 =pod
