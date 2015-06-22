@@ -17,7 +17,7 @@ use parent qw(Exporter);
 use Readonly;
 
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(initCfg getCfgValue);
+our @EXPORT_OK = qw(initCfg getCfgValue setCfgValue resetCfg);
 our $VERSION   = '${project.version}';
 
 =head1 NAME
@@ -211,6 +211,43 @@ sub _setCfgValue
     return getCfgValue($key);
 }
 
+=item setCfgValue ($key, $value, $force)
+
+Set the configuration option C<$key> to C<$value>.
+If force is set, the option and value are also added
+to the C<force_cfg> hashref, making it protected against
+rereading of the config file.
+
+=cut
+
+sub setCfgValue
+{
+    my ($key, $value, $force) = @_;
+    my $newvalue = _setCfgValue($key, $value);
+
+    # _setCfgValue throws error on unknown key
+
+    if ($force) {
+        $force_cfg->{$key} = $value;
+    }
+
+    # for unittesting
+    return $newvalue;
+}
+
+=item resetCfg
+
+reset the configuration hash and empty the force
+hashref.
+
+=cut
+
+sub resetCfg
+{
+    $cfg = {%DEFAULT_CFG};
+    $force_cfg = {};
+}
+
 =pod
 
 =back
@@ -218,4 +255,3 @@ sub _setCfgValue
 =cut
 
 1;
-

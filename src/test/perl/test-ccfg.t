@@ -8,9 +8,11 @@ use warnings;
 use Test::More;
 use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::CCfg qw (@CFG_KEYS);
+use EDG::WP4::CCM::CCfg qw (@CONFIG_OPTIONS $CONFIG_FN @CFG_KEYS
+    initCfg getCfgValue setCfgValue resetCfg);
 use Cwd;
 use Net::Domain qw(hostname hostdomain);
+use Readonly;
 
 my $host   = hostname();
 my $domain = hostdomain();
@@ -50,7 +52,7 @@ my $fn = "$ccfgtmp/notexists";
 my $fh = CAF::FileReader->new($fn);
 ok(!-f $fn, "notexists file $fn doesn't exist");
 
-eok($ec, EDG::WP4::CCM::CCfg::initCfg($fn), "initCfg of not existing file");
+eok($ec, initCfg($fn), "initCfg of not existing file");
 
 $fn = "$ccfgtmp/ccm_invalidkey.cfg";
 ok(-f $fn, "ccm_invalidkey file $fn does exist");
@@ -58,7 +60,7 @@ eok($ec, EDG::WP4::CCM::CCfg::_readConfigFile($fn), "_readConfigFile with invali
 
 $fn = "$ccfgtmp/ccm.cfg";
 ok(-f $fn,                            "ccm cfg file $fn does exist");
-ok(EDG::WP4::CCM::CCfg::initCfg($fn), "initialise CCfg");
+ok(initCfg($fn), "initialise CCfg");
 
 my %expected = (
 
@@ -75,12 +77,51 @@ my %expected = (
     purge_time => 86400,
 );
 while (my ($k, $v) = each %expected) {
-    is(EDG::WP4::CCM::CCfg::getCfgValue($k), $v, "Get ccfg param $k");
+    is(getCfgValue($k), $v, "Get ccfg param $k");
 }
+
+# Test setCfgValue
+while (my ($k, $v) = each %expected) {
+    my $newvalue = "new$v";
+    is(setCfgValue($k, $newvalue), $newvalue, "Set ccfg param $k to $newvalue");
+    is(getCfgValue($k), $newvalue, "Get new ccfg param $k");
+}
+
+# Re-init
+ok(initCfg($fn), "re initialise CCfg pt1");
+while (my ($k, $v) = each %expected) {
+    if ($k =~ m/^(keep_old|purge_time)$/) {
+        # not via configfile
+        $v = "new$v";
+    }
+    is(getCfgValue($k), $v, "Get ccfg param $k after reinit pt1");
+}
+
+# Force them
+while (my ($k, $v) = each %expected) {
+    my $newvalue = "new$v";
+    is(setCfgValue($k, $newvalue, 1), $newvalue, "Set ccfg param $k to $newvalue after reinit pt1 with force");
+    is(getCfgValue($k), $newvalue, "Get new ccfg param $k after reinit pt1 with force");
+}
+
+# Re-init with forced
+ok(initCfg($fn), "re initialise CCfg pt2");
+while (my ($k, $v) = each %expected) {
+    my $newvalue = "new$v";
+    is(getCfgValue($k), $newvalue, "Get ccfg param $k after reinit pt2 with forced values");
+}
+
+# Reset everything and reread. Forced should be cleared.
+resetCfg();
+ok(initCfg($fn), "re initialise CCfg pt3");
+while (my ($k, $v) = each %expected) {
+    is(getCfgValue($k), $v, "Get ccfg param $k after reinit pt3 and reset");
+}
+
 
 # test the config we ship
 ok(-f $ccfgconfig,                            "ccm cfg file $ccfgconfig does exist");
-ok(EDG::WP4::CCM::CCfg::initCfg($ccfgconfig), "initialise CCfg");
+ok(initCfg($ccfgconfig), "initialise CCfg");
 
 %expected = (
 
@@ -97,14 +138,54 @@ ok(EDG::WP4::CCM::CCfg::initCfg($ccfgconfig), "initialise CCfg");
     world_readable   => 0,
 );
 while (my ($k, $v) = each %expected) {
-    is(EDG::WP4::CCM::CCfg::getCfgValue($k), $v, "Get ccm.conf ccfg param $k");
+    is(getCfgValue($k), $v, "Get ccm.conf ccfg param $k");
 }
+
+# Hard test for possible values
+# (based on original 15.4 code)
+Readonly::Hash my %DEFAULT_CFG => {
+    "base_url" => undef,
+    "ca_dir" => undef,
+    "ca_file" => undef,
+    "cache_root" => "/var/lib/ccm",
+    "cert_file" => undef,
+    "context" => undef,
+    "dbformat" => "GDBM_File",
+    "debug" => undef,
+    "force" => undef,
+    "get_timeout" => 30,
+    "json_typed" => 0,
+    "keep_old" => 2,
+    "key_file" => undef,
+    "lock_retries" => 3,
+    "lock_wait" => 30,
+    "preprocessor" => undef,
+    "profile" => undef,
+    "profile_failover" => undef,
+    "purge_time" => 86400,
+    "retrieve_retries" => 3,
+    "retrieve_wait" => 30,
+    "trust" => undef,
+    "world_readable" => undef,
+};
+my %default_cfg = map {$_->{option} => $_->{DEFAULT}} @CONFIG_OPTIONS;
+is_deeply(\%DEFAULT_CFG, \%default_cfg,
+          "Expected default configuration options");
+
+# All CONFIG_OPTIONS hasve nonempty HELP
+foreach my $opt (@CONFIG_OPTIONS) {
+    ok($opt->{HELP}, "Non-empty HELP for CONFIG_OPTIONS $opt->{option}");
+}
+
+# Exported default config file
+is($CONFIG_FN, "/etc/ccm.conf", "Expected default ccm config file");
 
 # Hard test for possible values (sorted)
 is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
-    context dbformat debug force get_timeout json_typed keep_old
-    key_file lock_retries lock_wait preprocessor profile profile_failover
-    purge_time retrieve_retries retrieve_wait trust world_readable
-    )], "CFG_KEYS exports all possible configuration keys");
+context dbformat debug force get_timeout json_typed keep_old
+key_file lock_retries lock_wait preprocessor profile profile_failover
+purge_time retrieve_retries retrieve_wait trust world_readable
+)], "CFG_KEYS exports all possible configuration keys");
+
 
 done_testing();
