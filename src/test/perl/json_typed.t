@@ -3,19 +3,21 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More;
 use EDG::WP4::CCM::XMLPanProfile;
 use EDG::WP4::CCM::JSONProfileTyped;
-use EDG::WP4::CCM::Fetch;
 use CAF::FileReader;
-use JSON::XS qw(decode_json);
 use Test::Deep;
 use XML::Parser;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CCMTest qw(compile_profile);
 use B;
+use Taint::Runtime qw(taint_start taint_enabled taint_stop);
 
 use Readonly;
+
+taint_start();
+ok(taint_enabled(), "taint enabled for json_typed testing");
 
 =pod
 
@@ -108,7 +110,9 @@ my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
 
 $fh = CAF::FileReader->new("target/test/json/${simple}.json");
 note("Profile contents: $fh");
-$t = decode_json("$fh");
+# This is what Fetch choose_interpreter does
+$t = EDG::WP4::CCM::Fetch::_decode_json("$fh", 1);
+
 my $our_result = EDG::WP4::CCM::JSONProfileTyped->interpret_node(profile => $t);
 
 # Do not explain before creating result. It might do some auto-stringification
