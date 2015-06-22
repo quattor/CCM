@@ -10,12 +10,11 @@ use warnings;
 
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::CacheManager qw ($CURRENT_CID_FN);
-use EDG::WP4::CCM::Element qw();
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Element;
 use CAF::FileWriter;
 
-use EDG::WP4::CCM::Path qw ();
-use Scalar::Util qw (tainted);
+use EDG::WP4::CCM::Path;
 
 use parent qw(Exporter);
 
@@ -50,8 +49,6 @@ Module provides the Configuration class, to manipulate confgurations.
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-my $PROFILE_DIR_N = "profile.";
-
 =item new
 
 Create Configuration object. It takes three arguments:
@@ -63,20 +60,28 @@ Create Configuration object. It takes three arguments:
 If a configuration with specified CID does not exists, an exception is
 thrown.
 
-When the C<locked> flag is set (or when the C<lock> method is called at any point), 
-the Configuration instance is bound to the the specific CID, even if this is not 
-the latest one (or when a new one is fetched during the lifetime of the process).
-An unlocked Configuration instance will always use the latest CID.
+When the C<locked> flag is set (or when the C<lock> method is called to set it),
+the Configuration instance is bound to the specific CID, even if this is not
+the CacheManager's current one (e.g. when a new profile is fetched during the lifetime
+of the process, the CacheManager current CID is updated to the latest one).
+The locking is relevant when a C<CCM::Element> is accessed via
+a C<CCM::Configuration> instance (in particular, when a call to C<_prepareElement>
+is made).
+As a consequence, an unlocked Configuration instance will always use the
+CacheManager's current CID.
 
-Unless the anonymous flag is set to true, each process that creates a 
-Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid> 
-(with C<$cid> the CID and C<$pid> the process ID) under the C<profile.$cid> 
-directory in the C<CacheManager> cache path. The presence of this file protects 
-the process from getting this particular CID removed by the C<ccm-purge> command 
+Unless the anonymous flag is set to true, each process that creates a
+Configuration instance, creates a file named C<ccm-active-profile.$cid.$pid>
+(with C<$cid> the CID and C<$pid> the process ID) under the C<profile.$cid>
+directory in the C<CacheManager> cache path. The presence of this file protects
+the process from getting this particular CID removed by the C<ccm-purge> command
 (e.g. by the daily purge cron job).
+If the anonymous flag is set to -1, the permissions of the user to create this file
+are verified, and if the user can write to this file, the anonymous flag is set to
+false (this is only verified once during initialisation).
 
-Processes that have no permission to create this file (or don't care about long 
-runtimes), can set the C<anonymous> flag and use the configuartion 
+Processes that have no permission to create this file (or don't care about long
+runtimes), can set the C<anonymous> flag and use the configuration
 (at their own risk).
 
 =cut
@@ -84,34 +89,42 @@ runtimes), can set the C<anonymous> flag and use the configuartion
 sub new
 {    #T
     my ($class, $cache_manager, $cid, $locked, $anonymous) = @_;
+
     my $cache_path = $cache_manager->getCachePath();
     unless ($cache_path =~ m{^([-./\w]+)}) {
         throw_error("Cache path '$cache_path' is not an absolute path");
         return ();
     }
     $cache_path = $1;
+
     unless ($cid =~ m{^(\d+)$}) {
         throw_error("CID '$cid' must be a number");
         return ();
     }
     $cid = $1;
-    my $cfg_path = "$cache_path/${PROFILE_DIR_N}$cid";
+
+    my $cfg_path = $cache_manager->getConfigurationPath($cid);
+    unless (-d $cfg_path) {
+        throw_error("configuration directory ($cfg_path) does not exist");
+        return ();
+    }
+
     my $self     = {
         "cid"           => $cid,
         "locked"        => $locked,
         "cache_manager" => $cache_manager,
         "cache_path"    => $cache_path,
         "cfg_path"      => $cfg_path,
-        "cid_to_number" => undef,
-        "anonymous"     => $anonymous,
+        "cid_to_number" => undef, # counter to keep track of number of times a CID is in use
+        "anonymous"     => defined($anonymous) ? $anonymous : 0, # clean 0
     };
-    unless (-d $cfg_path) {
-        throw_error("configuration directory ($cfg_path) does not exist");
-        return ();
-    }
+
     bless($self, $class);
 
-    unless ($self->_create_pid_file($self)) {
+    $self->{anonymous} = ($self->_can_create_pid_file() ? 0 : 1)
+        if ($self->{anonymous} == -1);
+
+    unless ($self->_create_pid_file()) {
         $ec->rethrow_error();
         return ();
     }
@@ -142,10 +155,35 @@ sub getCacheManager ()
 sub _pid_filename
 {
     my ($self, $cid) = @_;
-    
+
     $cid = $self->{"cid"} if (!defined($cid));
     return $self->{"cfg_path"} . "/ccm-active-profile.${cid}-" . getpid();
 }
+
+# Return if current process can create the pid file in the
+# directory of the configuration or not.
+# It does this by trying to create an empty file
+# with as filename the pid_filename with additional '.writetest' suffix.
+# This test file is removed afterwards.
+# If cleanup fails, error is thrown and failure status via undef is returned.
+sub _can_create_pid_file
+{
+    my ($self) = @_;
+
+    my $fn = $self->_pid_filename($self->{"cid"}) . ".writetest";
+
+    unless (_touch_file($fn)) {
+        $ec->ignore_error();
+        return 0;
+    }
+
+    if ((-f $fn) && ! unlink($fn)) {
+        throw_error("unlink($fn)", $!);
+        return;
+    }
+
+    return 1;
+};
 
 #
 # sub creates pid file (if needed) in the directory of the configuration
@@ -162,7 +200,7 @@ sub _create_pid_file
 
         my $pid_file = $self->_pid_filename();
         unless (_touch_file($pid_file)) {
-            throw_error("_touch_file($pid_file)", $ec->error);
+            $ec->rethrow_error();
             return ();
         }
     }
@@ -206,6 +244,14 @@ sub _touch_file ($)
     my $fh = CAF::FileWriter->new($file_name);
     print $fh '';
     $fh->close();
+
+    my $err = $ec->error();
+    if(defined($err)) {
+        $ec->ignore_error();
+        throw_error("_touch_file($file_name) failed ", $err->reason);
+        return;
+    }
+
     return SUCCESS;
 }
 
@@ -242,16 +288,16 @@ sub getConfigurationId
     return $self->{"cid"};
 }
 
-#
-# subroutine update self->{"cid"} if current.cid contents of current.cid
-# are different from it
-# if cid changes it also creates new pidfile
-#
-
+# Obtain the current CID from the CacheManager and
+# update C<cid> attribute with current CID if needed.
+# The update includes changing the C<cfg_path> attribute
+# and updating the pid/CID files and counters using
+# <_remove_pid_file(old_CID)> and C<_create_pid_file>
+# (which uses the new/updated C<cid> attribute).
 sub _update_cid_pidf
 {    #T
     my ($self) = @_;
-    my $cid = $self->{"cache_manager"}->getCurrentCid();
+    my $cid = $self->{cache_manager}->getCurrentCid();
     unless (defined($cid)) {
         throw_error('$self->{"cache_manager"}->getCurrentCid()', $ec->error);
         return ();
@@ -262,7 +308,7 @@ sub _update_cid_pidf
             return ();
         }
         $self->{"cid"}      = $cid;
-        $self->{"cfg_path"} = $self->{"cache_path"} . "/${PROFILE_DIR_N}$cid";
+        $self->{"cfg_path"} = $self->{cache_manager}->getConfigurationPath($cid);
         unless ($self->_create_pid_file()) {
             $ec->rethrow_error();
             return ();
@@ -315,6 +361,36 @@ sub isLocked
     return $self->{"locked"};
 }
 
+# _prepareElement prepares for accessing the actual
+# profile data via the EDG::WP4::CCM::Element class.
+# It converts the C<path> argument to a CCM::Path instance
+# (if needed) and updates the CID to the latest available
+# if the configuration is not locked.
+# Returns a CCM:Path instance on success
+# (or undef in case of problem).
+sub _prepareElement
+{
+    my ($self, $path) = @_;
+
+    unless (UNIVERSAL::isa($path, "EDG::WP4::CCM::Path")) {
+        my $ps = $path;
+        $path = EDG::WP4::CCM::Path->new($ps);
+        unless ($path) {
+            throw_error("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
+            return;
+        }
+    }
+
+    unless ($self->{"locked"}) {
+        unless ($self->_update_cid_pidf()) {
+            $ec->rethrow_error();
+            return;
+        }
+    }
+
+    return $path;
+}
+
 =item getElement ($path)
 
 Returns Element object identified by $path (path may be a string or
@@ -325,20 +401,14 @@ and object of class Path)
 sub getElement
 {
     my ($self, $path) = @_;
-    unless (UNIVERSAL::isa($path, "EDG::WP4::CCM::Path")) {
-        my $ps = $path;
-        $path = EDG::WP4::CCM::Path->new($ps);
-        unless ($path) {
-            throw_error("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
-            return ();
-        }
+
+    $path = $self->_prepareElement($path);
+    unless (defined($path)) {
+        $ec->rethrow_error();
+        return ();
     }
-    unless ($self->{"locked"}) {
-        unless ($self->_update_cid_pidf()) {
-            $ec->rethrow_error();
-            return ();
-        }
-    }
+
+    # Actual access to the data happens here
     my $el = EDG::WP4::CCM::Element->createElement($self, $path);
     unless ($el) {
         throw_error("EDG::WP4::CCM::Element->createElement ($self, $path)", $ec->error);
@@ -378,20 +448,14 @@ returns true if elements identified by $path exists
 sub elementExists
 {
     my ($self, $path) = @_;
-    unless (UNIVERSAL::isa($path, "EDG::WP4::CCM::Path")) {
-        my $ps = $path;
-        $path = EDG::WP4::CCM::Path->new($ps);
-        unless ($path) {
-            throw_error("EDG::WP4::CCM::Path->new ($ps)", $ec->error);
-            return ();
-        }
+
+    $path = $self->_prepareElement($path);
+    unless (defined($path)) {
+        $ec->rethrow_error();
+        return ();
     }
-    unless ($self->{"locked"}) {
-        unless ($self->_update_cid_pidf()) {
-            $ec->rethrow_error();
-            return ();
-        }
-    }
+
+    # Actual access to the data happens here
     my $ex = EDG::WP4::CCM::Element->elementExists($self, $path);
     unless (defined($ex)) {
         throw_error("EDG::WP4::CCM::Element->elementExists ($self, $path)", $ec->error);
