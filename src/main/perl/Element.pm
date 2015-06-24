@@ -572,6 +572,7 @@ Array ref of anonymous methods to convert the argument
 
 The arrayref of anonymous methods are applied as follows: 
 convert methods C<[a, b, c]> will produce C<$new = c(b(a($old)))>.
+(An exception is thrown if these methods are not code references).
 
 =cut
 

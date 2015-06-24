@@ -75,7 +75,7 @@ sub gen_dbm ($$) {
     # description
     $key = 0x40000001;
     $hash{pack("L", $key)} = "an example of string";
-    
+
     # value
     $key = 0x00000002;
     $hash{pack("L", $key)} = "a list";
@@ -120,65 +120,60 @@ $config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
 # create element with string path
 $path = "/path/to/property";
 $element = EDG::WP4::CCM::Element->new($config, $path);
-ok(defined($element) && UNIVERSAL::isa($element, "EDG::WP4::CCM::Element"),
-   "Element->new(config, string)");
+isa_ok($element, "EDG::WP4::CCM::Element",
+       "Element->new(config, string) is a EDG::WP4::CCM::Element instance");
 
 # create element with Path object
 $path = EDG::WP4::CCM::Path->new("/path/to/property");
 $element = EDG::WP4::CCM::Element->new($config, $path);
-ok(defined($element) && UNIVERSAL::isa($element, "EDG::WP4::CCM::Element"),
-   "Element->new(config, Path)");
+isa_ok($element, "EDG::WP4::CCM::Element",
+       "Element->new(config, Path) is a EDG::WP4::CCM::Element instance");
 
 # create resource with createElement()
 $path = EDG::WP4::CCM::Path->new("/path/to/resource");
 $element = EDG::WP4::CCM::Element->createElement($config, $path);
-ok(defined($element) && UNIVERSAL::isa($element, "EDG::WP4::CCM::Resource"),
-   "Element->createElement(config, Path_to_resource)");
+isa_ok($element, "EDG::WP4::CCM::Resource",
+       "Element->createElement(config, Path_to_resource) is a EDG::WP4::CCM::Resource instance");
 
 # create property with createElement()
 $path = EDG::WP4::CCM::Path->new("/path/to/property");
 $element = EDG::WP4::CCM::Element->createElement($config, $path);
-ok(defined($element) && UNIVERSAL::isa($element, "EDG::WP4::CCM::Property"),
-   "Element->createElement(config, Path_to_property)");
-
-# test getConfiguration()
-$config = $element->getConfiguration();
-$prof_dir  = $config->getConfigPath();
-ok($prof_dir eq "$cache_dir/$profile", "Element->getConfiguration()");
+isa_ok($element, "EDG::WP4::CCM::Property",
+       "Element->createElement(config, Path_to_property) is a EDG::WP4::CCM::Property instance");
 
 # test getEID()
 $eid = $element->getEID();
-ok($eid == 1, "Element->getEID()");
+is($eid, 1, "Element->getEID() 1");
 
 # test getName()
 $name = $element->getName();
-ok($name eq "property", "Element->getName()");
+is($name, "property", "Element->getName()");
 
 # test getPath()
 $path = $element->getPath();
 $string = $path->toString();
-ok($string eq "/path/to/property", "Element->getPath()");
+is($string, "/path/to/property", "Element->getPath()");
 
 # test getType()
 $type = $element->getType();
-ok($type == EDG::WP4::CCM::Element->STRING, "Element->getType()" );
+is($type, EDG::WP4::CCM::Element->STRING, "Element->getType()" );
 
 # test getDerivation()
 $derivation = $element->getDerivation();
-ok($derivation eq "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
+is($derivation, "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
    "Element->getDerivation()");
 
 # test getChecksum()
 $checksum = $element->getChecksum();
-ok($checksum eq md5_hex($derivation), "Element->getChecksum()");
+is($checksum, md5_hex($derivation), "Element->getChecksum()");
 
 # test getDescription()
 $description = $element->getDescription();
-ok($description eq "an example of string", "Element->getDescription()");
+is($description, "an example of string", "Element->getDescription()");
 
 # test getValue()
 $value = $element->getValue();
-ok($value eq "a string", "Element->getValue()");
+is($value, "a string", "Element->getValue()");
 
 # test isType()
 ok($element->isType(EDG::WP4::CCM::Element->STRING),
@@ -199,5 +194,38 @@ ok(!$element->isResource(),   "!Element->isResource()");
 
 # test isProperty()
 ok($element->isProperty(),   "Element->isProperty()");
+
+#
+# Test CCM::Configuration instance methods
+#
+
+# test getConfiguration()
+$config = $element->getConfiguration();
+$prof_dir  = $config->getConfigPath();
+is($prof_dir, "$cache_dir/$profile", "Element->getConfiguration()");
+
+$path = $element->getPath();
+
+my $preppath = $config->_prepareElement("$path");
+isa_ok($preppath, "EDG::WP4::CCM::Path",
+       "_prepareElement returns EDG::WP4::CCM::Path instance");
+is("$preppath", "$path", "_prepareElement path has expected value");
+
+ok($config->elementExists("$path"), "config->elementExists true for path $path");
+ok(! $config->elementExists("/fake$path"), "config->elementExists false for path /fake$path");
+
+my $cfg_el = $config->getElement("$path");
+my $pathdata = 'a string';
+
+isa_ok($cfg_el, "EDG::WP4::CCM::Element",
+       "config->getElement returns EDG::WP4::CCM::Element instance");
+# is a property, not a hash or list
+is($cfg_el->getValue(), $pathdata, "getVale from element instance as expected");
+is_deeply($cfg_el->getTree(), $pathdata, "getTree from element instance as expected");
+
+is($config->getValue("$path"), $pathdata, "config->getValue of $path as expected");
+# is a property, not a hash or list
+is_deeply($config->getTree("$path"), $pathdata, "config->getTree of $path as expected");
+ok(! defined($config->getTree("/fake$path")), "config->getTree of /fake$path undefined");
 
 done_testing();
