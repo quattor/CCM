@@ -111,6 +111,7 @@ Readonly::Hash my %TEXTRENDER_FORMATS => {
     yaml => {}, # No opts
     pan => { truefalse => 1, doublequote => 1},
     pancxml => { truefalse => 1, xml => 1 },
+    tabcompletion => {},
 };
 
 Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
