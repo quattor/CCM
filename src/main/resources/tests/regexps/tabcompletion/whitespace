@@ -1,0 +1,12 @@
+Whitespace tabcompletion output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+there are 15 lines of output with newline, so 16 EOL
+---
+renderpath=/
+rendermodule=tabcompletion
+contentspath=/
+unordered
+---
+\n\z
+\n ### COUNT 27
+$ ### COUNT 28
