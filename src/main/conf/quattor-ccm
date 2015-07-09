@@ -25,7 +25,7 @@ _quattor_grep_path=`_quattor_find_bin grep`
 _quattor_sed_path=`_quattor_find_bin sed`
 _quattor_ls_path=`_quattor_find_bin ls`
 
-_quattor_grep() 
+_quattor_grep()
 {
     LC_ALL=C $_quattor_grep_path $@ 2>/dev/null
     return $?
@@ -59,7 +59,7 @@ _quattor_ccm_pan_path()
     pref=$2
     # default is start from /
     # require at least one extra character in completion
-    $_quattor_grep_path -e "^${pref:-/}[^/]\+/\?\$" $_quattor_ccm_cache_root/profile.$cid/tabcompletion 2>/dev/null | $_quattor_sed_path ':a;N;$!ba;s/\n/ /g;'
+    $_quattor_grep_path -e "^${pref:-/}\(/\|[^/]\+/\?\)\$" $_quattor_ccm_cache_root/profile.$cid/tabcompletion 2>/dev/null | $_quattor_sed_path ':a;N;$!ba;s/\n/ /g;'
 }
 
 _quattor_ccm_tabcomp_cids()
@@ -76,7 +76,7 @@ _quattor_ccm_tabcomp_pan_path()
     fi
 
     COMPREPLY=( $(_quattor_ccm_pan_path $_quattor_ccm_tabcomp_active_cid ${COMP_WORDS[$COMP_CWORD]}) )
-    
+
     counter=0
     # with only one answer
     while [ ${#COMPREPLY[@]} -eq 1 ]; do
@@ -89,7 +89,7 @@ _quattor_ccm_tabcomp_pan_path()
             # assign copy of new to COMPREPLY
             COMPREPLY=(${new[@]})
         fi
-        
+
         # avoid infinite loops in this code
         let counter=$counter+1
         if [ $counter -gt 100 ]; then
@@ -99,4 +99,3 @@ _quattor_ccm_tabcomp_pan_path()
 
     return 0
 }
-
