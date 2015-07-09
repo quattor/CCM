@@ -2,6 +2,7 @@
 # ${developer-info}
 # ${author-info}
 # ${build-info}
+
 package      EDG::WP4::CCM::Fetch;
 
 =head1 NAME
@@ -35,6 +36,9 @@ use warnings;
 use Getopt::Long;
 use EDG::WP4::CCM::CCfg qw(getCfgValue @CFG_KEYS);
 use EDG::WP4::CCM::DB;
+use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
+    $CURRENT_CID_FN $LATEST_CID_FN
+    $DATA_DN $PROFILE_DIR_N);
 use CAF::Lock qw(FORCE_IF_STALE);
 use CAF::FileEditor;
 use CAF::FileWriter;
@@ -55,6 +59,7 @@ use GSSAPI;
 use JSON::XS v2.3.0 qw(decode_json encode_json);
 use Carp qw(carp confess);
 use HTTP::Message;
+use Readonly;
 
 use constant DEFAULT_GET_TIMEOUT => 30;
 
@@ -80,7 +85,8 @@ use constant ERROR             => -1;
 use parent qw(Exporter CAF::Reporter);
 
 our @EXPORT    = qw();
-our @EXPORT_OK = qw($GLOBAL_LOCK_FN $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
+our @EXPORT_OK = qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
+    $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
     ComputeChecksum NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 
 # LWP should use Net::SSL (provided with Crypt::SSLeay)
@@ -90,8 +96,7 @@ $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME}    = 0;
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-my $GLOBAL_LOCK_FN = "global.lock";
-my $FETCH_LOCK_FN  = "fetch.lock";
+Readonly our $FETCH_LOCK_FN => "fetch.lock";
 
 =item new()
 
@@ -311,8 +316,7 @@ sub download
 
     my $url = $self->{uc($type) . "_URL"};
 
-    my $cache =
-        sprintf("%s/data/%s", $self->{CACHE_ROOT}, $self->EncodeURL($url));
+    my $cache = join("/", $self->{CACHE_ROOT}, $DATA_DN, $self->EncodeURL($url));
 
     if (!-f $cache) {
         CAF::FileWriter->new($cache, log => $self)->close();
@@ -336,23 +340,25 @@ sub download
     return undef;
 }
 
+# Previous is a bit of a misnomer. This is about the "latest.cid"
 sub previous
 {
     my ($self) = @_;
 
     my ($dir, %ret);
 
-    $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/latest.cid", log => $self);
+    $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/$LATEST_CID_FN", log => $self);
 
     if ("$ret{cid}" eq '') {
         $ret{cid}->print("0\n");
     }
     $ret{cid} =~ m{^(\d+)\n?$} or die "Invalid CID: $ret{cid}";
 
-    $dir = "$self->{CACHE_ROOT}/profile.$1";
-    $ret{url} = CAF::FileEditor->new("$dir/profile.url", log => $self);
-    $ret{url}->cancel();
-    chomp($ret{url});
+    $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$1";
+    $ret{dir} = $dir;
+
+    $ret{url} = CAF::FileReader->new("$dir/profile.url", log => $self);
+    chomp($ret{url}); # this actually works
 
     $ret{context_url} = CAF::FileReader->new("$dir/context.url", log => $self);
     $ret{profile}     = CAF::FileReader->new("$dir/profile.xml", log => $self);
@@ -368,20 +374,24 @@ sub current
     $cid %= MAXPROFILECOUNTER;
     $cid =~ m{^(\d+)$} or die "Weird CID: $cid";
     $cid = $1;
-    my $dir = "$self->{CACHE_ROOT}/profile.$cid";
+    my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
     mkpath($dir, {mode => ($self->{WORLD_READABLE} ? 0755 : 0700)});
 
     my %current = (
+        dir => $dir,
         url => CAF::FileWriter->new("$dir/profile.url", log => $self),
         cid => CAF::FileWriter->new(
-            "$self->{CACHE_ROOT}/current.cid", log => $self
+            "$self->{CACHE_ROOT}/$CURRENT_CID_FN", log => $self
         ),
         profile => CAF::FileWriter->new("$dir/profile.xml", log => $self),
         eiddata => "$dir/eid2data",
         eidpath => "$dir/path2eid"
     );
+
+    # Prepare new profile/CID to become current one
     $current{cid}->print("$cid\n");
+
     $current{url}->print("$self->{PROFILE_URL}\n");
     $current{profile}->print("$profile");
     return %current;
@@ -463,9 +473,14 @@ sub fetchProfile
         $self->error("Failed to process profile for $self->{PROFILE_URL}");
         return ERROR;
     }
+
+    # Make the new profile/CID the latest.cid
     $previous{cid}->set_contents("$current{cid}");
     $previous{cid}->close();
+
+    # Make the new profile/CID the current.cid
     $current{cid}->close();
+
     return SUCCESS;
 }
 
@@ -833,36 +848,32 @@ sub enableForeignProfile()
 {
     my ($self) = @_;
 
-    $self->debug(5, "Enabling foreign profile ");
+    $self->debug(5, "Enabling foreign profile.");
 
-    # Keeping old configuration
-    my $cache_root     = $self->{"CACHE_ROOT"};
     my $tmp_dir        = $self->{"TMP_DIR"};
-    my $old_cache_root = $cache_root;
 
     return (ERROR, "temporary directory $tmp_dir does not exist")
         unless (-d "$tmp_dir");
 
+    my $cache_root     = $self->{"CACHE_ROOT"};
+
     # Check existance of required directories in temporary foreign directory
-    if (!(-d $cache_root)) {
+    unless ((-d $cache_root)) {
         $self->debug(5, "Creating directory: $cache_root");
         mkdir($cache_root, 0755)
             or return (ERROR, "can't make foreign profile dir: $cache_root: $!");
+    }
+
+    unless ((-d "$cache_root/$DATA_DN")) {
+        $self->debug(5, "Creating $cache_root/data directory ");
         mkdir("$cache_root/data", 0755)
-            or return (ERROR, "can't make foreign profile data dir: $cache_root/data: $!");
+            or return (ERROR, "can't make foreign profile data dir: $cache_root/$DATA_DN: $!");
+    }
+
+    unless ((-d "$cache_root/tmp")) {
+        $self->debug(5, "Creating $cache_root/tmp directory ");
         mkdir("$cache_root/tmp", 0755)
             or return (ERROR, "can't make foreign profile tmp dir: $cache_root/tmp: $!");
-    } else {
-        unless ((-d "$cache_root/data")) {
-            $self->debug(5, "Creating $cache_root/data directory ");
-            mkdir("$cache_root/data", 0755)
-                or return (ERROR, "can't make foreign profile data dir: $cache_root/data: $!");
-        }
-        unless ((-d "$cache_root/tmp")) {
-            $self->debug(5, "Creating $cache_root/tmp directory ");
-            mkdir("$cache_root/tmp", 0755)
-                or return (ERROR, "can't make foreign profile tmp dir: $cache_root/tmp: $!");
-        }
     }
 
     # Create global lock file

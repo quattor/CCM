@@ -13,8 +13,10 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 50;
-use EDG::WP4::CCM::Fetch;
+use Test::More tests => 58;
+use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
+    $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
+    NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(mkpath rmtree);
@@ -25,6 +27,16 @@ use LC::Exception qw(SUCCESS);
 
 
 #$CAF::Object::NoAction = 1;
+
+# Test the exported constants
+is($GLOBAL_LOCK_FN, "global.lock", "Exported GLOBAL_LOCK_FN");
+is($FETCH_LOCK_FN, "fetch.lock", "Exported FETCH_LOCK_FN");
+is($CURRENT_CID_FN, "current.cid", "Exported CURRENT_CID_FN");
+is($LATEST_CID_FN, "latest.cid", "Exported LATEST_CID_FN");
+is($DATA_DN, "data", "Exported DATA_DN");
+is(NOQUATTOR, "/etc/noquattor", "Exported NOQUATTOR");
+is(NOQUATTOR_EXITCODE, "3", "Exported NOQUATTOR_EXITCODE");
+is(NOQUATTOR_FORCE, "force-quattor", "Exported NOQUATTOR_FORCE");
 
 sub compile_profile
 {
