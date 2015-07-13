@@ -200,6 +200,12 @@ Readonly::Array our @CONFIG_OPTIONS => (
         suffix => '=s',
         HELP => 'Base url to use when the profile is relative',
     },
+
+    {
+        option => 'tabcompletion',
+        DEFAULT => 0,
+        HELP => 'Create the tabcompletion file (during profile fetch)',
+    },
 );
 
 Readonly::Array our @CFG_KEYS => sort map {$_->{option}} @CONFIG_OPTIONS;
