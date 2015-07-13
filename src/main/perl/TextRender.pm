@@ -453,7 +453,7 @@ Usage example:
     my $element = $config->getElement("/");
     my $trd = ccm_format($format, $element);
 
-    if (defined $trd->get_text());
+    if (defined $trd->get_text()) {
         print "$trd";
     } else {
         $logger->error("Failed to textrender format $format: $trd->{fail}")
