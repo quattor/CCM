@@ -13,9 +13,10 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 58;
+use Test::More tests => 63;
 use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
+    $TABCOMPLETION_FN
     NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
@@ -24,6 +25,11 @@ use CAF::Object;
 use Carp qw(croak);
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS);
+
+use Test::Quattor::TextRender::Base;
+
+my $caf_trd = mock();
+
 
 
 #$CAF::Object::NoAction = 1;
@@ -34,6 +40,7 @@ is($FETCH_LOCK_FN, "fetch.lock", "Exported FETCH_LOCK_FN");
 is($CURRENT_CID_FN, "current.cid", "Exported CURRENT_CID_FN");
 is($LATEST_CID_FN, "latest.cid", "Exported LATEST_CID_FN");
 is($DATA_DN, "data", "Exported DATA_DN");
+is($TABCOMPLETION_FN, "tabcompletion", "Exported TABCOMPLETION_FN");
 is(NOQUATTOR, "/etc/noquattor", "Exported NOQUATTOR");
 is(NOQUATTOR_EXITCODE, "3", "Exported NOQUATTOR_EXITCODE");
 is(NOQUATTOR_FORCE, "force-quattor", "Exported NOQUATTOR_FORCE");
@@ -116,12 +123,12 @@ Successful retrieves must return a CAF::FileWriter object.
 
 =cut
 
-# in case the LWP::Protocol::https can't be loaded/found, 
+# in case the LWP::Protocol::https can't be loaded/found,
 # the following test fails with
-#   Got an unexpected result while retrieving https://www.google.com: 501 
+#   Got an unexpected result while retrieving https://www.google.com: 501
 #   Protocol scheme 'https' is not supported (LWP::Protocol::https not installed)
 # explicit import to generate a clean error
-# It will also fail if Net::SSL is not installed 
+# It will also fail if Net::SSL is not installed
 # (part of package that provides perl(Crypt::SSLeay))
 # These are the requires as listed in the pom.xml file.
 use Crypt::SSLeay;
@@ -342,6 +349,32 @@ $f->{FORCE} = 0;
 is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on the same XML profile");
 is($f->{FORCE}, 0, "And the FORCE flag was not modified");
 
+=pod
+
+=head2 Test tabcompletion generation
+
+=cut
+
+is($f->{TABCOMPLETION}, 0, "tabcompletion generation off");
+
+$f->{FORCE} = 1;
+$f->{TABCOMPLETION} = 1;
+is($f->fetchProfile(), SUCCESS,
+   "fetchProfile worked correctly on the same XML profile (with tabcompletion enabled)");
+
+my %latest = $f->previous();
+
+my $tab_fn = "$latest{dir}/$TABCOMPLETION_FN";
+ok(-f $tab_fn, "tabcompletion file found");
+my $tab_fh = CAF::FileReader->new($tab_fn);
+my $tab_txt = "$tab_fh";
+$tab_txt =~ s/\s//g; # squash whitespace
+is($tab_txt,
+   "//a//a/1/a/2/a/3/b/c/d/e//e/f/g//g/1//g/1/1/g/1/2/g/2//g/2/1/g/2/2/h//h/1//h/1/a/h/1/b/h/2//h/2/a//a//a/1/a/2/a/3/b/c/d/e//e/f/g//g/1//g/1/1/g/1/2/g/2//g/2/1/g/2/2/h//h/1//h/1/a/h/1/b/h/2//h/2/a",
+   "Expected content of tabcompletion file found");
+
+$f->{TABCOMPLETION} = 0;
+$f->{FORCE} = 0;
 
 =pod
 
@@ -364,4 +397,3 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
-

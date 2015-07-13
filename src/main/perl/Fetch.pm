@@ -39,6 +39,7 @@ use EDG::WP4::CCM::DB;
 use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN
     $DATA_DN $PROFILE_DIR_N);
+use EDG::WP4::CCM::TextRender qw(ccm_format);
 use CAF::Lock qw(FORCE_IF_STALE);
 use CAF::FileEditor;
 use CAF::FileWriter;
@@ -87,6 +88,7 @@ use parent qw(Exporter CAF::Reporter);
 our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
+    $TABCOMPLETION_FN
     ComputeChecksum NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 
 # LWP should use Net::SSL (provided with Crypt::SSLeay)
@@ -97,6 +99,7 @@ $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME}    = 0;
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 Readonly our $FETCH_LOCK_FN => "fetch.lock";
+Readonly our $TABCOMPLETION_FN => "tabcompletion";
 
 =item new()
 
@@ -156,6 +159,8 @@ sub _config($)
         $ec->rethrow_error();
         return ();
     }
+
+    $self->{_CCFG} = $cfg;
 
     my @keys = qw(tmp_dir context_url);
     push(@keys, @CFG_KEYS);
@@ -366,6 +371,7 @@ sub previous
     return %ret;
 }
 
+# returns the new soon to be current CID
 sub current
 {
     my ($self, $profile, %previous) = @_;
@@ -475,13 +481,41 @@ sub fetchProfile
     }
 
     # Make the new profile/CID the latest.cid
-    $previous{cid}->set_contents("$current{cid}");
+    my $new_cid = "$current{cid}";
+
+    $previous{cid}->set_contents($new_cid);
     $previous{cid}->close();
 
     # Make the new profile/CID the current.cid
     $current{cid}->close();
 
+    # TODO do we need a different/additonal control for foreign tabcompletion
+    # (i.e. does tabcompletion on foreign profiles make any sense)
+    # Do not check return code, this is not fatal or anything.
+    # An error is logged in case of problem
+    $self->generate_tabcompletion($new_cid) if $self->{TABCOMPLETION};
+
     return SUCCESS;
+}
+
+# Generate the tabcompletion file
+sub generate_tabcompletion
+{
+    my ($self, $cid) = @_;
+
+    my $cmgr = EDG::WP4::CCM::CacheManager->new($self->{CACHE_ROOT}, $self->{_CCFG});
+    my $cfg = $cmgr->getLockedConfiguration(undef, $cid);
+    my $el = $cfg->getElement('/');
+    my $fmt = ccm_format('tabcompletion', $el);
+
+    if (defined $fmt->get_text()) {
+        my $fh = $fmt->filewriter("$cfg->{cfg_path}/$TABCOMPLETION_FN", log => $self);
+        print $fh "$fmt";
+        $fh->close();
+    } else {
+        $self->error("Failed to render tabcompletion: $fmt->{fail}")
+    }
+
 }
 
 # Stores a persistent cache in the directories defined by %cur, from a
