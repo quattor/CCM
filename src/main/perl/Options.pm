@@ -32,9 +32,15 @@ Readonly::Hash my %PATH_SELECTION_METHODS => {
     },
 };
 
+
+# Default module actions
 Readonly::Hash my %ACTIONS => {
     showcids => 'Show valid CIDs',
 };
+
+# hashref with actions that are supported via the action method
+# Default use all ACTIONS. Modify via add_actions method
+my $_actions = { %ACTIONS };
 
 =head1 NAME
 
@@ -93,7 +99,7 @@ sub app_options {
     );
 
     # Actions
-    foreach my $act (sort keys %ACTIONS) {
+    foreach my $act (sort keys %$_actions) {
         push(@options, {
              NAME => "$act",
              HELP => $PATH_SELECTION_METHODS{$act},
@@ -246,6 +252,39 @@ sub action_showcids
     return SUCCESS;
 }
 
+=item add_actions
+
+Add actions defined in hashref to the supported actions.
+
+When creating a new module derived from EDG::WP4::CCM::Options,
+add methods named "action_<something>", and add then via this method
+to the _actions hashref.
+
+This will create a commandline option "--something", if selected,
+will execute the action_<something> method.
+
+The hashref key is the action name, the value is the help text.
+
+(Returns the _actions hashref for unittesting purposes)
+
+=cut
+
+sub add_actions
+{
+    my ($self, $newactions) = @_;
+
+    while (my ($action, $help) = each %$newactions) {
+        my $method = $self->can("action_$action");
+        if($method) {
+            $_actions->{$action} = $help;
+        } else {
+            $self->warn("Not adding non-existing action $action");
+        }
+    }
+
+    return $_actions;
+}
+
 =item action
 
 Run first of the predefined actions via the action_<actionname> methods
@@ -257,7 +296,7 @@ sub action
     my $self = shift;
 
     # defined actions
-    my @acts = map {$_ if $self->option($_)} sort keys %ACTIONS;
+    my @acts = map {$_ if $self->option($_)} sort keys %$_actions;
     my $act;
 
     # very primitive for now: run first found

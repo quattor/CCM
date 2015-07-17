@@ -94,6 +94,28 @@ is_deeply($newopts->gatherPaths(),
           ],
           "Expected gatherPaths");
 
+# Test add_actions
+my $actions = $newopts->add_actions();
+my @expected = qw(showcids);
+is_deeply([sort keys %$actions], \@expected,
+          "Expected default actions");
+
+$actions = $newopts->add_actions({
+    zzz_newact => "new action",
+});
+is_deeply([sort keys %$actions], \@expected,
+          "Expected actions (action not added if method doesn't exist)");
+
+# "create" the action
+$optmock->mock('action_zzz_newact', 1);
+$actions = $newopts->add_actions({
+    zzz_newact => "new action",
+});
+push(@expected, "zzz_newact");
+is_deeply([sort keys %$actions], \@expected,
+          "Expected actions after adding newact with existing acion_ method");
+
+
 # showcids action
 my @print;
 $optmock->mock('_print', sub {shift; @print = @_;});
