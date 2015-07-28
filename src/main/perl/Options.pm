@@ -102,7 +102,7 @@ sub app_options {
     foreach my $act (sort keys %$_actions) {
         push(@options, {
              NAME => "$act",
-             HELP => $PATH_SELECTION_METHODS{$act},
+             HELP => $_actions->{$act},
              });
     }
 
@@ -192,13 +192,19 @@ sub setCCMConfig
 
 =item getCCMConfig
 
-returns the CCM configuration instance
+Returns the CCM configuration instance.
+If none exists, one is created via C<setCCMConfig> method.
+
+All arguments are passed to possible C<setCCMConfig> call.
 
 =cut
 
 sub getCCMConfig
 {
     my $self = shift;
+
+    $self->setCCMConfig(@_) if(! defined($self->{CCM_CONFIG}));
+
     return $self->{CCM_CONFIG};
 }
 
