@@ -235,6 +235,7 @@ Test the extra TT vars and methods
 =cut
 
 $el = $cfg->getElement("/");
+
 $trd = EDG::WP4::CCM::TextRender->new(
     'extravars',
     $el,
@@ -243,6 +244,8 @@ $trd = EDG::WP4::CCM::TextRender->new(
     eol => 0,
     );
 is($trd->{fail}, undef, "Fail is undefined with new variables ".($trd->{fail} || "<undef>"));
+is(ref($trd->{contents}), 'HASH',
+    "contents is a HASH reference");
 
 my $rt = Test::Quattor::RegexpTest->new(
     regexp => 'src/test/resources/rendertest/regexptest-extravars',
@@ -252,5 +255,30 @@ $rt->test();
 
 diag("$trd");
 diag explain $trd->{contents};
+
+# add additional test for scalar string
+$el = $cfg->getElement("/a");
+
+my $trd_s = EDG::WP4::CCM::TextRender->new(
+    'extravars_scalar',
+    $el,
+    includepath => getcwd()."/src/test/resources",
+    relpath => 'rendertest',
+    eol => 0,
+    );
+is($trd_s->{fail}, undef, "Fail is undefined with new variables (scalar string) ".($trd->{fail} || "<undef>"));
+is(ref($trd_s->{contents}), 'EDG::WP4::CCM::TT::Scalar',
+    "scalar contents is EDG::WP4::CCM::TT::Scalar");
+
+$rt = Test::Quattor::RegexpTest->new(
+    regexp => 'src/test/resources/rendertest/regexptest-extravars-scalar_string',
+    text => "$trd_s",
+);
+$rt->test();
+
+
+diag("$trd_s");
+diag explain $trd_s->{contents};
+
 
 done_testing;
