@@ -378,8 +378,9 @@
             <username>root</username>
             <groupname>root</groupname>
             <filemode>644</filemode>
-            <configuration>noreplace</configuration>
+            <configuration>true</configuration>
             <documentation>false</documentation>
+            <directoryIncluded>false</directoryIncluded>
             <sources>
               <source>
                 <location>${project.build.directory}/etc</location>
