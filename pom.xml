@@ -427,6 +427,18 @@
               </source>
             </sources>
           </mapping>
+          <mapping>
+            <directory>/usr/share/templates/</directory>
+            <filemode>644</filemode>
+            <username>root</username>
+            <groupname>root</groupname>
+            <sources>
+              <source>
+                <location>${project.build.directory}/share/templates/</location>
+              </source>
+            </sources>
+            <directoryIncluded>false</directoryIncluded>
+          </mapping>
         </mappings>
         <postinstallScriptlet>
           <script>pgrep ncm-cdispd &gt;/dev/null &amp;&amp; service ncm-cdispd restart || true</script>
