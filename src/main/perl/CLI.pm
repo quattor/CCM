@@ -47,7 +47,7 @@ sub app_options
 
     push(@$opts,
          {
-             NAME => 'format|F=s',
+             NAME => 'format=s',
              DEFAULT => 'pan',
              HELP => 'Select the format (avail: ' . join(', ', @CCM_FORMATS). ')',
          },
@@ -74,17 +74,26 @@ sub action_show
     return if (! defined($cfg));
 
     foreach my $path (@{$self->gatherPaths()}) {
-        next if(! $cfg->elementExists($path));
+        if(! $cfg->elementExists($path)) {
+            $self->debug(4, "action_show: no element for path $path");
+            next;
+        }
 
-        my $fmt_txt = ccm_format(
+        my $trd = ccm_format(
             $self->option('format'),
             $cfg->getElement($path),
-            )->get_text();
+            );
+        my $fmt_txt = $trd->get_text();
 
         # TODO: no fail on renderfailure?
-        return if (! defined($fmt_txt));
-
-        $self->_print($fmt_txt);
+        if(defined($fmt_txt)) {
+            $self->_print($fmt_txt);
+        } else {
+            $self->debug(3, "action_show: Renderfailure for path $path",
+                         " and format ", $self->option('format'),
+                         ": ", $trd->{fail});
+            return;
+        };
     }
 
     return SUCCESS;

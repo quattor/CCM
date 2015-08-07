@@ -33,7 +33,7 @@ my @allopts = map {$_->{NAME}} @{$cli->app_options()};
 # number of new options compared to CCM::Options
 my $newopts = 1;
 is_deeply([@allopts[-$newopts .. -1]],
-          ['format|F=s'],
+          ['format=s'],
           "Added CLI options as expected");
 
 my @actions = sort keys %{$cli->add_actions()};

@@ -88,12 +88,12 @@ sub app_options {
             # the ccm client will use the main ccm.conf from CCfg
             NAME    => "$OPTION_CFGFILE=s",
             DEFAULT => $CONFIG_FN,
-            HELP    => 'configuration file for CCM',
+            HELP    => 'Configuration file for CCM',
         },
 
         {
             NAME    => "cid=s",
-            HELP    => "set configuration CID (default 'undef' is the current CID; see CCM::CacheManager getCid for special values)",
+            HELP    => "Set configuration CID (default 'undef' is the current CID; see CCM::CacheManager getCid for special values)",
         },
 
     );
@@ -229,14 +229,15 @@ sub gatherPaths
             }
         }
     }
+    $self->debug(4, "gatherPaths ", join(",", @paths));
     return \@paths;
 }
 
-# wrapper around print (for easy unittesting)
+# wrapper around report (for easy unittesting)
 sub _print
 {
     my ($self, @args) = @_;
-    print @_;
+    $self->report(@args);
 }
 
 =item action_showcids
@@ -302,7 +303,7 @@ sub action
     my $self = shift;
 
     # defined actions
-    my @acts = map {$_ if $self->option($_)} sort keys %$_actions;
+    my @acts = grep {$self->option($_)} sort keys %$_actions;
     my $act;
 
     # very primitive for now: run first found
@@ -310,12 +311,20 @@ sub action
         $act = $1;
     }
 
+    $self->debug(5, "Selected ", ($act || "<undef>"),
+                 " from actions ", join(",", @acts));
+
     if ($act) {
         my $method = $self->can("action_$act");
-        return if(! $method);
-
-        # execute it
-        return $method->($self);
+        if($method) {
+            # execute it
+            my $res = $method->($self);
+            $self->debug(3, "Method for action $act returned undef") if (! defined($res));
+            return $res;
+        } else {
+            $self->debug(3, "No method for action $act found");
+            return;
+        }
     }
 
     # return SUCCESS if no actions selected (nothing goes wrong)
