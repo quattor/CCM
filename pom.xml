@@ -202,6 +202,8 @@
                   <argument>${project.build.directory}/doc/man/man8/ccm-purge</argument>
                   <argument>${project.build.directory}/sbin/ccm-initialise</argument>
                   <argument>${project.build.directory}/doc/man/man8/ccm-initialise</argument>
+                  <argument>${project.build.directory}/sbin/ccm</argument>
+                  <argument>${project.build.directory}/doc/man/man8/ccm</argument>
               </arguments>
               <workingDirectory>${project.build.directory}/</workingDirectory>
               <outputFile>${project.build.directory}/target/doc/man/man8</outputFile>
@@ -243,9 +245,11 @@
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-fetch" destfile="${project.build.directory}/doc/man/man8/ccm-fetch.8.gz" />
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-initialise" destfile="${project.build.directory}/doc/man/man8/ccm-initialise.8.gz" />
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-purge" destfile="${project.build.directory}/doc/man/man8/ccm-purge.8.gz" />
+                      <gzip src="${project.build.directory}/doc/man/man8/ccm" destfile="${project.build.directory}/doc/man/man8/ccm.8.gz" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-fetch" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-initialise" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-purge" />
+                      <delete file="${project.build.directory}/doc/man/man8/ccm" />
                   </tasks>
               </configuration>
           </execution>
@@ -314,6 +318,7 @@
               <source>
                 <location>${project.build.directory}/sbin</location>
                 <includes>
+                  <include>ccm</include>
                   <include>ccm-*</include>
                 </includes>
               </source>
