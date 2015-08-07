@@ -28,7 +28,7 @@ use LC::Exception qw(SUCCESS);
 
 use Test::Quattor::TextRender::Base;
 
-my $caf_trd = mock();
+my $caf_trd = mock_textrender();
 
 
 

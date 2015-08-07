@@ -10,7 +10,7 @@ use Test::Quattor::ProfileCache;
 use EDG::WP4::CCM::TextRender qw(ccm_format);
 use Test::Quattor::TextRender::Base;
 
-my $caf_trd = mock();
+my $caf_trd = mock_textrender();
 
 Readonly my $TAB_COMP => 'target/etc/quattor-ccm';
 

@@ -10,7 +10,7 @@ use EDG::WP4::CCM::Element qw(escape);
 use Test::MockModule;
 use Test::Quattor::TextRender::Base;
 
-my $caf_trd = mock();
+my $caf_trd = mock_textrender();
 
 my $optmock = Test::MockModule->new('EDG::WP4::CCM::Options');
 my @print;
