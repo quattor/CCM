@@ -99,3 +99,142 @@ _quattor_ccm_tabcomp_pan_path()
 
     return 0
 }
+
+
+# for args "a b", return longoptios string "--a --b"
+_quattor_ccm_make_long_options()
+{
+    opts=""
+    for opt in $@; do
+        opts="${opts}--$opt "
+    done
+    echo $opts
+}
+
+# sorted list of options for CCM::Options based tools
+_quattor_ccm_CCfg_options=(base_url cache_root ca_dir ca_file cert_file context dbformat debug force get_timeout json_typed keep_old key_file lock_retries lock_wait preprocessor profile profile_failover purge_time retrieve_retries retrieve_wait tabcompletion trust world_readable)
+
+# sorted list of options for CCM::Options based tools
+# (except those already in _quattor_ccm_CCfg_options)
+_quattor_ccm_Options_options=(cfgfile cid component metaconfig profpath showcids)
+
+# sorted list of options for CCM::CLI based tools
+# (except those already in _quattor_ccm_CCfg_options and _quattor_ccm_Options_options)
+_quattor_ccm_CLI_options=(format show)
+
+# generate the longoptions
+_quattor_ccm_CCfg_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]}`
+_quattor_ccm_Options_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]} ${_quattor_ccm_Options_options[@]}`
+_quattor_ccm_CLI_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]} ${_quattor_ccm_Options_options[@]} ${_quattor_ccm_CLI_options[@]}`
+
+# formats (no list, space spearated sorted string)
+_quattor_ccm_CLI_formats="json pan pancxml tabcompletion yaml"
+
+# options handlers, to be used nested
+# exit code 0 if all is fine, no further processing is required
+# The logic in the *) case is the folowing:
+#     Is $prev an option to be handled by this function?
+#     If it's not, exit/return with non-zero and let something else deal with it
+#     If it is, all possible is done.
+
+_quattor_ccm_CCfg_handle_options()
+{
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        --ca_file|--cert_file|--key_file)
+            COMPREPLY=( $(compgen -f ${cur}) )
+            return 0
+            ;;
+        --cache_root|--ca_dir)
+            COMPREPLY=( $(compgen -d ${cur}) )
+            return 0
+            ;;
+        *)
+            compgen -W "$_quattor_ccm_CCfg_longoptions" -- "$prev" > /dev/null
+            return $?
+            ;;
+    esac
+
+    # should never get here
+    return 1
+}
+
+_quattor_ccm_Options_handle_options()
+{
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        --cfgfile)
+            COMPREPLY=( $(compgen -f ${cur}) )
+            return 0
+            ;;
+        --cid)
+            _quattor_ccm_tabcomp_cids
+            return 0
+            ;;
+        --profpath)
+            _quattor_ccm_tabcomp_pan_path
+            return 0
+            ;;
+        *)
+            compgen -W "$_quattor_ccm_Options_longoptions" -- "$prev" > /dev/null
+            return $?
+            ;;
+    esac
+
+    # should never get here
+    return 1
+}
+
+_quattor_ccm_CLI_handle_options()
+{
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        --format)
+            COMPREPLY=($(compgen -W "$_quattor_ccm_CLI_formats" -- ${cur}))
+            return 0
+            ;;
+        *)
+            compgen -W "$_quattor_ccm_CLI_longoptions" -- "$prev" > /dev/null
+            return $?
+            ;;
+    esac
+
+    # should never get here
+    return 1
+}
+
+# tabcompletion for CCM::CLI utils, e.g. ccm script
+_quattor_ccm_CLI()
+{
+    local cur prev
+
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # test CCfg options
+    _quattor_ccm_CCfg_handle_options && return 0
+
+    # test Options options
+    _quattor_ccm_Options_handle_options && return 0
+
+    # test CLI options
+    _quattor_ccm_CLI_handle_options && return 0
+
+    COMPREPLY=($(compgen -W "$_quattor_ccm_CLI_longoptions" -- ${cur}))
+    return 0
+}
+
+#
+# Usage: complete bindings
+#
+complete -F _quattor_ccm_CLI ccm
