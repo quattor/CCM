@@ -510,7 +510,6 @@ sub generate_tabcompletion
 
     if (defined $fmt->get_text()) {
         my $fh = $fmt->filewriter("$cfg->{cfg_path}/$TABCOMPLETION_FN", log => $self);
-        print $fh "$fmt";
         $fh->close();
     } else {
         $self->error("Failed to render tabcompletion: $fmt->{fail}")

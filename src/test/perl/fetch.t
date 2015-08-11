@@ -370,7 +370,7 @@ my $tab_fh = CAF::FileReader->new($tab_fn);
 my $tab_txt = "$tab_fh";
 $tab_txt =~ s/\s//g; # squash whitespace
 is($tab_txt,
-   "//a//a/1/a/2/a/3/b/c/d/e//e/f/g//g/1//g/1/1/g/1/2/g/2//g/2/1/g/2/2/h//h/1//h/1/a/h/1/b/h/2//h/2/a//a//a/1/a/2/a/3/b/c/d/e//e/f/g//g/1//g/1/1/g/1/2/g/2//g/2/1/g/2/2/h//h/1//h/1/a/h/1/b/h/2//h/2/a",
+   "//a//a/1/a/2/a/3/b/c/d/e//e/f/g//g/1//g/1/1/g/1/2/g/2//g/2/1/g/2/2/h//h/1//h/1/a/h/1/b/h/2//h/2/a",
    "Expected content of tabcompletion file found");
 
 $f->{TABCOMPLETION} = 0;
