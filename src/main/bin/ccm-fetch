@@ -119,6 +119,9 @@ sub app_options {
           { NAME   => 'json_typed',
             HELP   => 'Extract typed data from JSON profiles' },
 
+          { NAME   => 'tabcompletion',
+            HELP   => 'Create the tabcompletion file (during profile fetch)' },
+
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
             HELP    => 'Turn on debugging messages' });
