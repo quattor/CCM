@@ -1,0 +1,2 @@
+[% path %][% path.size ? "/" : "" %]
+[% # the only newline, one per element -%]

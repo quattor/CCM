@@ -1,0 +1,34 @@
+Base tabcompletion output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+---
+renderpath=/
+rendermodule=tabcompletion
+contentspath=/
+---
+^/$
+^/data/$
+^/data/hash/$
+^/data/hash/x$
+^/data/listtruefalse/$
+^/data/listtruefalse/1$
+^/data/listtruefalse/2$
+^/data/one$
+^/data/oneandahalf$
+^/special/$
+^/special/escaped_20data$
+^/special/not_escaped_d$
+^/z/$
+^/z/deep/$
+^/z/deep/a$
+^/z/deep/list/$
+^/z/deep/list/1/$
+^/z/deep/list/1/a/$
+^/z/deep/list/1/a/b$
+^/z/deep/list/2/$
+^/z/deep/list/2/atest$
+^/z/deep/list/2/btest$
+^/z/deep/list/2/ctest$
+^/z/deep/list/2/dtest$
+^/z/deep/list/2/etest$
+^/z/deep/list/3/$
+^/z/deep/list/3/fake$

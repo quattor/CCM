@@ -20,7 +20,7 @@ use XML::Parser;
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
 is_deeply(\@CCM_FORMATS, 
-          [qw(json pan pancxml yaml)],
+          [qw(json pan pancxml tabcompletion yaml)],
           "Expected supported CCM formats"
     );
 
@@ -107,5 +107,22 @@ $txt =~ s/\s//g; # squash all whitespace
 is($txt,
    '<?xmlversion="1.0"encoding="UTF-8"?><nlistformat="pan"name="profile"><longname="a">1</long><doublename="b">1.5</double><nlistname="c"><booleanname="f">false</boolean><booleanname="t">true</boolean></nlist><stringname="d">test</string></nlist>',
    "pancxml format");
+
+=pod
+
+=head2 tabcompletion
+
+Test tabcompletion format (more tests in TT testsuite)
+
+=cut
+
+$el = $cfg->getElement("/");
+$fmt = ccm_format('tabcompletion', $el);
+isa_ok($fmt, 'EDG::WP4::CCM::TextRender', "a EDG::WP4::CCM::TextRender instance");
+$txt = "$fmt";
+$txt =~ s/\s//g; # squash all whitespace
+is($txt,
+   '//a/b/c//c/f/c/t/d',
+   "tabcompletion format");
 
 done_testing();

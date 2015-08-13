@@ -1,0 +1,3 @@
+[%-     type = data.get_type -%]
+"[% path %]" = [% data %]; # [% type FILTER lower %]
+[% # the only newline, one per element -%]

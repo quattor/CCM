@@ -111,6 +111,7 @@ Readonly::Hash my %TEXTRENDER_FORMATS => {
     yaml => {}, # No opts
     pan => { truefalse => 1, doublequote => 1},
     pancxml => { truefalse => 1, xml => 1 },
+    tabcompletion => {},
 };
 
 Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
@@ -452,7 +453,7 @@ Usage example:
     my $element = $config->getElement("/");
     my $trd = ccm_format($format, $element);
 
-    if (defined $trd->get_text());
+    if (defined $trd->get_text()) {
         print "$trd";
     } else {
         $logger->error("Failed to textrender format $format: $trd->{fail}")

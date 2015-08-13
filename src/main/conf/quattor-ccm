@@ -1,0 +1,101 @@
+# ${license-info}
+# ${developer-info}
+# ${author-info}
+# ${build-info}
+
+#
+# Set of tabcompletion function that can be used by other tools to access CCM data
+#
+
+# absolute path to tools, e.g. no fancy ls aliases and unnecessary PATH lookups
+_quattor_find_bin()
+{
+    local dir bin fn
+    fn="$1"
+    # use the "slow" sed here
+    for dir in `echo $PATH | sed 's/:/ /g'`; do
+        bin="$dir/$fn"
+        if [ -x "$bin" ]; then
+            echo $bin
+            break
+        fi
+    done
+}
+_quattor_grep_path=`_quattor_find_bin grep`
+_quattor_sed_path=`_quattor_find_bin sed`
+_quattor_ls_path=`_quattor_find_bin ls`
+
+_quattor_grep()
+{
+    LC_ALL=C $_quattor_grep_path $@ 2>/dev/null
+    return $?
+}
+
+_quattor_ccm_conf=${QUATTOR_CCM_CONF:-/etc/ccm.conf}
+
+_quattor_ccm_cache_root=`_quattor_grep cache_root $_quattor_ccm_conf | $_quattor_sed_path "s/^.*\s\+//"`
+
+_quattor_ccm_get_cids()
+{
+    # always check the ${1} separately (e.g. in case it's the only one and $1 is not empty
+    $_quattor_ls_path -d $_quattor_ccm_cache_root/profile.${1} $_quattor_ccm_cache_root/profile.${1}[0-9]* 2>/dev/null | $_quattor_sed_path 's/[^ ]*\/profile.//g;:a;N;$!ba;s/\n/ /g;s/[^ ]*\/profile.//g'
+}
+
+_quattor_ccm_get_latest_cid()
+{
+    cat $_quattor_ccm_cache_root/latest.cid 2>/dev/null
+}
+
+_quattor_ccm_get_current_cid()
+{
+    cat $_quattor_ccm_cache_root/current.cid 2>/dev/null
+}
+
+# return a different path the 2nd argument
+_quattor_ccm_pan_path()
+{
+    local cid pref
+    cid=$1
+    pref=$2
+    # default is start from /
+    # require at least one extra character in completion
+    $_quattor_grep_path -e "^${pref:-/}\(/\|[^/]\+/\?\)\$" $_quattor_ccm_cache_root/profile.$cid/tabcompletion 2>/dev/null | $_quattor_sed_path ':a;N;$!ba;s/\n/ /g;'
+}
+
+_quattor_ccm_tabcomp_cids()
+{
+    COMPREPLY=( $(_quattor_ccm_get_cids ${COMP_WORDS[$COMP_CWORD]}) )
+    return 0
+}
+
+_quattor_ccm_tabcomp_pan_path()
+{
+    local cid cur prev
+    if [ -z "$_quattor_ccm_tabcomp_active_cid" ]; then
+        _quattor_ccm_tabcomp_active_cid=`_quattor_ccm_get_current_cid`
+    fi
+
+    COMPREPLY=( $(_quattor_ccm_pan_path $_quattor_ccm_tabcomp_active_cid ${COMP_WORDS[$COMP_CWORD]}) )
+
+    counter=0
+    # with only one answer
+    while [ ${#COMPREPLY[@]} -eq 1 ]; do
+        # try again
+        new=( $(_quattor_ccm_pan_path $_quattor_ccm_tabcomp_active_cid ${COMPREPLY[0]}) )
+        # _quattor_ccm_pan_path looks for a different path
+        if [ ${#new[@]} -eq 0 ]; then
+            break
+        else
+            # assign copy of new to COMPREPLY
+            COMPREPLY=(${new[@]})
+        fi
+
+        # avoid infinite loops in this code
+        let counter=$counter+1
+        if [ $counter -gt 100 ]; then
+            return 1
+        fi
+    done
+
+    return 0
+}
