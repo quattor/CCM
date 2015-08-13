@@ -12,7 +12,7 @@ _quattor_find_bin()
 {
     local dir bin fn
     fn="$1"
-    # use the "slow" sed here
+
     for dir in `echo $PATH | sed 's/:/ /g'`; do
         bin="$dir/$fn"
         if [ -x "$bin" ]; then

@@ -54,7 +54,7 @@ ccm [I<OPTIONS>]
 
 =head1 OPTIONS
 
-For the list op options, check the C<EDG::WP4::CCM::CLI> and
-C<EDG::WP4::CCM::Options> documentation.
+For the list of options, check the L<EDG::WP4::CCM::CLI> and
+L<EDG::WP4::CCM::Options> documentation.
 
 =cut

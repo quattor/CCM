@@ -281,8 +281,7 @@ sub add_actions
     my ($self, $newactions) = @_;
 
     while (my ($action, $help) = each %$newactions) {
-        my $method = $self->can("action_$action");
-        if($method) {
+        if($self->can("action_$action")) {
             $_actions->{$action} = $help;
         } else {
             $self->warn("Not adding non-existing action $action");
