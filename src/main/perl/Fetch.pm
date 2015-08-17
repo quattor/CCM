@@ -329,7 +329,11 @@ sub download
 
     my @st = stat($cache) or die "Unable to stat profile cache: $cache ($!)";
 
-    foreach my $u (($url, $self->{uc($type) . "_FAILOVER"})) {
+    my @urls = ($url);
+    push @urls, split(/,/, $self->{uc($type) . "_FAILOVER"})
+        if defined($self->{uc($type) . "_FAILOVER"});
+
+    foreach my $u (@urls) {
         next if (!defined($u));
         for my $i (1 .. $self->{RETRIEVE_RETRIES}) {
             my $rt = $self->retrieve($u, $cache, $st[ST_MTIME]);

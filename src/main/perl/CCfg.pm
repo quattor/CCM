@@ -62,7 +62,7 @@ Readonly::Array our @CONFIG_OPTIONS => (
     {
         option => 'profile_failover',
         suffix => '=s',
-        HELP => 'URL of profile to fetch when --profile is not available',
+        HELP => 'URL of profile to fetch when --profile is not available, can be comma separated',
     },
 
     {
