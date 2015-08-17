@@ -410,10 +410,23 @@ sub make_contents
     }
 
 
-
     # Make the full contents available (e.g. to access the root keys)
-    # Must be a copy
-    $extra_vars->{contents} = { %$contents };
+    # Must be a level-1 copy (can't touch the values, see e.g. json/yaml)
+    # TODO: investigate Storable dclone (but will it make unmodified copies of the values?)
+    # TODO: handle scalars converted to array(ref)s?
+    $ref = ref($contents);
+    if(! $ref) {
+        # This can be a scalar (e.g. regular getTree on scalar element)
+        $extra_vars->{contents} = $contents;
+    } elsif ($ref eq "HASH") {
+        $extra_vars->{contents} = { %$contents };
+    } elsif ($ref eq "ARRAY") {
+        $extra_vars->{contents} = [ @$contents ];
+    } else {
+        # Typically a scalar that is converted to another instance
+        $extra_vars->{contents} = bless { %$contents }, $ref;
+    }
+
 
     # Add extra_vars to the CCM namespace
     # To be used in TT as follows: [% CCM.is_hash(myvar) ? "hooray" %]
