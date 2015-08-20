@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+# ${license-info}
+# ${developer-info}
+# ${author-info}
+# ${build-info}
+
+use strict;
+use warnings;
+
+# required for CAF
+BEGIN {
+    unshift(@INC, '/usr/lib/perl');
+}
+
+# minimal Path
+$ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
+# fix umask
+umask (022);
+
+use LC::Exception qw(throw_error);
+use EDG::WP4::CCM::CLI;
+
+our ($this_app);
+
+# unbuffer STDOUT & STDERR
+autoflush STDOUT 1;
+autoflush STDERR 1;
+
+# initialise main class
+my $cmdtxt = "$0 with args ".join(',', @ARGV);
+unless ($this_app = EDG::WP4::CCM::CLI->new($0, @ARGV)) {
+    throw_error("Cannot start application ($cmdtxt).");
+    exit (1);
+}
+$this_app->debug(5, "Application started: $cmdtxt.");
+
+
+my $ret = $this_app->action();
+
+exit($ret ? 0 : 1);
+
+=head1 NAME
+
+ccm - CCM commandline interface
+
+=head1 DESCRIPTION
+
+ccm is a commandline interface to the CCM DB on the node.
+It can be used to e.g. query information in various output formats.
+
+=head1 SYNOPSIS
+
+ccm [I<OPTIONS>]
+
+=head1 OPTIONS
+
+For the list of options, check the L<EDG::WP4::CCM::CLI> and
+L<EDG::WP4::CCM::Options> documentation.
+
+=cut

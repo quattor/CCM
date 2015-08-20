@@ -32,9 +32,15 @@ Readonly::Hash my %PATH_SELECTION_METHODS => {
     },
 };
 
+
+# Default module actions
 Readonly::Hash my %ACTIONS => {
     showcids => 'Show valid CIDs',
 };
+
+# hashref with actions that are supported via the action method
+# Default use all ACTIONS. Modify via add_actions method
+my $_actions = { %ACTIONS };
 
 =head1 NAME
 
@@ -82,21 +88,21 @@ sub app_options {
             # the ccm client will use the main ccm.conf from CCfg
             NAME    => "$OPTION_CFGFILE=s",
             DEFAULT => $CONFIG_FN,
-            HELP    => 'configuration file for CCM',
+            HELP    => 'Configuration file for CCM',
         },
 
         {
             NAME    => "cid=s",
-            HELP    => "set configuration CID (default 'undef' is the current CID; see CCM::CacheManager getCid for special values)",
+            HELP    => "Set configuration CID (default 'undef' is the current CID; see CCM::CacheManager getCid for special values)",
         },
 
     );
 
     # Actions
-    foreach my $act (sort keys %ACTIONS) {
+    foreach my $act (sort keys %$_actions) {
         push(@options, {
              NAME => "$act",
-             HELP => $PATH_SELECTION_METHODS{$act},
+             HELP => $_actions->{$act},
              });
     }
 
@@ -186,13 +192,19 @@ sub setCCMConfig
 
 =item getCCMConfig
 
-returns the CCM configuration instance
+Returns the CCM configuration instance.
+If none exists, one is created via C<setCCMConfig> method.
+
+All arguments are passed to possible C<setCCMConfig> call.
 
 =cut
 
 sub getCCMConfig
 {
     my $self = shift;
+
+    $self->setCCMConfig(@_) if(! defined($self->{CCM_CONFIG}));
+
     return $self->{CCM_CONFIG};
 }
 
@@ -217,14 +229,15 @@ sub gatherPaths
             }
         }
     }
+    $self->debug(4, "gatherPaths ", join(",", @paths));
     return \@paths;
 }
 
-# wrapper around print (for easy unittesting)
+# wrapper around report (for easy unittesting)
 sub _print
 {
     my ($self, @args) = @_;
-    print @_;
+    $self->report(@args);
 }
 
 =item action_showcids
@@ -246,6 +259,38 @@ sub action_showcids
     return SUCCESS;
 }
 
+=item add_actions
+
+Add actions defined in hashref to the supported actions.
+
+When creating a new module derived from EDG::WP4::CCM::Options,
+add methods named "action_<something>", and add then via this method
+to the _actions hashref.
+
+This will create a commandline option "--something", if selected,
+will execute the action_<something> method.
+
+The hashref key is the action name, the value is the help text.
+
+(Returns the _actions hashref for unittesting purposes)
+
+=cut
+
+sub add_actions
+{
+    my ($self, $newactions) = @_;
+
+    while (my ($action, $help) = each %$newactions) {
+        if($self->can("action_$action")) {
+            $_actions->{$action} = $help;
+        } else {
+            $self->warn("Not adding non-existing action $action");
+        }
+    }
+
+    return $_actions;
+}
+
 =item action
 
 Run first of the predefined actions via the action_<actionname> methods
@@ -257,7 +302,7 @@ sub action
     my $self = shift;
 
     # defined actions
-    my @acts = map {$_ if $self->option($_)} sort keys %ACTIONS;
+    my @acts = grep {$self->option($_)} sort keys %$_actions;
     my $act;
 
     # very primitive for now: run first found
@@ -265,12 +310,20 @@ sub action
         $act = $1;
     }
 
+    $self->debug(5, "Selected ", ($act || "<undef>"),
+                 " from actions ", join(",", @acts));
+
     if ($act) {
         my $method = $self->can("action_$act");
-        return if(! $method);
-
-        # execute it
-        return $method->($self);
+        if($method) {
+            # execute it
+            my $res = $method->($self);
+            $self->debug(3, "Method for action $act returned undef") if (! defined($res));
+            return $res;
+        } else {
+            $self->debug(3, "No method for action $act found");
+            return;
+        }
     }
 
     # return SUCCESS if no actions selected (nothing goes wrong)

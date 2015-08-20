@@ -26,7 +26,7 @@ is_deeply(\@CCM_FORMATS,
 
 my $cfg = get_config_for_profile("format");
 
-my $caf_trd = mock();
+my $caf_trd = mock_textrender();
 my $log = Test::Quattor::Object->new();
 
 
