@@ -137,7 +137,7 @@ use LWP::Protocol::https;
 note("Testing profile retrieval");
 my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
 ok($pf, "Something got returned");
-$pf->cancel();
+$pf->cancel() if defined($pf);
 
 my $specialchars = "http://securedserver?parameter1=foo&parameter=foo%20bar";
 $f->setProfileURL($specialchars);
