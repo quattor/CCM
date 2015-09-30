@@ -28,6 +28,25 @@ my $ec = LC::Exception::Context->new->will_store_errors;
 
 # test the resolveTags  method
 is(EDG::WP4::CCM::CCfg::_resolveTags("a"),       "a",     "_resolveTags(a)");
+
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST__'),   $host,   '_resolveTags(__HOST__)');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__DOMAIN__'), $domain, '_resolveTags(__DOMAIN__)');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST____DOMAIN__'), $host . $domain,
+    '_resolveTags(__HOST____DOMAIN__)');
+is(
+    EDG::WP4::CCM::CCfg::_resolveTags('__HOST__host__DOMAIN__domain'),
+    $host . "host" . $domain . "domain",
+    '_resolveTags(__HOST__host__DOMAIN__domain)'
+);
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST____DOMAIN____HOST____DOMAIN__'),
+    "$host$domain$host$domain", '_resolveTags(__HOST____DOMAIN____HOST____DOMAIN__)');
+is(
+    EDG::WP4::CCM::CCfg::_resolveTags(':__HOST__/__DOMAIN__/__HOST__/__DOMAIN__'),
+    ":$host/$domain/$host/$domain",
+    '_resolveTags(:__HOST__/__DOMAIN__/__HOST__/__DOMAIN__)'
+);
+
+# deprecated $host / $domain
 is(EDG::WP4::CCM::CCfg::_resolveTags('$host'),   $host,   '_resolveTags($host)');
 is(EDG::WP4::CCM::CCfg::_resolveTags('$domain'), $domain, '_resolveTags($domain)');
 is(EDG::WP4::CCM::CCfg::_resolveTags('$host$domain'), $host . $domain,
