@@ -1,0 +1,41 @@
+Value test for CCM/general module
+---
+renderpath=/
+rendermodule=general
+contentspath=/
+---
+^<"dict_level0">$
+^\s{4}list_level1 l1_value_el0$
+^\s{4}list_level1 l1_value_el1$
+^\s{4}<"list_level1b">$
+^\s{8}<"l1_dict_el2">$
+^\s{12}ll1_list ll1_el0$
+^\s{12}ll1_list ll1_el1$
+^\s{12}ll1_name1 ll1_value1$
+^\s{8}</"l1_dict_el2">$
+^\s{8}<"level2">$
+^\s{12}list_level2 l2_value_el0$
+^\s{12}list_level2 l2_value_el1$
+^\s{12}<"list_level2b">$
+^\s{16}<"l2_dict_el2">$
+^\s{20}ll2_list ll2_el0$
+^\s{20}ll2_list ll2_el1$
+^\s{20}ll2_name1 ll2_value1$
+^\s{16}</"l2_dict_el2">$
+^\s{12}</"list_level2b">$
+^\s{12}name_level2 value_level2$
+^\s{8}</"level2">$
+^\s{4}</"list_level1b">$
+^\s{4}name_level1 value_level1$
+^</"dict_level0">$
+^list_level0 l0_value_el0$
+^list_level0 l0_value_el1$
+^<"list_level0b">$
+^\s{4}<"l0_dict_el2">$
+^\s{8}ll0_list ll0_el0$
+^\s{8}ll0_list ll0_el1$
+^\s{8}ll0_name1 ll0_value1$
+^\s{4}</"l0_dict_el2">$
+^</"list_level0b">$
+^name_level0 value_level0$
+^nameb_level0 valueb_level0$

@@ -16,7 +16,10 @@ use Readonly;
 use Test::Quattor qw(textrender);
 use EDG::WP4::CCM::TextRender;
 use Test::Quattor::RegexpTest;
+use Test::Quattor::TextRender::Base;
 use Cwd;
+
+use Config::General;
 
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
@@ -280,5 +283,52 @@ $rt->test();
 diag("$trd_s");
 diag explain $trd_s->{contents};
 
+=pod
+
+=head2 general alias
+
+Test general as alias for CCM/general, validate C<Config::General> format
+
+=cut
+
+my $caf_trd = mock_textrender();
+
+
+my $contents = {
+    'name_level0' => 'scalar_level0',
+    'level1' => {
+        'name_level1' => 'scalar_level1',
+        'name_level2' => [
+            'scalar_element0',
+            'scalar_element1',
+            ]
+        },
+    "level2 space", {
+        'more' => 'values',
+        'name2_level2' => [
+            { 'l2_more' => 'l2 values'},
+            { 'l2_moreb' => 'l2_moreb'},
+            ]
+        },
+};
+
+$trd = EDG::WP4::CCM::TextRender->new('general', $contents);
+is($trd->{module}, 'general', 'module general is alias for CCM/general (relative module name ok)');
+is($trd->{relpath}, 'CCM', 'module general is alias for CCM/general (relpath ok)');
+ok($trd->{method_is_tt}, "method_is_tt is true for module general");
+
+my $txt = "$trd";
+$txt =~ s/\s+//g; # squash whitespace
+# the correctnes is verified in detail in the TT unittests
+is($txt,
+   '<"level1">name_level1scalar_level1name_level2scalar_element0name_level2scalar_element1</"level1"><"level2space">morevalues<"name2_level2">l2_morel2values</"name2_level2"><"name2_level2">l2_morebl2_moreb</"name2_level2"></"level2space">name_level0scalar_level0',
+   "general / CCM/general module rendered correctly");
+
+# No error logging in the module
+ok(! exists($trd->{fail}), "No errors logged anywhere");
+
+my %cg_cfg = Config::General->new(-String => "$trd")->getall();
+is_deeply(\%cg_cfg, $contents, "Correctly rendered valid Config::General");
+diag explain \%cg_cfg;
 
 done_testing;
