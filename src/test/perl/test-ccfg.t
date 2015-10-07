@@ -27,23 +27,41 @@ my $ccfgconfig = getcwd() . "/src/main/conf/ccm.conf";
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 # test the resolveTags  method
-is(EDG::WP4::CCM::CCfg::_resolveTags("a"),       "a",     "_resolveTags(a)");
-is(EDG::WP4::CCM::CCfg::_resolveTags('$host'),   $host,   '_resolveTags($host)');
-is(EDG::WP4::CCM::CCfg::_resolveTags('$domain'), $domain, '_resolveTags($domain)');
+is(EDG::WP4::CCM::CCfg::_resolveTags("a"), "a",
+   "_resolveTags(a) returned (unexpanded) a");
+
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST__'), $host,
+   '_resolveTags(__HOST__) correctly expanded __HOST__');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__DOMAIN__'), $domain,
+   '_resolveTags(__DOMAIN__) correctly expanded __DOMAIN__');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST____DOMAIN__'), $host . $domain,
+    '_resolveTags(__HOST____DOMAIN__) correctly expanded __HOST__ followed by __DOMAIN__');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST__host__DOMAIN__domain'),
+   $host . "host" . $domain . "domain",
+   '_resolveTags(__HOST__host__DOMAIN__domain) correctly expanded __HOST__ followed by __DOMAIN__ with some letters in between');
+is(EDG::WP4::CCM::CCfg::_resolveTags('__HOST____DOMAIN____HOST____DOMAIN__'),
+    "$host$domain$host$domain",
+   '_resolveTags(__HOST____DOMAIN____HOST____DOMAIN__) correctly expanded __HOST__ followed by __DOMAIN__ followed by __HOST__ followed by __DOMAIN__');
+
+is(EDG::WP4::CCM::CCfg::_resolveTags(':__HOST__/__DOMAIN__/__HOST__/__DOMAIN__'),
+   ":$host/$domain/$host/$domain",
+   '_resolveTags(:__HOST__/__DOMAIN__/__HOST__/__DOMAIN__) correctly expanded __HOST__ followed by __DOMAIN__ followed by __HOST__ followed by __DOMAIN__ separated by /');
+
+# deprecated $host / $domain
+is(EDG::WP4::CCM::CCfg::_resolveTags('$host'), $host,
+   '_resolveTags($host) correctly expanded $host');
+is(EDG::WP4::CCM::CCfg::_resolveTags('$domain'), $domain,
+   '_resolveTags($domain) correctly expanded $domain');
 is(EDG::WP4::CCM::CCfg::_resolveTags('$host$domain'), $host . $domain,
-    '_resolveTags($host$domain)');
-is(
-    EDG::WP4::CCM::CCfg::_resolveTags('$hosthost$domaindomain'),
-    $host . "host" . $domain . "domain",
-    '_resolveTags($hosthost$domaindomain)'
-);
+    '_resolveTags($host$domain) correctly expanded $host forllowed by $domain');
+is(EDG::WP4::CCM::CCfg::_resolveTags('$hosthost$domaindomain'),
+   $host . "host" . $domain . "domain",
+   '_resolveTags($hosthost$domaindomain) correctly expanded $host followed by $domain with some letters in between');
 is(EDG::WP4::CCM::CCfg::_resolveTags('$host$domain$host$domain'),
-    "$host$domain$host$domain", '_resolveTags($host$domain$host$domain)');
-is(
-    EDG::WP4::CCM::CCfg::_resolveTags(':$host/$domain/$host/$domain'),
-    ":$host/$domain/$host/$domain",
-    '_resolveTags(:$host/$domain/$host/$domain)'
-);
+    "$host$domain$host$domain", '_resolveTags($host$domain$host$domain) correctly expanded $host followed by $domain followed by $host followed by $domain');
+is(EDG::WP4::CCM::CCfg::_resolveTags(':$host/$domain/$host/$domain'),
+   ":$host/$domain/$host/$domain",
+   '_resolveTags(:$host/$domain/$host/$domain) correctly expanded $host followed by $domain followed by $host followed by $domain separated by /');
 
 
 # unittest to check empty/non-existing/invalid keyword

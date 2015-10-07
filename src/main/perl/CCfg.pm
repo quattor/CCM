@@ -227,25 +227,35 @@ my $cfg = {%DEFAULT_CFG};
 # even when re-reading the config file
 my $force_cfg = {};
 
+
+# We allow magic variable/keyword expansion in the config file
+#   __HOST__ (deprecated: $host): replaced by hostname() value
+#   __DOMAIN__ (deprecated: $domain): replaced by hostdomain() value
+# (The $host and $domain is deprecated as it can interfere with
+# CAF::Application / Appconfig variable expansion)
 sub _resolveTags ($)
 {
     my ($s) = @_;
-    if ($s =~ /\$host/) {
+    my $host_pattern = '(__HOST__|\$host)';
+    if ($s =~ /$host_pattern/) {
         my $h = hostname();
         unless ($h) {
             throw_error("could not resolve the hostname!");
             return ();
         }
         $h = lc($h);    # use lowercase for host.
-        $s =~ s/\$host/$h/g;
+        $s =~ s/$host_pattern/$h/g;
     }
-    if ($s =~ /\$domain/) {
+
+
+    my $domain_pattern = '(__DOMAIN__|\$domain)';
+    if ($s =~ /$domain_pattern/) {
         my $d = hostdomain();
         unless ($d) {
             throw_error("could not resolve the domainname!");
             return ();
         }
-        $s =~ s/\$domain/$d/g;
+        $s =~ s/$domain_pattern/$d/g;
     }
     return $s;
 }
