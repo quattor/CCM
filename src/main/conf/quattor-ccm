@@ -128,7 +128,7 @@ _quattor_ccm_Options_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_
 _quattor_ccm_CLI_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]} ${_quattor_ccm_Options_options[@]} ${_quattor_ccm_CLI_options[@]}`
 
 # formats (no list, space spearated sorted string)
-_quattor_ccm_CLI_formats="json pan pancxml tabcompletion yaml"
+_quattor_ccm_CLI_formats="json pan pancxml query tabcompletion yaml"
 
 # options handlers, to be used nested
 # exit code 0 if all is fine, no further processing is required

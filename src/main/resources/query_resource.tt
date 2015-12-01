@@ -1,0 +1,3 @@
+[%-# 2 space indendatation * depth, +- and element name
+    space = ' ' -%]
+[% space.repeat(2 * path.size) %]+-[% path.last %]

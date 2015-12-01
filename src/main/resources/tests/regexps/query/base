@@ -1,0 +1,8 @@
+Base query output test from the /
+contentspath is not relevant, uses CCM.contents anyway
+---
+renderpath=/
+rendermodule=query
+contentspath=/
+---
+NOMATCH
