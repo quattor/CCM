@@ -94,9 +94,31 @@ is_deeply($newopts->gatherPaths(),
           ],
           "Expected gatherPaths");
 
+# Default action
+ok(! $newopts->default_action(), "No default action by default");
+ok(! $newopts->default_action('notanaction'), "Default action not modifed for unsupported action");
+ok(! $newopts->default_action(), "Still no default action");
+
+# a valid action (is check a bit later by itself)
+my @expected = qw(showcids);
+
+is($newopts->default_action($expected[0]), $expected[0],
+   "Set default action and returns the default value");
+is($newopts->default_action(), $expected[0],
+   "Expected default action");
+ok(! $newopts->default_action(''), "Unset default action");
+ok(! $newopts->default_action(), "Default action unset");
+
+# default action is called when no action is set
+my $called = 0;
+# return undef, as if nothing was configured
+$optmock->mock('default_action', sub {$called++; return});
+ok($newopts->action(),
+   'action returns success even when no actions (or default action) is defined');
+is($called, 1, 'Default action called when no action defined');
+
 # Test add_actions
 my $actions = $newopts->add_actions();
-my @expected = qw(showcids);
 is_deeply([sort keys %$actions], \@expected,
           "Expected default actions");
 
@@ -114,7 +136,6 @@ $actions = $newopts->add_actions({
 push(@expected, "zzz_newact");
 is_deeply([sort keys %$actions], \@expected,
           "Expected actions after adding newact with existing acion_ method");
-
 
 # showcids action
 my @print;

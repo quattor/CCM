@@ -41,6 +41,8 @@ Readonly::Hash my %ACTIONS => {
 # hashref with actions that are supported via the action method
 # Default use all ACTIONS. Modify via add_actions method
 my $_actions = { %ACTIONS };
+# Default action
+my $_default_action;
 
 =head1 NAME
 
@@ -240,6 +242,32 @@ sub _print
     $self->report(@args);
 }
 
+=item default_action
+
+Set the default action C<$action> if action is defined
+(use empty string to unset the default value).
+
+Returns the default action.
+
+=cut
+
+sub default_action
+{
+    my ($self, $action) = @_;
+
+    if(defined($action)) {
+        if(($action eq '') || $self->can("action_$action")) {
+            $self->verbose("Set default action to $action.");
+            $_default_action = $action;
+        } else {
+            $self->warn("Not adding non-existing action $action as default action.");
+        }
+    }
+
+    return $_default_action;
+}
+
+
 =item action_showcids
 
 the showcids action prints all sorted profile CIDs as comma-separated list
@@ -310,8 +338,17 @@ sub action
         $act = $1;
     }
 
-    $self->debug(5, "Selected ", ($act || "<undef>"),
-                 " from actions ", join(",", @acts));
+    if ($act) {
+        $self->debug(5, "Selected ", ($act || "<undef>"),
+                     " from actions ", join(",", @acts));
+    } else {
+        $act = $self->default_action();
+        if ($act) {
+            $self->debug(5, "Selected default action $act");
+        } else {
+            $self->verbose("No action set. Doin nothing")
+        }
+    }
 
     if ($act) {
         my $method = $self->can("action_$act");
