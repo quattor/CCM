@@ -139,7 +139,58 @@ Initialize the process object. Arguments:
 
 =item module
 
-The rendering module to use (see C<CAF::TextRender> for details).
+The rendering module to use (see L<CAF::TextRender> for details).
+
+CCM provides following additional builtin modules:
+
+=over
+
+=item general
+
+using TT to render a C<Config::General> compatible file.
+(This is an alias for the C<CCM/general> TT module).
+
+Contents is a hashref (does not require a C<Element> instance),
+with key/value pairs generated according to
+the basetype of the value as follows:
+
+=over
+
+=item scalar
+
+converted in a single line
+    <key> <value>
+
+=item arrayref of scalars
+
+converted in multiple lines as follows
+    <key> <scalar element0>
+    <key> <scalar element1>
+    ...
+
+=item hashref
+
+generates a block with format
+    <"key">
+        <recursive rendering of the value>
+    </"key">
+
+=item arrayref of hashref
+
+generates series of blocks
+    <"key">
+        <recursive rendering of the element0>
+    </"key">
+    <"key">
+        <recursive rendering of the element1>
+    </"key">
+    ...
+
+=back
+
+(Whitespace in the block name is enforced with double quotes.)
+
+=back
 
 =item contents
 
@@ -262,6 +313,11 @@ sub _initialize
         $self->{elementopts} = {};
     }
 
+    # The general alias
+    if ($module eq 'general' && ! defined($opts{relpath})) {
+        $opts{relpath} = 'CCM';
+    }
+
     return $self->SUPER::_initialize($module, $contents, %opts);
 }
 
@@ -322,7 +378,6 @@ sub _make_predefined_options
             push(@{$opts{convert_boolean}}, $ELEMENT_CONVERT{upper});
         }
     }
-
 
     if ($elopts->{doublequote}) {
         push(@{$opts{convert_string}}, $ELEMENT_CONVERT{doublequote_string});
