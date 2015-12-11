@@ -130,6 +130,14 @@ Returns undef if it cannot fetch the profile due to a network error,
 
 =cut
 
+sub _cleanup
+{
+    my ($current, $previous) = @_;
+    $current->{cid}->cancel()     if $current->{cid};
+    $previous->{cid}->cancel()    if $previous->{cid};
+    $current->{profile}->cancel() if $current->{profile};
+}
+
 sub fetchProfile
 {
 
@@ -173,9 +181,7 @@ sub fetchProfile
 
     local $SIG{__DIE__} = sub {
         warn "Cleaning on die";
-        $current{cid}->cancel()     if $current{cid};
-        $previous{cid}->cancel()    if $previous{cid};
-        $current{profile}->cancel() if $current{profile};
+        $self->_cleanup(\%current, \%previous);
         confess(@_);
     };
     $self->verbose("Downloaded new profile");
@@ -183,6 +189,7 @@ sub fetchProfile
     %current = $self->current($profile, %previous);
     if ($self->process_profile("$profile", %current) == $ERROR) {
         $self->error("Failed to process profile for $self->{PROFILE_URL}");
+        $self->_cleanup(\%current, \%previous);
         return $ERROR;
     }
 
