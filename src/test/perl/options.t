@@ -84,8 +84,10 @@ is($cfg, $newopts->{CCM_CONFIG}, "getCCMConfig returns expected instance");
 is_deeply($cfg->getTree("/"), {a => 'b'}, "Read CCM returns correct data");
 
 # gatherPaths: option name sorted
-is_deeply($newopts->gatherPaths(),
-          ['/software/components/mycomponent', # component
+is_deeply($newopts->gatherPaths('/initialpath/1', '/initialpath/2'),
+          ['/initialpath/1',
+           '/initialpath/2',
+           '/software/components/mycomponent', # component
            '/software/components/othercomponent',
            '/software/components/metaconfig/services/'. escape('/etc/special') ."/contents", # metaconfig
            '/software/components/metaconfig/services/'. escape('/etc/veryspecial') . "/contents",

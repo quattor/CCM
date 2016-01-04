@@ -214,13 +214,20 @@ sub getCCMConfig
 
 Retrun arrayref of selected profile path (via the PATH_SELECTION_METHODS)
 
+All options are treated as initial paths.
+
 =cut
 
 sub gatherPaths
 {
-    my $self = shift;
+    my ($self, @paths) = @_;
 
-    my @paths;
+    if (@paths) {
+        $self->debug(4, 'Initial paths passed: ', join(',', @paths));
+    } else {
+        $self->debug(4, 'No initial paths');
+    }
+
     # profile path selection options
     foreach my $sel (sort keys %PATH_SELECTION_METHODS) {
         my $values = $self->option($sel);
