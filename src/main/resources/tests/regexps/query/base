@@ -4,5 +4,32 @@ contentspath is not relevant, uses CCM.contents anyway
 renderpath=/
 rendermodule=query
 contentspath=/
+element=truefalse,singlequote
 ---
-NOMATCH
+^\+-/$
+^\s{2}\+-data$
+^\s{4}\+-hash$
+^\s{6}\$ x : 'OK'$
+^\s{4}\+-listtruefalse$
+^\s{6}\$ 0 : true$
+^\s{6}\$ 1 : false$
+^\s{4}\$ one : 1$
+^\s{4}\$ oneandahalf : 1.5$
+^\s{2}\+-special$
+^\s{4}\$ escaped_20data : 'escaped data'$
+^\s{4}\$ not_escaped_d : 'not_escaped_d'$
+^\s{2}\+-z$
+^\s{4}\+-deep$
+^\s{6}\$ a : 'a'$
+^\s{6}\+-list$
+^\s{8}\+-0$
+^\s{10}\+-a$
+^\s{12}\$ b : 'a'$
+^\s{8}\+-1$
+^\s{10}\$ atest : 1$
+^\s{10}\$ btest : 1.5$
+^\s{10}\$ ctest : true$
+^\s{10}\$ dtest : false$
+^\s{10}\$ etest : 'ok'$
+^\s{8}\+-2$
+^\s{10}\$ fake : 1$
