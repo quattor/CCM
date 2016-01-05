@@ -28,6 +28,7 @@ our @db_backends;
 
 BEGIN {
     foreach my $db (qw(DB_File CDB_File GDBM_File)) {
+        local $@;
         eval " require $db; $db->import ";
         push(@db_backends, $db) unless $@;
     }
@@ -167,6 +168,7 @@ sub process_profile
     my ($self, $profile, %cur) = @_;
 
     my ($class, $t) = $self->choose_interpreter($profile);
+    local $@;
     eval "require $class";
     die "Couldn't load interpreter $class: $@" if $@;
 
@@ -209,6 +211,7 @@ sub choose_interpreter
     }
 
     my $xmlParser = new XML::Parser(Style => 'Tree');
+    local $@;
     $tree = eval {$xmlParser->parse($profile);};
     die("XML parse of profile failed: $@") if ($@);
 
