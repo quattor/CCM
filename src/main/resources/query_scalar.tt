@@ -1,3 +1,5 @@
 [%-# 2 space indentation * depth, $, type, element name, single quoted value
-    space = ' ' -%]
-[% space.repeat(2 * path.size) %]$ [% path.last -%] : [% data %]
+    space = ' ';
+    offset = path.size - CCM.element.path.size -%]
+[%-# scalar path is not unescaped -%] 
+[% space.repeat(2 * offset) %]$ [% path.last -%] : [% data %]

@@ -52,7 +52,7 @@ is_deeply($cli_show->{profpaths}, [], 'Empty arrayref with no non-option command
 is_deeply($cli_show->gatherPaths(@{$cli_show->{profpaths}}), ['/a'], 'Expected selected paths');
 
 ok($cli_show->action(), "action with show and default format returns success");
-is_deeply(\@print, [["  \$ a : 'b'\n"],], "show with default format gives correct result");
+is_deeply(\@print, [["\$ a : 'b'\n"],], "show with default format gives correct result");
 
 # default options, non-option args
 @print = ();
@@ -62,7 +62,7 @@ is_deeply($cli_show->{profpaths}, ['/a'], 'non-option commandline options as pro
 is_deeply($cli_show->gatherPaths(@{$cli_show->{profpaths}}), ['/a'], 'Expected selected paths with non-opt args');
 
 ok($cli_show->action(), "default action/format and non-opt args returns success");
-is_deeply(\@print, [["  \$ a : 'b'\n"],], "default action/format and non-opt args gives correct result");
+is_deeply(\@print, [["\$ a : 'b'\n"],], "default action/format and non-opt args gives correct result");
 
 
 done_testing();
