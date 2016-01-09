@@ -230,7 +230,15 @@ _quattor_ccm_CLI()
     # test CLI options
     _quattor_ccm_CLI_handle_options && return 0
 
-    COMPREPLY=($(compgen -W "$_quattor_ccm_CLI_longoptions" -- ${cur}))
+    # Certainly not an option at this point
+    # Default is action show with profpath
+    if [[ $cur == /* ]]; then
+       _quattor_ccm_tabcomp_pan_path
+       return 0
+    fi
+
+    # No option or profpath to handle: show a / for default action with profpath or any option
+    COMPREPLY=($(compgen -W "/ $_quattor_ccm_CLI_longoptions" -- ${cur}))
     return 0
 }
 
