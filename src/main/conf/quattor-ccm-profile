@@ -1,0 +1,14 @@
+# Load quattor-ccm bash completion
+#  - interactive session only
+#  - any user with low enough UID (like admins)
+if [[ $- == *i* ]]; then
+    # do not load if already loaded
+    if [ -z "$quattor_ccm_tabcompletion_loaded" ]; then
+	minuid=9999
+	myid=`id -u 2>/dev/null`
+	if [ ${myid:-0} -lt $minuid ]; then
+	    source /etc/bash_completion.d/quattor-ccm
+	    quattor_ccm_tabcompletion_loaded=1
+	fi
+    fi
+fi
