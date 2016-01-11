@@ -27,6 +27,7 @@ sub _is_valid_xml
     # XML::Parser->parse uses 'die' with invalid xml.
     my $tag = "really_really_random_tag";
 
+    local $@;
     my $t = eval {$_xml_parser->parse("<$tag>$txt</$tag>");};
     return $@ ? 0 : 1;
 }

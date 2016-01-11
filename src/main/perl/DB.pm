@@ -36,6 +36,7 @@ our @db_backends;
 
 BEGIN {
     foreach my $db (qw(DB_File CDB_File GDBM_File)) {
+        local $@;
         eval " require $db; $db->import ";
         push(@db_backends, $db) unless $@;
     }
@@ -140,6 +141,7 @@ sub _CDB_File
     my $dbformat = 'CDB_File';
     my $err;
     if ($mode eq 'write') {
+        local $@;
         eval {
             unlink("$file.tmp");    # ignore return code; we don't care
             CDB_File::create(%$hashref, $file, "$file.tmp");
