@@ -99,6 +99,11 @@ sub action_show
             $self->option('format'),
             $cfg->getElement($path),
             );
+        if(! defined($trd)) {
+            $self->debug(3, "action_show: invalid format ", $self->option('format'));
+            return;
+        }
+
         my $fmt_txt = $trd->get_text();
 
         # TODO: no fail on renderfailure?
