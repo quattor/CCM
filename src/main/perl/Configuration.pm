@@ -366,7 +366,7 @@ sub isLocked
 # It converts the C<path> argument to a CCM::Path instance
 # (if needed) and updates the CID to the latest available
 # if the configuration is not locked.
-# Returns a CCM:Path instance on success
+# Returns a CCM::Path instance on success
 # (or undef in case of problem).
 sub _prepareElement
 {

@@ -312,9 +312,15 @@ sub getConfiguration
 
 =item getUnlockedConfiguration ($cred; $cid)
 
-Returns unlocked Configuration object. If the $cid parameter is
-ommited, the most recently downloaded configuration (when the cache
-was not globally locked) is returned.
+This method is deprecated in favour of C<getConfiguration>.
+
+Returns unlocked Configuration object.
+
+Unless the object is locked explicitly later by calling the C<lock> method,
+C<CCM::Element>s will always be fetched from the current CID,
+not the CID passed via C<$cid>. (If the $cid parameter is omitted,
+the most recently downloaded configuration (when the cache
+was not globally locked) is returned.)
 
 Security and $cred parameter meaning are not defined.
 
@@ -333,8 +339,10 @@ sub getUnlockedConfiguration
 
 =item getLockedConfiguration ($cred; $cid)
 
+This method is deprecated in favour of C<getConfiguration>.
+
 Returns locked Configuration object. If the $cid parameter is
-ommited, the most recently downloaded configuration (when the cache
+omitted, the most recently downloaded configuration (when the cache
 was not globally locked) is returned.
 
 Security and $cred parameter meaning are not defined.
@@ -354,10 +362,15 @@ sub getLockedConfiguration
 
 =item getAnonymousConfiguration ($cred; $cid)
 
+This method is deprecated in favour of C<getConfiguration>.
+
 Returns unlocked anonymous Configuration object.
-If the $cid parameter is ommited, the most recently
-downloaded configuration (when the cache
-was not globally locked) is returned.
+
+Unless the object is locked explicitly later by calling the C<lock> method,
+C<CCM::Element>s will always be fetched from the current CID,
+not the CID passed via C<$cid>. (If the $cid parameter is omitted,
+the most recently downloaded configuration (when the cache
+was not globally locked) is returned.)
 
 Security and $cred parameter meaning are not defined.
 
