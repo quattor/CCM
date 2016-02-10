@@ -37,7 +37,7 @@ to manipulate absolute paths
 
 =cut
 
-my $ec = LC::Exception::Context->new->will_store_errors;
+our $ec = LC::Exception::Context->new->will_store_errors;
 
 =item new ($path)
 

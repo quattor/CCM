@@ -47,7 +47,7 @@ Module provides the Configuration class, to manipulate confgurations.
 
 =cut
 
-my $ec = LC::Exception::Context->new->will_store_errors;
+our $ec = LC::Exception::Context->new->will_store_errors;
 
 =item new
 
@@ -464,12 +464,25 @@ sub elementExists
     return $ex;
 }
 
+# Handle failures. Stores the error message and
+# returns undef. All failures should use 'return $self->fail("message");'.
+# No error logging should occur in this module.
+# Based on CAF::Object->fail
+sub fail
+{
+    my ($self, @messages) = @_;
+    $self->{fail} = join('', map {defined($_) ? $_ : '<undef>'} @messages);
+    return;
+}
+
+
 =item getTree ($path)
 
 returns C<getTree> of the element identified by C<$path>.
 Any other optional arguments are passed to C<getTree>.
 
-If the path does not exist, undef is returned.
+If the path does not exist, undef is returned. (Any error
+reason is set as the C<fail> attribute and the error is ignored.)
 
 =cut
 
@@ -477,12 +490,21 @@ sub getTree
 {
     my ($self, $path, @args) = @_;
 
-    return if (! $self->elementExists($path));
+    my $res;
+    if ($self->elementExists($path)) {
+        my $el = $self->getElement($path);
+        if ($el) {
+            $res = $el->getTree(@args);
+        }
+    }
 
-    my $el = $self->getElement($path);
-    return if(! $el);
+    if ($ec->error()) {
+        my $reason = $ec->error()->reason();
+        $ec->ignore_error();
+        return $self->fail($reason);
+    }
 
-    return $el->getTree(@args);
+    return $res;
 }
 
 =pod
