@@ -27,7 +27,7 @@ use LC::Exception qw(SUCCESS throw_error);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-sub _config($)
+sub _config
 {
     my ($self, $cfg, $param) = @_;
 
@@ -74,7 +74,7 @@ sub _config($)
 #
 
 # Set Cache Root directory
-sub setCacheRoot($)
+sub setCacheRoot
 {
     my ($self, $val) = @_;
     throw_error("directory does not exist: $val") unless (-d $val);
@@ -83,7 +83,7 @@ sub setCacheRoot($)
 }
 
 # Set preprocessor application
-sub setPreprocessor($)
+sub setPreprocessor
 {
     my ($self, $val) = @_;
     throw_error("file does not exist or not executable: $val")
@@ -93,7 +93,7 @@ sub setPreprocessor($)
 }
 
 # Set CA directory
-sub setCADir($)
+sub setCADir
 {
     my ($self, $val) = @_;
     throw_error("CA directory does not exist: $val") unless (-d $val);
@@ -102,7 +102,7 @@ sub setCADir($)
 }
 
 # Set CA files
-sub setCAFile($)
+sub setCAFile
 {
     my ($self, $val) = @_;
     throw_error("CA file does not exist: $val") unless (-r $val);
@@ -111,7 +111,7 @@ sub setCAFile($)
 }
 
 # Set Key files path
-sub setKeyFile($)
+sub setKeyFile
 {
     my ($self, $val) = @_;
     throw_error("Key file does not exist: $val") unless (-r $val);
@@ -119,7 +119,7 @@ sub setKeyFile($)
     return SUCCESS;
 }
 
-sub setCertFile($)
+sub setCertFile
 {
     my ($self, $val) = @_;
     throw_error("cert_file does not exist: $val") unless (-r $val);
@@ -127,13 +127,13 @@ sub setCertFile($)
     return SUCCESS;
 }
 
-sub setConfig(;$)
+sub setConfig
 {
     my ($self, $val) = @_;
     $self->_config($val);
 }
 
-sub setProfileURL($)
+sub setProfileURL
 {
     my ($self, $prof) = @_;
     chomp($prof);
@@ -155,14 +155,14 @@ sub setProfileURL($)
     return SUCCESS;
 }
 
-sub setContext($)
+sub setContext
 {
     my ($self, $val) = @_;
     $self->{"CONTEXT_URL"} = $val;
     return SUCCESS;
 }
 
-sub setContextTime($)
+sub setContextTime
 {
     my ($self, $val) = @_;
     throw_error("Context time should be natural number: $val")
@@ -171,7 +171,7 @@ sub setContextTime($)
     return SUCCESS;
 }
 
-sub setContextnTime($)
+sub setContextnTime
 {
     my ($self, $val) = @_;
     throw_error("Context time should be natural number: $val")
@@ -180,7 +180,7 @@ sub setContextnTime($)
     return SUCCESS;
 }
 
-sub setProfilenTime($)
+sub setProfilenTime
 {
     my ($self, $val) = @_;
     throw_error("Profile time should be natural number: $val")
@@ -189,7 +189,7 @@ sub setProfilenTime($)
     return SUCCESS;
 }
 
-sub setWorldReadable($)
+sub setWorldReadable
 {
     my ($self, $val) = @_;
     throw_error("World readable option should be natural number: $val")
@@ -198,7 +198,7 @@ sub setWorldReadable($)
     return SUCCESS;
 }
 
-sub setGroupReadable($)
+sub setGroupReadable
 {
     my ($self, $val) = @_;
     throw_error("Group readable option should be valid groupname: $val")
@@ -214,7 +214,7 @@ notification time then only the profile will be downloaded
 
 =cut
 
-sub setNotificationTime($)
+sub setNotificationTime
 {
     my ($self, $val) = @_;
     throw_error("Notification time should be natural number: $val")
@@ -229,7 +229,7 @@ Define timeout after which profile fetch will be terminated.
 
 =cut
 
-sub setTimeout($)
+sub setTimeout
 {
     my ($self, $val) = @_;
     throw_error("Timeout should be natural number: $val")
@@ -238,7 +238,7 @@ sub setTimeout($)
     return SUCCESS;
 }
 
-sub setForce($)
+sub setForce
 {
     my ($self, $val) = @_;
     throw_error("Force should be natural number: $val")
@@ -253,26 +253,26 @@ Define failover profile url
 
 =cut
 
-sub setProfileFailover($)
+sub setProfileFailover
 {
     my ($self, $val) = @_;
     $self->{"PROFILE_FAILOVER"} = $val;
     return SUCCESS;
 }
 
-sub getCacheRoot($)
+sub getCacheRoot
 {
     my ($self) = @_;
     return $self->{"CACHE_ROOT"};
 }
 
-sub getProfileURL($)
+sub getProfileURL
 {
     my ($self) = @_;
     return $self->{"PROFILE_URL"};
 }
 
-sub getForce($)
+sub getForce
 {
     my ($self) = @_;
     return $self->{"FORCE"};

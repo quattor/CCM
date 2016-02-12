@@ -239,7 +239,7 @@ my $force_cfg = {};
 #   __DOMAIN__ (deprecated: $domain): replaced by hostdomain() value
 # (The $host and $domain is deprecated as it can interfere with
 # CAF::Application / Appconfig variable expansion)
-sub _resolveTags ($)
+sub _resolveTags
 {
     my ($s) = @_;
     my $host_pattern = '(__HOST__|\$host)';
@@ -269,7 +269,7 @@ sub _resolveTags ($)
 # This format is "<key> <value>" and is readable by AppConfig
 # But lots of AppConfig file format features
 # are not supported with this reader.
-sub _readConfigFile ($)
+sub _readConfigFile
 {
     my ($fn) = @_;
 
@@ -359,7 +359,7 @@ returns a value of the configuration parameter identified by $key.
 
 =cut
 
-sub getCfgValue ($)
+sub getCfgValue
 {
     my ($key) = @_;
     return ($cfg->{$key});

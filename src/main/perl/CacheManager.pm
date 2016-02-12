@@ -448,7 +448,7 @@ sub isLocked
 # _encodeUrl ($url)
 #
 
-sub _encodeUrl ($)
+sub _encodeUrl
 {
     my ($url) = @_;
     my $eu = encode_base64($url, "");

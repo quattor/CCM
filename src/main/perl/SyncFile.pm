@@ -132,7 +132,7 @@ get file name
 
 =cut
 
-sub get_file_name ()
+sub get_file_name
 {    #T
     my ($self) = @_;
     return $self->{"file_name"};
@@ -145,7 +145,7 @@ file
 
 =cut
 
-sub new ($$$)
+sub new
 {    #T
     my ($class, $file_name, $wait, $retries) = @_;
     my $self = {

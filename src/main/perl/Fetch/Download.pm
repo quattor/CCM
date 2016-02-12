@@ -178,7 +178,7 @@ sub download
     return undef;
 }
 
-sub Base64Encode ($)
+sub Base64Encode
 {
 
     # Uses MIME::Base64 -- with no breaking result into lines.
@@ -187,7 +187,7 @@ sub Base64Encode ($)
     return encode_base64($_[0], '');
 }
 
-sub Base64Decode ($)
+sub Base64Decode
 {
 
     # Need to catch warnings from MIME::Base64's decode function.
@@ -207,7 +207,7 @@ sub Base64Decode ($)
     }
 }
 
-sub Gunzip ($)
+sub Gunzip
 {
 
     # Returns undef on failure.
@@ -222,7 +222,7 @@ sub Gunzip ($)
     }
 }
 
-sub Base64UscoreEncode ($)
+sub Base64UscoreEncode
 {
 
     # base64, then with "/" -> "_"
@@ -234,7 +234,7 @@ sub Base64UscoreEncode ($)
     return $in;
 }
 
-sub Base64UscoreDecode ($)
+sub Base64UscoreDecode
 {
 
     my ($self, $in) = @_;

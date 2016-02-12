@@ -234,7 +234,7 @@ sub choose_interpreter
     }
 }
 
-sub ComputeChecksum ($)
+sub ComputeChecksum
 {
 
     # Compute the node profile checksum attribute.
@@ -353,7 +353,7 @@ sub MakeDatabase
 
 # Perform operations required to store foreign profiles.
 
-sub enableForeignProfile()
+sub enableForeignProfile
 {
     my ($self) = @_;
 

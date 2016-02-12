@@ -145,7 +145,7 @@ sub getConfigPath
 # return CacheManager
 #
 
-sub getCacheManager ()
+sub getCacheManager
 {
     my ($self) = @_;
     return $self->{"cache_manager"};
@@ -213,7 +213,7 @@ sub _create_pid_file
 # given cid drops to zero. it updates %cid_to_number
 #
 
-sub _remove_pid_file ()
+sub _remove_pid_file
 {    #T (indirectly)
     my ($self, $cid) = @_;
     unless (defined($cid)) {
@@ -238,7 +238,7 @@ sub _remove_pid_file ()
 # sub creates empty file with $file_name name
 #
 
-sub _touch_file ($)
+sub _touch_file
 {    #T
     my ($file_name) = @_;
     my $fh = CAF::FileWriter->new($file_name);
