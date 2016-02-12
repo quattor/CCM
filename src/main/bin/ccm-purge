@@ -1,27 +1,18 @@
 #!/usr/bin/perl -w
+# ${license-info}
+# ${developer-info}
+# ${author-info}
+# ${build-info}
 
-#
-# ccm-purge
-#
-# $Id: ccm-purge.cin,v 1.4 2006/11/23 14:28:23 gcancio Exp $
-#
-# Copyright (c) 2003 EU DataGrid.
-# For license conditions see http://www.eu-datagrid.org/license.html
-#
-
-#
 # Beginning sequence for EDG initialization
-#
 BEGIN {
-
     # use perl libs in /usr/lib/perl
     unshift(@INC, '/usr/lib/perl');
-    unshift(@INC,'/opt/edg/lib/perl');
-
 }
 
 
 use strict;
+use warnings;
 use Getopt::Long;
 use Digest::MD5 qw(md5_hex);
 use Errno qw(ESRCH EPERM);
@@ -54,10 +45,8 @@ my ($Tolerant);
 # Perl warnings could be transformed into fatal errors
 $SIG{__WARN__} = sub { $Tolerant ? warn $_[0] :  die $_[0] };
 
-#######################################################################
-sub Warn ($) {
-#######################################################################
-
+sub Warn
+{
     my $msg = $_[0];
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [WARN] %s",
@@ -65,10 +54,9 @@ sub Warn ($) {
     print STDERR $msg . "\n";
 }
 
-#######################################################################
-sub Info ($) {
-#######################################################################
 
+sub Info
+{
     my $msg = shift;
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [INFO] %s",
@@ -85,8 +73,8 @@ sub Info ($) {
 # Open the file given as parameter and read a profile CID number,
 # checking the proper CID format.
 #
-sub read_cid($) {
-
+sub read_cid
+{
     my ($filename) = @_;
     my ($id);
 
@@ -97,7 +85,6 @@ sub read_cid($) {
     close(FILE);
 
     return($id);
-
 }
 
 #
@@ -111,8 +98,8 @@ sub read_cid($) {
 #   - get list of available profiles
 #   - get list of cached URLs
 #
-sub init() {
-
+sub init
+{
     my (@url_list);
     my ($ccm_conf);
 
@@ -163,7 +150,6 @@ sub init() {
     close(DIR);
 
     return;
-
 }
 
 #
@@ -174,8 +160,8 @@ sub init() {
 # For each active.pid file, it checks if the processes is
 # running, and if not, remove the file.
 #
-sub clean_profile($) {
-
+sub clean_profile
+{
     my ($profile) = @_;
     my ($active_pid, $file);
 
@@ -212,7 +198,6 @@ sub clean_profile($) {
     close(DIR);
 
     return;
-
 }
 
 #
@@ -220,8 +205,8 @@ sub clean_profile($) {
 #
 # Given a profile, return the number of active.pid files
 #
-sub num_active_pids($) {
-
+sub num_active_pids
+{
     my ($profile) = @_;
     my (@files, $n_files);
 
@@ -232,7 +217,6 @@ sub num_active_pids($) {
     close(DIR);
 
     return($n_files);
-
 }
 
 #
@@ -240,8 +224,8 @@ sub num_active_pids($) {
 #
 # Read from file an URL.
 #
-sub read_url($) {
-
+sub read_url
+{
     my ($filename) = @_;
     my $url;
 
@@ -251,7 +235,6 @@ sub read_url($) {
     close(FILE);
 
     return($url);
-
 }
 
 #
@@ -264,8 +247,8 @@ sub read_url($) {
 #   - URL stored at context.url
 #   - all URLs stored in eid2data.db recods of type 'fetch'
 #
-sub save_active_urls($) {
-
+sub save_active_urls
+{
     my ($profile) = @_;
 
     my ($url, $md5, %hash, $key, $ukey);
@@ -300,7 +283,6 @@ sub save_active_urls($) {
 
     untie(%hash);
     return;
-
 }
 
 #
@@ -308,8 +290,8 @@ sub save_active_urls($) {
 #
 # Clean up temporary directory
 #
-sub clean_temp_dir() {
-
+sub clean_temp_dir
+{
     my ($dir);
     my ($mod_time, $curr_time);
 
@@ -330,7 +312,6 @@ sub clean_temp_dir() {
 
     close(DIR);
     return;
-
 }
 
 #
@@ -344,8 +325,8 @@ sub clean_temp_dir() {
 # then remove the profile.
 # Finally, remove unused URLs files, and temporary files.
 #
-sub main() {
-
+sub main
+{
     my ($profile, $prof_cid);
     my ($mod_time, $curr_time);
     my ($url);
@@ -384,7 +365,6 @@ sub main() {
     clean_temp_dir();
 
     return;
-
 }
 
 init();
@@ -427,14 +407,5 @@ found, if this option is specified, the program will continue even if
 small errors are detected
 
 =back
-
-=head1 AUTHOR
-
-Rafael A. Garcia Leiva <angel.leiva@uam.es>
-Universidad Autonoma de Madrid
-
-=head1 VERSION
-
-$Id: ccm-purge.cin,v 1.4 2006/11/23 14:28:23 gcancio Exp $
 
 =cut
