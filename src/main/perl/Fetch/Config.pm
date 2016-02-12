@@ -198,6 +198,15 @@ sub setWorldReadable($)
     return SUCCESS;
 }
 
+sub setGroupReadable($)
+{
+    my ($self, $val) = @_;
+    throw_error("Group readable option should be valid groupname: $val")
+        unless (defined(getgrnam($val)));
+    $self->{"GROUP_READABLE"} = $val;
+    return SUCCESS;
+}
+
 =item setNotificationTime()
 
 Define notification time, if profile modification time is greater than

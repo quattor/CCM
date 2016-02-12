@@ -92,6 +92,12 @@ Readonly::Array our @CONFIG_OPTIONS => (
     },
 
     {
+        option => 'group_readable',
+        suffix => '=s',
+        HELP    => 'Group readable profile (value is the groupname)',
+    },
+
+    {
         # TODO: ccm-fetch has default 1
         option => 'world_readable',
         suffix => '=i',

@@ -121,7 +121,19 @@ sub current
     $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
-    mkpath($dir, {mode => ($self->{WORLD_READABLE} ? 0755 : 0700)});
+    my $opts = {
+        mode => ($self->{WORLD_READABLE} ? 0755 : 0700),
+    };
+
+    my $grp = $self->{GROUP_READABLE};
+    if (defined($grp)) {
+        die "Invalid group name for group_readable $grp" if(! defined(getgrnam($grp)));
+        $opts->{mode} = 0750;
+        $opts->{group} = $grp;
+    };
+
+    # mkpath returns the created directories, croaks on fatal errors
+    mkpath($dir, $opts);
 
     my %current = (
         dir => $dir,

@@ -52,12 +52,14 @@ sub Config
     EDG::WP4::CCM::CCfg::initCfg(shift);
 
     $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
+    $group_readable = EDG::WP4::CCM::CCfg::getCfgValue('group_readable');
     $world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
 }
 
 
 # Main program
 
+# validate options
 Quit("usage: cache-initialise [OPTIONS]
   -d, --debug          turn on debugging
   --config=FILE        location of fetch config file (for cache root)")
@@ -71,23 +73,30 @@ Config($config);
 rmtree($cache_root, 0, 0);
 
 # make directory structure
-if ($world_readable) {
-    my $ok = mkdir $cache_root, 0755;
-    die "Can't create $cache_root: $!\n" unless $ok;
-    mkdir "$cache_root/data", 0755;
-    die "Can't create $cache_root/data: $!\n" unless $ok;
-    mkdir "$cache_root/tmp", 0755;
-    die "Can't create $cache_root/tmp: $!\n" unless $ok;
-} else {
-    my $ok = mkdir $cache_root, 0700;
-    die "Can't create $cache_root: $!\n" unless $ok;
-    mkdir "$cache_root/data", 0700;
-    die "Can't create $cache_root/data: $!\n" unless $ok;
-    mkdir "$cache_root/tmp", 0700;
-    die "Can't create $cache_root/tmp: $!\n" unless $ok;
-    # make sure files are created so only root can see them
-    umask(077);
-}
+my $owner = 0;
+my $group = 0;
+my $mode = 0700;
+my $mask = 077;
+
+if ($group_readable) {
+    $mode = 0750;
+    $mask = 027;
+    $group = getgrnam($group_readable);
+    if(! defined) {
+        Quit("Invalid group name for group_readable $group_readable");
+    };
+} elsif ($world_readable) {
+    $mode = 0755;
+};
+
+my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
+foreach my $path (@paths) {
+    my $ok = mkdir $cache_root, $mode;
+    die "Can't create $path: $!\n" unless $ok;
+};
+
+# make sure files are created so only root can see them
+umask($mask) if $mask;
 
 
 # make lock files

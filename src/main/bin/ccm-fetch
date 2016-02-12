@@ -66,6 +66,9 @@ sub app_options {
             DEFAULT => '30',
             HELP    => 'Timeout in seconds for HTTP GET operation' },
 
+          { NAME    => 'group_readable=s',
+            HELP    => 'Group readable profile (value is the groupname)' },
+
           { NAME    => 'world_readable=i',
             DEFAULT => '0',
             HELP    => 'World readable profile flag 1/0' },
@@ -246,9 +249,16 @@ $fetch->setPreprocessor($this_app->option("preprocessor"))
 $fetch->setCacheRoot($this_app->option("cache_root"))
 		if defined $this_app->option("cache_root");
 
-# set world readable flag
-$fetch->setWorldReadable($this_app->option("world_readable"))
-		if defined $this_app->option("world_readable");
+# set group/world readable flag
+if (defined $this_app->option("group_readable")) {
+    $fetch->setWorldReadable($this_app->option("group_readable"));
+    if ($this_app->option("world_readable")) {
+        $this_app->info("group_readable set, not setting world_readable");
+    };
+} else {
+    $fetch->setWorldReadable($this_app->option("world_readable"))
+        if defined $this_app->option("world_readable");
+};
 
 # we no longer set profile notification time
 # since we always want to get something later than what we
@@ -417,10 +427,21 @@ File containing a bundle of trusted CA certificates for use with HTTPS.
 Directory containing trusted CA certificates for use with HTTPS. Hash
 symlinks are needed.
 
+=item group_readable
+
+Group readable profiles (value is the groupname).
+If set with valid groupname, profiles will be
+stored on local disk with in directory with 750 permissions and the
+the groupname as group (still owned by root).
+
+When group_readable is set, world_readable is ignored.
+
 =item world_readable
 
 World readable profiles flag (1/0). If true profiles will be
-stored on local disk with 755 permissions, if false with 700.
+stored on local disk in directory with 755 permissions, if false with 700.
+
+When group_readable is set, world_readable is ignored.
 
 =back
 
