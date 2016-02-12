@@ -48,8 +48,8 @@ use EDG::WP4::CCM::Fetch::ProfileCache qw($FETCH_LOCK_FN
     $ERROR);
 
 use parent qw(Exporter CAF::Reporter EDG::WP4::CCM::Fetch::Config
-              EDG::WP4::CCM::Fetch::Download EDG::WP4::CCM::Fetch::ProfileCache
-              EDG::WP4::CCM::Fetch::Unused);
+              EDG::WP4::CCM::Fetch::Download
+              EDG::WP4::CCM::Fetch::ProfileCache);
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN
