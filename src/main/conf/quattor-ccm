@@ -128,7 +128,7 @@ _quattor_ccm_Options_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_
 _quattor_ccm_CLI_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]} ${_quattor_ccm_Options_options[@]} ${_quattor_ccm_CLI_options[@]}`
 
 # formats (no list, space spearated sorted string)
-_quattor_ccm_CLI_formats="json pan pancxml tabcompletion yaml"
+_quattor_ccm_CLI_formats="json ncmquery pan pancxml query tabcompletion yaml"
 
 # options handlers, to be used nested
 # exit code 0 if all is fine, no further processing is required
@@ -230,7 +230,15 @@ _quattor_ccm_CLI()
     # test CLI options
     _quattor_ccm_CLI_handle_options && return 0
 
-    COMPREPLY=($(compgen -W "$_quattor_ccm_CLI_longoptions" -- ${cur}))
+    # Certainly not an option at this point
+    # Default is action show with profpath
+    if [[ $cur == /* ]]; then
+       _quattor_ccm_tabcomp_pan_path
+       return 0
+    fi
+
+    # No option or profpath to handle: show a / for default action with profpath or any option
+    COMPREPLY=($(compgen -W "/ $_quattor_ccm_CLI_longoptions" -- ${cur}))
     return 0
 }
 

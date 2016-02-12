@@ -5,8 +5,8 @@ unique template basic;
 "/data/listtruefalse" = list(true, false);
 "/data/hash/x" = "OK";
 
-"/special/not_escaped_d" = "not_escaped_d";
-"/special/{escaped data}" = "escaped data";
+"/special/not_escaped_d/not_escaped_d" = "not_escaped_d";
+"/special/{escaped data}/{escaped data}" = "escaped data";
 
 # Some larger, deeper example
 "/z/deep/a" = "a";

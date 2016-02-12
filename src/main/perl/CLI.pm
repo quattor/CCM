@@ -17,6 +17,8 @@ Readonly::Hash my %CLI_ACTIONS => {
     show => 'Print the tree starting from the selected path.',
 };
 
+Readonly my $DEFAULT_ACTION => 'show';
+
 =head1 NAME
 
 EDG::WP4::CCM::CLI
@@ -30,12 +32,26 @@ and a module allows for far easier unittesting.
 
 sub _initialize {
 
-    my $self = shift;
+    my ($self, $cmd, @args) = @_;
+
+    my $argsref = \@args;
 
     $self->add_actions(\%CLI_ACTIONS);
 
-    return $self->SUPER::_initialize(@_);
+    $self->default_action($DEFAULT_ACTION);
 
+    my $res = $self->SUPER::_initialize($cmd, $argsref);
+
+    # Final arguments are all profpaths
+    if (@$argsref) {
+        $self->{profpaths} = $argsref;
+        $self->debug(2, "Add non-option cmdline profpaths: ", join(',', $self->{profpaths}));
+    } else {
+        $self->{profpaths} = [];
+        $self->debug(2, "No non-option cmdline profpaths");
+    };
+
+    return $res;
 }
 
 # extend the CCM::Options
@@ -48,7 +64,7 @@ sub app_options
     push(@$opts,
          {
              NAME => 'format=s',
-             DEFAULT => 'pan',
+             DEFAULT => 'query',
              HELP => 'Select the format (avail: ' . join(', ', @CCM_FORMATS). ')',
          },
     );
@@ -73,7 +89,7 @@ sub action_show
     my $cfg = $self->getCCMConfig();
     return if (! defined($cfg));
 
-    foreach my $path (@{$self->gatherPaths()}) {
+    foreach my $path (@{$self->gatherPaths(@{$self->{profpaths}})}) {
         if(! $cfg->elementExists($path)) {
             $self->debug(4, "action_show: no element for path $path");
             next;
@@ -83,6 +99,11 @@ sub action_show
             $self->option('format'),
             $cfg->getElement($path),
             );
+        if(! defined($trd)) {
+            $self->debug(3, "action_show: invalid format ", $self->option('format'));
+            return;
+        }
+
         my $fmt_txt = $trd->get_text();
 
         # TODO: no fail on renderfailure?

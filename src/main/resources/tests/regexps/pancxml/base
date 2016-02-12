@@ -21,8 +21,12 @@ element=truefalse,xml
 ^        <double name="oneandahalf">1.5</double>$
 ^    </nlist>$
 ^    <nlist name="special">$
-^        <string name="escaped_20data">escaped data</string>$
-^        <string name="not_escaped_d">not_escaped_d</string>$
+^        <nlist name="escaped_20data">$
+^            <string name="escaped_20data">escaped data</string>$
+^        </nlist>$
+^        <nlist name="not_escaped_d">$
+^            <string name="not_escaped_d">not_escaped_d</string>$
+^        </nlist>$
 ^    </nlist>$
 ^    <nlist name="z">$
 ^        <nlist name="deep">$

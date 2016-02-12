@@ -1,0 +1,28 @@
+# Script to-be-sourced to enable ccm CLI tabcompletion
+# (e.g. in case not all bashcompletion scripts in
+# /etc/bash_completion.d are/can not be enabled by default).
+#
+# This loads quattor-ccm bash completion
+#   - interactive session only
+#   - any user with low enough UID (like admins)
+#       - can be set via CCM_TABCOMPLETION_MINUID
+#       - defaults to 9999
+#
+# Use following pan snippet to configure it via /etc/profile.d
+# "/software/components/symlink/links" = append(dict(
+#        "name", "/etc/profile.d/quattor-ccm.sh",
+#        "target", "/usr/share/quattor/quattor-ccm-profile",
+#        "replace", dict("all", "yes"),
+#        ));
+#
+if [[ $- == *i* ]]; then
+    # do not load if already loaded
+    if [ -z "$quattor_ccm_tabcompletion_loaded" ]; then
+        minuid=${CCM_TABCOMPLETION_MINUID:-9999}
+        myid=`id -u 2>/dev/null`
+        if [ ${myid:-0} -lt $minuid ]; then
+            source /etc/bash_completion.d/quattor-ccm
+            quattor_ccm_tabcompletion_loaded=1
+        fi
+    fi
+fi

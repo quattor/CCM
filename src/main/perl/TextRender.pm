@@ -109,10 +109,12 @@ Readonly::Hash our %ELEMENT_CONVERT => {
 # Update the ccm_format pod with new formats
 Readonly::Hash my %TEXTRENDER_FORMATS => {
     json => {}, # No opts
-    yaml => {}, # No opts
+    ncmquery => { truefalse => 1 },
     pan => { truefalse => 1, doublequote => 1},
     pancxml => { truefalse => 1, xml => 1 },
+    query => { truefalse => 1, singlequote => 1 },
     tabcompletion => {},
+    yaml => {}, # No opts
 };
 
 Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
@@ -507,11 +509,13 @@ Supported formats are:
 
 =item json
 
-=item yaml
-
 =item pan
 
 =item pancxml
+
+=item query
+
+=item yaml
 
 =back
 

@@ -1,0 +1,5 @@
+[%-# 2 space indendatation * depth, +- and element name
+    space = ' '
+    offset = path.size - CCM.element.path.size -%]
+[%# TODO: ncm-query does not print the leading / of the root element when a subtree is quiered -%]
+[% space.repeat(2 * offset) %]+-[% CCM.unescape(offset ? path.last : path) %]

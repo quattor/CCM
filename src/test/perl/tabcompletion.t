@@ -299,11 +299,19 @@ test_comp_handle_longopt("Options", "profpath", "/system/network/", $compres_pan
 test_comp_handle_longopt("CLI", "format", "", \@CCM_FORMATS);
 
 # _quattor_ccm_CLI
-# unsupported option / empty option prints all options
+# empty option prints all options and /
 #   this tests the pass through
-test_comp($CLI_longopts,
+my @cli_fallback = @$CLI_longopts;
+push(@cli_fallback, '/');
+test_comp(\@cli_fallback,
           "tabcomplete _quattor_ccm_CLI",
           'COMP_WORDS=(SCRIPTNAME)', 'COMP_CWORD=1', '&&', '_quattor_ccm_CLI');
+# test CLI with non-option profpath
+test_comp($compres_pan_path_system_network,
+          "Tabcomplete '/sy' with CLI (passed to _quattor_ccm_tabcomp_pan_path)",
+          'COMP_WORDS=(SCRIPTNAME /sy)', 'COMP_CWORD=1', '&&', '_quattor_ccm_CLI');
+
+# test CLI with --format
 test_comp(\@CCM_FORMATS, "Tabcomplete formats with _quattor_ccm_CLI",
           'COMP_WORDS=(SCRIPTNAME --format)', 'COMP_CWORD=2', '&&', '_quattor_ccm_CLI');
 

@@ -41,6 +41,8 @@ Readonly::Hash my %ACTIONS => {
 # hashref with actions that are supported via the action method
 # Default use all ACTIONS. Modify via add_actions method
 my $_actions = { %ACTIONS };
+# Default action
+my $_default_action;
 
 =head1 NAME
 
@@ -212,13 +214,20 @@ sub getCCMConfig
 
 Retrun arrayref of selected profile path (via the PATH_SELECTION_METHODS)
 
+All options are treated as initial paths.
+
 =cut
 
 sub gatherPaths
 {
-    my $self = shift;
+    my ($self, @paths) = @_;
 
-    my @paths;
+    if (@paths) {
+        $self->debug(4, 'Initial paths passed: ', join(',', @paths));
+    } else {
+        $self->debug(4, 'No initial paths');
+    }
+
     # profile path selection options
     foreach my $sel (sort keys %PATH_SELECTION_METHODS) {
         my $values = $self->option($sel);
@@ -239,6 +248,32 @@ sub _print
     my ($self, @args) = @_;
     $self->report(@args);
 }
+
+=item default_action
+
+Set the default action C<$action> if action is defined
+(use empty string to unset the default value).
+
+Returns the default action.
+
+=cut
+
+sub default_action
+{
+    my ($self, $action) = @_;
+
+    if(defined($action)) {
+        if(($action eq '') || $self->can("action_$action")) {
+            $self->verbose("Set default action to $action.");
+            $_default_action = $action;
+        } else {
+            $self->warn("Not adding non-existing action $action as default action.");
+        }
+    }
+
+    return $_default_action;
+}
+
 
 =item action_showcids
 
@@ -310,8 +345,17 @@ sub action
         $act = $1;
     }
 
-    $self->debug(5, "Selected ", ($act || "<undef>"),
-                 " from actions ", join(",", @acts));
+    if ($act) {
+        $self->debug(5, "Selected ", ($act || "<undef>"),
+                     " from actions ", join(",", @acts));
+    } else {
+        $act = $self->default_action();
+        if ($act) {
+            $self->debug(5, "Selected default action $act");
+        } else {
+            $self->verbose("No action set. Doin nothing")
+        }
+    }
 
     if ($act) {
         my $method = $self->can("action_$act");

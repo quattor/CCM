@@ -1,0 +1,1 @@
+[% INCLUDE CCM/path_walk.tt data=CCM.contents path=CCM.element.path class="ncmquery" -%]

@@ -1,0 +1,4 @@
+[%-# 2 space indendatation * depth, +- and element name
+    space = ' '
+    offset = path.size - CCM.element.path.size -%]
+[% space.repeat(2 * offset) %]+-[% CCM.unescape(offset ? path.last : path) %]
