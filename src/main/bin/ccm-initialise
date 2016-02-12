@@ -1,82 +1,63 @@
 #!/usr/bin/perl -w
-
-#######################################################################
+# ${license-info}
+# ${developer-info}
+# ${author-info}
+# ${build-info}
 #
 # Initialise local config cache
 #
-# Copyright (c) 2003 EU DataGrid project.  All rights reserved.
-# For license conditions see file LICENSE or
-# <http://www.eu-datagrid.org/license.html>
-#
-# $Id: ccm-initialise.cin,v 1.1 2004/10/28 09:06:22 rgarcial Exp $
-#
-#######################################################################
 
-#
-# Beginning sequence for EDG initialization
-#
 BEGIN {
-
     # use perl libs in /usr/lib/perl
     unshift(@INC, '/usr/lib/perl');
-    unshift(@INC,'/opt/edg/lib/perl');
-
 }
 
 use strict;
+use warnings;
 use Getopt::Long;
 use File::Path;
 use EDG::WP4::CCM::CCfg;
 
-#######################################################################
 # Options
-#######################################################################
-
 my $debug = undef;
 my $config = undef;
 my $cache_root = undef;
 my $world_readable = 0;
+my $group_readable = undef;
 
-#######################################################################
-sub Quit (;$) {
-#######################################################################
+sub Quit
+{
+    my $msg = shift;
 
-    if (defined($_[0])) {
-        print STDERR "cache-initialise: " . $_[0] . "\n";
+    if ($msg) {
+        print STDERR "cache-initialise: $msg\n";
         exit(1);
     } else {
         exit(0);
     }
 }
 
-#######################################################################
-sub Debug ($) {
-#######################################################################
- 
+sub Debug
+{
     my $msg = shift;
     if (defined($debug)) {
         print $msg . "\n";
     }
 
-  return 'ok';
+    return 'ok';
 }
 
-#######################################################################
-sub Config ($) {
-#######################################################################
-
+sub Config
+{
     EDG::WP4::CCM::CCfg::initCfg(shift);
 
     $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
     $world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
-
 }
 
-#######################################################################
-# Main program
-#######################################################################
 
-# options
+# Main program
+
 Quit("usage: cache-initialise [OPTIONS]
   -d, --debug          turn on debugging
   --config=FILE        location of fetch config file (for cache root)")
