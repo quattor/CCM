@@ -20,6 +20,8 @@ use Cwd;
 
 use CCMTest qw(make_file);
 
+my $ec_cfg = $EDG::WP4::CCM::Configuration::ec;
+
 my $cdtmp = getcwd()."/target/tmp";
 mkdir($cdtmp) if (! -d $cdtmp);
 
@@ -226,6 +228,31 @@ is_deeply($cfg_el->getTree(), $pathdata, "getTree from element instance as expec
 is($config->getValue("$path"), $pathdata, "config->getValue of $path as expected");
 # is a property, not a hash or list
 is_deeply($config->getTree("$path"), $pathdata, "config->getTree of $path as expected");
+
+# Configuration::getTree error handling
+# fail method
+ok(! defined($config->{fail}), "No fail attribute set");
+ok(! defined($config->fail("a", "b")), "Confiuration::fail returns undef");
+is($config->{fail}, "ab", "Configuration fail attribute is set (joined args)");
+
+# cfg->getTree does not throw errors
+if ($ec_cfg->error()) {
+    $ec_cfg->has_been_reported(1);
+}
+# reset fail attribute
+$config->{fail} = undef;
+
+ok(! $ec_cfg->error(), "No errors before testing getTree errorhandling");
+
 ok(! defined($config->getTree("/fake$path")), "config->getTree of /fake$path undefined");
+ok(! defined($config->{fail}),
+   "config->getTree of /fake$path undefined does not set fail attribute (element does not exist)");
+
+ok(! defined($config->getTree("//invalidpath")), "config->getTree of //invalidpath undefined");
+like($config->{fail}, qr{path //invalidpath must be an absolute path},
+   "config->getTree of //invalidpath undefined does sets fail attribute (invalid path throws error)");
+
+ok(! $ec_cfg->error(), "No errors after testing getTree errorhandling");
+diag explain $ec_cfg;
 
 done_testing();
