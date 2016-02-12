@@ -91,6 +91,7 @@ sub app_options {
           { NAME    => 'retrieve_wait=i',
             DEFAULT => 30,
             HELP    => 'Number of seconds that fetch will wait between retrieve attempts' },
+
           { NAME    => 'lock_wait=i',
             DEFAULT => 30,
             HELP    =>  'Number of seconds that fetch will wait between lock attempts' },
@@ -104,23 +105,23 @@ sub app_options {
           { NAME    => 'ca_file=s',
             HELP    => 'File containing a bundle of trusted CA certificates for use with HTTPS.' },
 
-          { NAME   => 'ca_dir=s',
-            HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
+          { NAME    => 'ca_dir=s',
+            HELP    => 'Directory containing trusted CA certificates for use with HTTPS' },
 
-          { NAME   => 'trust=s',
-            HELP   => 'Kerberos principal to trust if using encrypted profiles' },
+          { NAME    => 'trust=s',
+            HELP    => 'Kerberos principal to trust if using encrypted profiles' },
 
-          { NAME   => 'keep_old=i',
-            HELP   => 'Number of old profiles to keep before purging' },
+          { NAME    => 'keep_old=i',
+            HELP    => 'Number of old profiles to keep before purging' },
 
-          { NAME   => 'purge_time=i',
-            HELP   => 'Number of seconds before purging inactive profiles' },
+          { NAME    => 'purge_time=i',
+            HELP    => 'Number of seconds before purging inactive profiles' },
 
-          { NAME   => 'json_typed',
-            HELP   => 'Extract typed data from JSON profiles' },
+          { NAME    => 'json_typed',
+            HELP    => 'Extract typed data from JSON profiles' },
 
-          { NAME   => 'tabcompletion',
-            HELP   => 'Create the tabcompletion file (during profile fetch)' },
+          { NAME    => 'tabcompletion',
+            HELP    => 'Create the tabcompletion file (during profile fetch)' },
 
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
