@@ -98,7 +98,6 @@ Readonly::Array our @CONFIG_OPTIONS => (
     },
 
     {
-        # TODO: ccm-fetch has default 1
         option => 'world_readable',
         suffix => '=i',
         HELP    => 'World readable profile flag 1/0',

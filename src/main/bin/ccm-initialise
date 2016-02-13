@@ -95,7 +95,8 @@ foreach my $path (@paths) {
     die "Can't create $path: $!\n" unless $ok;
 };
 
-# make sure files are created so only root can see them
+# make sure files are created so only
+# root and possibly the group can see them
 umask($mask) if $mask;
 
 

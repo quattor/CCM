@@ -251,9 +251,9 @@ $fetch->setCacheRoot($this_app->option("cache_root"))
 
 # set group/world readable flag
 if (defined $this_app->option("group_readable")) {
-    $fetch->setWorldReadable($this_app->option("group_readable"));
+    $fetch->setGroupReadable($this_app->option("group_readable"));
     if ($this_app->option("world_readable")) {
-        $this_app->info("group_readable set, not setting world_readable");
+        $this_app->info("group_readable set, precedes world_readable configuration");
     };
 } else {
     $fetch->setWorldReadable($this_app->option("world_readable"))
@@ -434,14 +434,14 @@ If set with valid groupname, profiles will be
 stored on local disk with in directory with 750 permissions and the
 the groupname as group (still owned by root).
 
-When group_readable is set, world_readable is ignored.
+The C<group_readable> configuration option precedes C<world_readable>.
 
 =item world_readable
 
 World readable profiles flag (1/0). If true profiles will be
 stored on local disk in directory with 755 permissions, if false with 700.
 
-When group_readable is set, world_readable is ignored.
+The C<group_readable> configuration option precedes C<world_readable>.
 
 =back
 
