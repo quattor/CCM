@@ -127,9 +127,13 @@ sub current
 
     my $grp = $self->{GROUP_READABLE};
     if (defined($grp)) {
-        die "Invalid group name for group_readable $grp" if(! defined(getgrnam($grp)));
-        $opts->{mode} = 0750;
-        $opts->{group} = $grp;
+        if (defined(getgrnam($grp))) {
+            $opts->{mode} = 0750;
+            $opts->{group} = $grp;
+        } else {
+            $opts->{mode} = 0700;
+            $self->error("Invalid group name for group_readable $grp, using owner-only");
+        };
     };
 
     # mkpath returns the created directories, croaks on fatal errors
