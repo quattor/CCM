@@ -68,7 +68,7 @@ to the CCM config file.
 =cut
 
 sub new
-{    #T
+{
     my ($class, $cache_path, $config_file) = @_;
 
     initCfg($config_file);
@@ -327,7 +327,7 @@ Security and $cred parameter meaning are not defined.
 =cut
 
 sub getUnlockedConfiguration
-{    #T
+{
     my ($self, $cred, $cid) = @_;
     my $cfg = $self->_getConfig(0, $cred, $cid);
     unless (defined($cfg)) {
@@ -350,7 +350,7 @@ Security and $cred parameter meaning are not defined.
 =cut
 
 sub getLockedConfiguration
-{    #T
+{
     my ($self, $cred, $cid) = @_;
     my $cfg = $self->_getConfig(1, $cred, $cid);
     unless (defined($cfg)) {
@@ -377,7 +377,7 @@ Security and $cred parameter meaning are not defined.
 =cut
 
 sub getAnonymousConfiguration
-{    #T
+{
     my ($self, $cred, $cid) = @_;
     my $cfg = $self->_getConfig(0, $cred, $cid, 1);
     unless (defined($cfg)) {
@@ -396,7 +396,7 @@ sub getAnonymousConfiguration
 #
 
 sub _getConfig
-{    #T
+{
     my ($self, $lc, $cred, $cid, $anonymous) = @_;
     my $locked = $self->isLocked();
     unless (defined($locked)) {
@@ -427,7 +427,7 @@ Returns true if the cache is globally locked, otherwise false.
 =cut
 
 sub isLocked
-{    #T
+{
     my ($self) = @_;
     my $locked = $self->{"global_lock_file"}->read();
     unless (defined($locked)) {
