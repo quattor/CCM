@@ -96,7 +96,7 @@ for use with all the components that deal with escaped keys.
 
 =cut
 
-sub unescape ($)
+sub unescape
 {
     my $str = shift;
     $str =~ s!(_[0-9a-f]{2})!sprintf ("%c", hex($1))!eg;
@@ -207,7 +207,7 @@ sub new
 
 }
 
-=item _get_tied_db()
+=item _get_tied_db
 
 Wrapper around EDG::WP4::CCM::DB::read() to attempt to cache the tied
 hash.  Takes a scalar reference (to be filled in with either a new
@@ -224,7 +224,7 @@ profile data goes into a whole new path.)
 {
     my $CACHE = {};
 
-    sub _get_tied_db($$)
+    sub _get_tied_db
     {
         my ($returnref, $path) = @_;
         my ($base) = $path =~ /(\w+)$/;
@@ -570,7 +570,7 @@ Array ref of anonymous methods to convert the argument
 
 =back
 
-The arrayref of anonymous methods are applied as follows: 
+The arrayref of anonymous methods are applied as follows:
 convert methods C<[a, b, c]> will produce C<$new = c(b(a($old)))>.
 (An exception is thrown if these methods are not code references).
 
@@ -657,7 +657,7 @@ SWITCH:
 # Private function that resolve element's id number. $prof_dir is the profile
 # full directory path, and $ele_path is the element path (as string)
 #
-sub _resolve_eid($$)
+sub _resolve_eid
 {
 
     my ($prof_dir, $ele_path) = @_;
@@ -687,7 +687,7 @@ sub _resolve_eid($$)
 # into a Type constant
 # $string type in string format
 #
-sub _type_converter($)
+sub _type_converter
 {
 
     my $type = shift;
@@ -713,7 +713,7 @@ sub _type_converter($)
 # Private function to read metadata information from DB file.
 # $self if a reference to myself (Element) object
 #
-sub _read_metadata($)
+sub _read_metadata
 {
 
     my $self = shift;
@@ -773,7 +773,7 @@ sub _read_metadata($)
 # $config is a configuration profile
 # $ele_path is the element path (as string)
 #
-sub _read_type($$)
+sub _read_type
 {
 
     my ($config,   $ele_path);
@@ -816,7 +816,7 @@ sub _read_type($$)
 # Private function to read element's value from DB file.
 # $self if a reference to myself (Element) object
 #
-sub _read_value ($$$)
+sub _read_value
 {
 
     my $self = shift;

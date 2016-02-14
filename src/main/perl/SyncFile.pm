@@ -56,7 +56,7 @@ character.
 =cut
 
 sub read
-{    #T
+{
     my ($self) = @_;
     my $fh = CAF::FileReader->new($self->{"file_name"});
     chop($fh);
@@ -71,7 +71,7 @@ contents.
 =cut
 
 sub write
-{    #T
+{
     my ($self, $contents) = @_;
     my $fh = CAF::FileWriter->new($self->{"file_name"});
     print $fh "$contents\n";
@@ -132,8 +132,8 @@ get file name
 
 =cut
 
-sub get_file_name ()
-{    #T
+sub get_file_name
+{
     my ($self) = @_;
     return $self->{"file_name"};
 }
@@ -145,8 +145,8 @@ file
 
 =cut
 
-sub new ($$$)
-{    #T
+sub new
+{
     my ($class, $file_name, $wait, $retries) = @_;
     my $self = {
         "file_name" => $file_name,

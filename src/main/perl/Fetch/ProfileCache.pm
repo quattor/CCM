@@ -121,7 +121,29 @@ sub current
     $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
-    mkpath($dir, {mode => ($self->{WORLD_READABLE} ? 0755 : 0700)});
+    my $opts = {
+        mode => 0700,
+    };
+
+    my $grp = $self->{GROUP_READABLE};
+    if (defined($grp)) {
+        if (defined(getgrnam($grp))) {
+            $opts->{mode} = 0750;
+            $opts->{group} = $grp;
+        } else {
+            $opts->{mode} = 0700;
+            $self->error("Invalid group name for group_readable $grp, falling back to owner-only");
+        };
+    };
+
+    if ($self->{WORLD_READABLE}) {
+        $self->info("Both group_readable and world_readable are set, ",
+                    "world_readable setting honoured.") if $self->{GROUP_READABLE};
+        $opts->{mode} = 0755;
+    }
+
+    # mkpath returns the created directories, croaks on fatal errors
+    mkpath($dir, $opts);
 
     my %current = (
         dir => $dir,
@@ -222,7 +244,7 @@ sub choose_interpreter
     }
 }
 
-sub ComputeChecksum ($)
+sub ComputeChecksum
 {
 
     # Compute the node profile checksum attribute.
@@ -341,7 +363,7 @@ sub MakeDatabase
 
 # Perform operations required to store foreign profiles.
 
-sub enableForeignProfile()
+sub enableForeignProfile
 {
     my ($self) = @_;
 

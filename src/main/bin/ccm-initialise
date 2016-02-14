@@ -1,82 +1,74 @@
 #!/usr/bin/perl -w
-
-#######################################################################
+# ${license-info}
+# ${developer-info}
+# ${author-info}
+# ${build-info}
 #
 # Initialise local config cache
 #
-# Copyright (c) 2003 EU DataGrid project.  All rights reserved.
-# For license conditions see file LICENSE or
-# <http://www.eu-datagrid.org/license.html>
-#
-# $Id: ccm-initialise.cin,v 1.1 2004/10/28 09:06:22 rgarcial Exp $
-#
-#######################################################################
 
-#
-# Beginning sequence for EDG initialization
-#
 BEGIN {
-
     # use perl libs in /usr/lib/perl
     unshift(@INC, '/usr/lib/perl');
-    unshift(@INC,'/opt/edg/lib/perl');
-
 }
 
 use strict;
+use warnings;
 use Getopt::Long;
 use File::Path;
 use EDG::WP4::CCM::CCfg;
 
-#######################################################################
 # Options
-#######################################################################
-
 my $debug = undef;
 my $config = undef;
 my $cache_root = undef;
 my $world_readable = 0;
+my $group_readable = undef;
 
-#######################################################################
-sub Quit (;$) {
-#######################################################################
+sub Quit
+{
+    my $msg = shift;
 
-    if (defined($_[0])) {
-        print STDERR "cache-initialise: " . $_[0] . "\n";
+    if ($msg) {
+        print STDERR "cache-initialise: $msg\n";
         exit(1);
     } else {
         exit(0);
     }
 }
 
-#######################################################################
-sub Debug ($) {
-#######################################################################
- 
+sub Warn
+{
+    my $msg = shift;
+
+    print "[WARN] $msg \n";
+
+    return 'ok';
+}
+
+sub Debug
+{
     my $msg = shift;
     if (defined($debug)) {
         print $msg . "\n";
     }
 
-  return 'ok';
+    return 'ok';
 }
 
-#######################################################################
-sub Config ($) {
-#######################################################################
-
+sub Config
+{
     EDG::WP4::CCM::CCfg::initCfg(shift);
 
     $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
+    $group_readable = EDG::WP4::CCM::CCfg::getCfgValue('group_readable');
     $world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
-
 }
 
-#######################################################################
-# Main program
-#######################################################################
 
-# options
+# Main program
+
+# validate options
 Quit("usage: cache-initialise [OPTIONS]
   -d, --debug          turn on debugging
   --config=FILE        location of fetch config file (for cache root)")
@@ -90,23 +82,43 @@ Config($config);
 rmtree($cache_root, 0, 0);
 
 # make directory structure
+my $owner = 0;
+my $gid;
+my $mode = 0700;
+my $mask = 077;
+
+if ($group_readable) {
+    $gid = getgrnam($group_readable);
+    if(defined($gid)) {
+        $mode = 0750;
+        $mask = 027;
+    } else {
+        Warn("Invalid group name for group_readable $group_readable");
+    };
+};
+
 if ($world_readable) {
-    my $ok = mkdir $cache_root, 0755;
-    die "Can't create $cache_root: $!\n" unless $ok;
-    mkdir "$cache_root/data", 0755;
-    die "Can't create $cache_root/data: $!\n" unless $ok;
-    mkdir "$cache_root/tmp", 0755;
-    die "Can't create $cache_root/tmp: $!\n" unless $ok;
-} else {
-    my $ok = mkdir $cache_root, 0700;
-    die "Can't create $cache_root: $!\n" unless $ok;
-    mkdir "$cache_root/data", 0700;
-    die "Can't create $cache_root/data: $!\n" unless $ok;
-    mkdir "$cache_root/tmp", 0700;
-    die "Can't create $cache_root/tmp: $!\n" unless $ok;
-    # make sure files are created so only root can see them
-    umask(077);
-}
+    if($group_readable) {
+        Warn("Both group_readable and world_readable are set, world_readable setting honoured.");
+    }
+    $mask = undef;
+    $mode = 0755;
+};
+
+my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
+foreach my $path (@paths) {
+    my $ok = mkdir $cache_root, $mode;
+    die "Can't create $path: $!\n" unless $ok;
+    if (defined($gid)) {
+        # use effective UID
+        # chown returns number of changed files, croaks on error
+        chown $>, $gid, $path;
+    };
+};
+
+# make sure files are created so only
+# root and possibly the group can see them
+umask($mask) if $mask;
 
 
 # make lock files
@@ -120,7 +132,7 @@ __END__
 
 =head1 NAME
 
-cache-initialise - initialise local config cache
+ccm-initialise - initialise local config cache
 
 =head1 DESCRIPTION
 

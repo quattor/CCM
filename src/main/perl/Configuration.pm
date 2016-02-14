@@ -87,7 +87,7 @@ runtimes), can set the C<anonymous> flag and use the configuration
 =cut
 
 sub new
-{    #T
+{
     my ($class, $cache_manager, $cid, $locked, $anonymous) = @_;
 
     my $cache_path = $cache_manager->getCachePath();
@@ -145,7 +145,7 @@ sub getConfigPath
 # return CacheManager
 #
 
-sub getCacheManager ()
+sub getCacheManager
 {
     my ($self) = @_;
     return $self->{"cache_manager"};
@@ -191,7 +191,7 @@ sub _can_create_pid_file
 #
 
 sub _create_pid_file
-{    #T
+{
     my ($self) = @_;
     unless ($self->{"cid_to_number"}{$self->{"cid"}}) {
         $self->{"cid_to_number"}{$self->{"cid"}} += 1;
@@ -213,8 +213,8 @@ sub _create_pid_file
 # given cid drops to zero. it updates %cid_to_number
 #
 
-sub _remove_pid_file ()
-{    #T (indirectly)
+sub _remove_pid_file
+{
     my ($self, $cid) = @_;
     unless (defined($cid)) {
         throw_error("_remove_pid_file", "cid parameter not defined");
@@ -238,8 +238,8 @@ sub _remove_pid_file ()
 # sub creates empty file with $file_name name
 #
 
-sub _touch_file ($)
-{    #T
+sub _touch_file
+{
     my ($file_name) = @_;
     my $fh = CAF::FileWriter->new($file_name);
     print $fh '';
@@ -260,7 +260,7 @@ sub _touch_file ($)
 #
 
 sub DESTROY
-{    #T (indirectly)
+{
     my ($self) = @_;
     unless ($self->_remove_pid_file($self->{"cid"})) {
         throw_error('_remove_pid_file($self->{"cid"})', $ec->error);
@@ -277,7 +277,7 @@ Returns configuration id.
 
 # triggers a _update_cid_pidf for unlocked configs
 sub getConfigurationId
-{    #T
+{
     my ($self) = @_;
     unless ($self->{"locked"}) {
         unless ($self->_update_cid_pidf()) {
@@ -295,7 +295,7 @@ sub getConfigurationId
 # <_remove_pid_file(old_CID)> and C<_create_pid_file>
 # (which uses the new/updated C<cid> attribute).
 sub _update_cid_pidf
-{    #T
+{
     my ($self) = @_;
     my $cid = $self->{cache_manager}->getCurrentCid();
     unless (defined($cid)) {
@@ -324,7 +324,7 @@ Lock configuration (local lock).
 =cut
 
 sub lock
-{    #T
+{
     my ($self) = @_;
     $self->{"locked"} = 1;
     return SUCCESS;
@@ -337,7 +337,7 @@ Unlock configuration (local unlock).
 =cut
 
 sub unlock
-{    #T
+{
     my ($self) = @_;
     $self->{"locked"} = 0;
     unless ($self->_update_cid_pidf()) {
@@ -356,7 +356,7 @@ Returns true if the configuration is locked, otherwise false
 =cut
 
 sub isLocked
-{    #T
+{
     my ($self) = @_;
     return $self->{"locked"};
 }

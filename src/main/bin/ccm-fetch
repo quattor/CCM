@@ -66,8 +66,11 @@ sub app_options {
             DEFAULT => '30',
             HELP    => 'Timeout in seconds for HTTP GET operation' },
 
+          { NAME    => 'group_readable=s',
+            HELP    => 'Group readable profile (value is the groupname)' },
+
           { NAME    => 'world_readable=i',
-            DEFAULT => '1',
+            DEFAULT => '0',
             HELP    => 'World readable profile flag 1/0' },
 
           { NAME    => 'force|f',
@@ -91,6 +94,7 @@ sub app_options {
           { NAME    => 'retrieve_wait=i',
             DEFAULT => 30,
             HELP    => 'Number of seconds that fetch will wait between retrieve attempts' },
+
           { NAME    => 'lock_wait=i',
             DEFAULT => 30,
             HELP    =>  'Number of seconds that fetch will wait between lock attempts' },
@@ -104,23 +108,23 @@ sub app_options {
           { NAME    => 'ca_file=s',
             HELP    => 'File containing a bundle of trusted CA certificates for use with HTTPS.' },
 
-          { NAME   => 'ca_dir=s',
-            HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
+          { NAME    => 'ca_dir=s',
+            HELP    => 'Directory containing trusted CA certificates for use with HTTPS' },
 
-          { NAME   => 'trust=s',
-            HELP   => 'Kerberos principal to trust if using encrypted profiles' },
+          { NAME    => 'trust=s',
+            HELP    => 'Kerberos principal to trust if using encrypted profiles' },
 
-          { NAME   => 'keep_old=i',
-            HELP   => 'Number of old profiles to keep before purging' },
+          { NAME    => 'keep_old=i',
+            HELP    => 'Number of old profiles to keep before purging' },
 
-          { NAME   => 'purge_time=i',
-            HELP   => 'Number of seconds before purging inactive profiles' },
+          { NAME    => 'purge_time=i',
+            HELP    => 'Number of seconds before purging inactive profiles' },
 
-          { NAME   => 'json_typed',
-            HELP   => 'Extract typed data from JSON profiles' },
+          { NAME    => 'json_typed',
+            HELP    => 'Extract typed data from JSON profiles' },
 
-          { NAME   => 'tabcompletion',
-            HELP   => 'Create the tabcompletion file (during profile fetch)' },
+          { NAME    => 'tabcompletion',
+            HELP    => 'Create the tabcompletion file (during profile fetch)' },
 
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
@@ -245,9 +249,13 @@ $fetch->setPreprocessor($this_app->option("preprocessor"))
 $fetch->setCacheRoot($this_app->option("cache_root"))
 		if defined $this_app->option("cache_root");
 
+# set group readable flag
+$fetch->setGroupReadable($this_app->option("group_readable"))
+    if defined $this_app->option("group_readable");
+
 # set world readable flag
 $fetch->setWorldReadable($this_app->option("world_readable"))
-		if defined $this_app->option("world_readable");
+    if defined $this_app->option("world_readable");
 
 # we no longer set profile notification time
 # since we always want to get something later than what we
@@ -416,10 +424,25 @@ File containing a bundle of trusted CA certificates for use with HTTPS.
 Directory containing trusted CA certificates for use with HTTPS. Hash
 symlinks are needed.
 
+=item group_readable
+
+Group readable profiles (value is the groupname).
+If set with valid groupname, profiles will be
+stored on local disk with in directory with 750 permissions and the
+the groupname as group (still owned by root).
+
+Following standard UNIX ACL semantics, the C<group_readable> configuration
+option is not very useful if C<world_readable> is also true.
+
 =item world_readable
 
 World readable profiles flag (1/0). If true profiles will be
-stored on local disk with 755 permissions, if false with 700.
+stored on local disk in directory with 755 permissions, if false with 700.
+
+Following standard UNIX ACL semantics, the C<group_readable> configuration
+option is not very useful if C<world_readable> is also true.
+
+The use of C<world_readable> is not recommended.
 
 =back
 
