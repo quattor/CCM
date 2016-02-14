@@ -122,7 +122,7 @@ sub current
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
     my $opts = {
-        mode => ($self->{WORLD_READABLE} ? 0755 : 0700),
+        mode => 0700,
     };
 
     my $grp = $self->{GROUP_READABLE};
@@ -132,9 +132,15 @@ sub current
             $opts->{group} = $grp;
         } else {
             $opts->{mode} = 0700;
-            $self->error("Invalid group name for group_readable $grp, using owner-only");
+            $self->error("Invalid group name for group_readable $grp, falling back to owner-only");
         };
     };
+
+    if ($self->{WORLD_READABLE}) {
+        $self->info("Both group_readable and world_readable are set, ",
+                    "world_readable setting honoured.") if $self->{GROUP_READABLE};
+        $opts->{mode} = 0755;
+    }
 
     # mkpath returns the created directories, croaks on fatal errors
     mkpath($dir, $opts);

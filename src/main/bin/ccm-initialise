@@ -37,6 +37,15 @@ sub Quit
     }
 }
 
+sub Warn
+{
+    my $msg = shift;
+
+    print "[WARN] $msg \n";
+
+    return 'ok';
+}
+
 sub Debug
 {
     my $msg = shift;
@@ -74,18 +83,25 @@ rmtree($cache_root, 0, 0);
 
 # make directory structure
 my $owner = 0;
-my $group = 0;
+my $gid;
 my $mode = 0700;
 my $mask = 077;
 
 if ($group_readable) {
-    $mode = 0750;
-    $mask = 027;
-    $group = getgrnam($group_readable);
-    if(! defined) {
-        Quit("Invalid group name for group_readable $group_readable");
+    $gid = getgrnam($group_readable);
+    if(defined($gid)) {
+        $mode = 0750;
+        $mask = 027;
+    } else {
+        Warn("Invalid group name for group_readable $group_readable");
     };
-} elsif ($world_readable) {
+};
+
+if ($world_readable) {
+    if($group_readable) {
+        Warn("Both group_readable and world_readable are set, world_readable setting honoured.");
+    }
+    $mask = undef;
     $mode = 0755;
 };
 
@@ -93,6 +109,11 @@ my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
 foreach my $path (@paths) {
     my $ok = mkdir $cache_root, $mode;
     die "Can't create $path: $!\n" unless $ok;
+    if (defined($gid)) {
+        # use effective UID
+        # chown returns number of changed files, croaks on error
+        chown $>, $gid, $path;
+    };
 };
 
 # make sure files are created so only

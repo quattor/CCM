@@ -249,16 +249,13 @@ $fetch->setPreprocessor($this_app->option("preprocessor"))
 $fetch->setCacheRoot($this_app->option("cache_root"))
 		if defined $this_app->option("cache_root");
 
-# set group/world readable flag
-if (defined $this_app->option("group_readable")) {
-    $fetch->setGroupReadable($this_app->option("group_readable"));
-    if ($this_app->option("world_readable")) {
-        $this_app->info("group_readable set, precedes world_readable configuration");
-    };
-} else {
-    $fetch->setWorldReadable($this_app->option("world_readable"))
-        if defined $this_app->option("world_readable");
-};
+# set group readable flag
+$fetch->setGroupReadable($this_app->option("group_readable"))
+    if defined $this_app->option("group_readable");
+
+# set world readable flag
+$fetch->setWorldReadable($this_app->option("world_readable"))
+    if defined $this_app->option("world_readable");
 
 # we no longer set profile notification time
 # since we always want to get something later than what we
@@ -434,14 +431,18 @@ If set with valid groupname, profiles will be
 stored on local disk with in directory with 750 permissions and the
 the groupname as group (still owned by root).
 
-The C<group_readable> configuration option precedes C<world_readable>.
+Following standard UNIX ACL semantics, the C<group_readable> configuration
+option is not very useful if C<world_readable> is also true.
 
 =item world_readable
 
 World readable profiles flag (1/0). If true profiles will be
 stored on local disk in directory with 755 permissions, if false with 700.
 
-The C<group_readable> configuration option precedes C<world_readable>.
+Following standard UNIX ACL semantics, the C<group_readable> configuration
+option is not very useful if C<world_readable> is also true.
+
+The use of C<world_readable> is not recommended.
 
 =back
 

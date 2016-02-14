@@ -189,21 +189,23 @@ sub setProfilenTime
     return SUCCESS;
 }
 
+sub setGroupReadable
+{
+    my ($self, $val) = @_;
+    # Report this, but do not fail
+    $self->warn("Group readable option should be valid groupname: could not resolve $val")
+        unless (defined(getgrnam($val)));
+    # Setting it anyway, invalid groups are handled properly
+    $self->{"GROUP_READABLE"} = $val;
+    return SUCCESS;
+}
+
 sub setWorldReadable
 {
     my ($self, $val) = @_;
     throw_error("World readable option should be natural number: $val")
         unless ($val =~ m/^\d+$/);
     $self->{"WORLD_READABLE"} = $val;
-    return SUCCESS;
-}
-
-sub setGroupReadable
-{
-    my ($self, $val) = @_;
-    throw_error("Group readable option should be valid groupname: $val")
-        unless (defined(getgrnam($val)));
-    $self->{"GROUP_READABLE"} = $val;
     return SUCCESS;
 }
 
