@@ -59,12 +59,82 @@ use constant MAXPROFILECOUNTER => 9999;
 use parent qw(Exporter);
 
 our @EXPORT    = qw();
-our @EXPORT_OK = qw($FETCH_LOCK_FN $TABCOMPLETION_FN $ERROR ComputeChecksum);
+our @EXPORT_OK = qw(
+    $FETCH_LOCK_FN $TABCOMPLETION_FN $ERROR
+    ComputeChecksum MakeCacheRoot
+);
 
 Readonly our $ERROR => -1;
 
 Readonly our $FETCH_LOCK_FN => "fetch.lock";
 Readonly our $TABCOMPLETION_FN => "tabcompletion";
+
+
+# Function (not method) to create cacheroot and optional subdirectories
+# with appropiate permissions. Does not return anything.
+# Arguments
+#    C<cache_root>: the cacheroot (additionally, also cacheroot/tmp and cacheroot/data are handled)
+#    C<group_readable>: the group_readble groupname
+#    C<world_readable>: world_readable boolean
+#    C<reporter>: info/error reporter
+#    C<profiledir>: optional relative profile dir path that will receive the permissions
+sub MakeCacheRoot
+{
+    my ($cache_root, $group_readable, $world_readable, $reporter, $profiledir) = @_;
+
+    my $gid;
+    my $mode = 0700;
+    my $mask = 077;
+
+    if ($group_readable) {
+        $gid = getgrnam($group_readable);
+        my $msg = "group name for group_readable $group_readable";
+        if(defined($gid)) {
+            $reporter->verbose("Valid $msg");
+            $mode = 0750;
+            $mask = 027;
+        } else {
+            $reporter->error("Invalid $msg");
+        };
+    };
+
+    if ($world_readable) {
+        if($group_readable) {
+            $reporter->info("Both group_readable and world_readable are set, world_readable setting honoured.");
+        } else {
+            $reporter->verbose("world_readable set")
+        }
+        $mask = undef;
+        $mode = 0755;
+    };
+
+    # Default paths to set
+    my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
+    # Add profilepath
+    push (@paths, "$cache_root/$profiledir") if ($profiledir && $profiledir =~ m/^\w+\.\d+$/);
+
+    $reporter->verbose("Going to create/modify paths: @paths");
+
+    foreach my $path (@paths) {
+        if (-d $path) {
+            # chmod returns number of changed files, croaks on error
+            chmod $mode, $path;
+        } else {
+            my $ok = mkdir $path, $mode;
+            die "Can't create $path: $!\n" unless $ok;
+        }
+        if (defined($gid)) {
+            # use effective UID
+            # chown returns number of changed files, croaks on error
+            chown $>, $gid, $path;
+        };
+    };
+
+    # make sure files are created so only
+    # root and possibly the group can see them
+    umask($mask) if $mask;
+}
+
 
 # Sets up the required locks in the cache root.  It requires a
 # CAF::Lock for the profile itself, and another one, "global.lock" to
@@ -121,29 +191,9 @@ sub current
     $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
-    my $opts = {
-        mode => 0700,
-    };
-
-    my $grp = $self->{GROUP_READABLE};
-    if (defined($grp)) {
-        if (defined(getgrnam($grp))) {
-            $opts->{mode} = 0750;
-            $opts->{group} = $grp;
-        } else {
-            $opts->{mode} = 0700;
-            $self->error("Invalid group name for group_readable $grp, falling back to owner-only");
-        };
-    };
-
-    if ($self->{WORLD_READABLE}) {
-        $self->info("Both group_readable and world_readable are set, ",
-                    "world_readable setting honoured.") if $self->{GROUP_READABLE};
-        $opts->{mode} = 0755;
-    }
-
-    # mkpath returns the created directories, croaks on fatal errors
-    mkpath($dir, $opts);
+    # Change the whole cacheroot and profile dir to allow correct permissions
+    MakeCacheRoot($self->{CACHE_ROOT}, $self->{GROUP_READABLE}, $self->{WORLD_READABLE},
+                  $self, "$PROFILE_DIR_N$cid");
 
     my %current = (
         dir => $dir,

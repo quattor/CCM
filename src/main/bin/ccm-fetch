@@ -6,17 +6,18 @@
 
 package ccm_fetch;
 
+use strict;
+use warnings;
+
 # required for CAF (Common Application Framework)
 BEGIN {
-    unshift(@INC, '/opt/edg/lib/perl', '/usr/lib/perl');
+    unshift(@INC, '/usr/lib/perl');
 }
 
 use CAF::Application;
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR_FORCE);
-use strict;
-use warnings;
 our @ISA = qw(CAF::Application CAF::Reporter);
 
 # needed for method overriding
@@ -147,7 +148,7 @@ sub _initialize {
 
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
-	return undef;
+        return undef;
     }
 
     return SUCCESS;
@@ -158,6 +159,9 @@ sub _initialize {
 
 package main;
 
+use strict;
+use warnings;
+
 # modules
 use English;
 use LC::Exception qw(SUCCESS throw_error);
@@ -167,10 +171,6 @@ use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
-
-use strict;
-use warnings;
-#use diagnostics;
 
 our ($this_app);
 
