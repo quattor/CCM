@@ -15,6 +15,7 @@ use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
 use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Path;
+use LC::Exception;
 
 use Cwd;
 
@@ -253,6 +254,15 @@ like($config->{fail}, qr{path //invalidpath must be an absolute path},
    "config->getTree of //invalidpath undefined does sets fail attribute (invalid path throws error)");
 
 ok(! $ec_cfg->error(), "No errors after testing getTree errorhandling");
-diag explain $ec_cfg;
+
+# Inject an error, getTree should handle it gracefully (i.e. ignore it)
+my $myerror = LC::Exception->new();
+$myerror->is_error(1);
+$ec_cfg->error($myerror);
+
+ok($ec_cfg->error(), "Error before testing getTree errorhandling");
+is_deeply($config->getTree("$path"), $pathdata, "config->getTree of $path as expected with existing error");
+ok(! $ec_cfg->error(), "No errors after testing getTree errorhandling with existing error");
+
 
 done_testing();

@@ -490,6 +490,11 @@ sub getTree
 {
     my ($self, $path, @args) = @_;
 
+    # Ignore any existing errors
+    if ($ec->error()) {
+        $ec->ignore_error();
+    };
+
     my $res;
     if ($self->elementExists($path)) {
         my $el = $self->getElement($path);
