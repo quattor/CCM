@@ -107,8 +107,13 @@ if ($world_readable) {
 
 my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
 foreach my $path (@paths) {
-    my $ok = mkdir $cache_root, $mode;
-    die "Can't create $path: $!\n" unless $ok;
+    if (-d $path) {
+        # chmod returns number of changed files, croaks on error
+        chmod $mode, $path;
+    } else {
+        my $ok = mkdir $path, $mode;
+        die "Can't create $path: $!\n" unless $ok;
+    }
     if (defined($gid)) {
         # use effective UID
         # chown returns number of changed files, croaks on error
