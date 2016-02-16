@@ -107,7 +107,6 @@ sub init
     my $usage = "$0 [--time seconds] [--conf ccm.conf] [--tolerant]";
 
     $ccm_conf = "";
-    $TimeAging = EDG::WP4::CCM::CCfg::getCfgValue("purge_time");
     $Tolerant  = 0;
     my $help = 0;
     GetOptions('config=s'  => \$ccm_conf,
@@ -116,13 +115,14 @@ sub init
                'help'      => \$help,
         ) or die("error processing command line: $!\n $usage");
 
-    die("Usage: $usage\n") if ($help || !$TimeAging);
-
     if (!$ccm_conf) {
         initCfg();
     } else {
         initCfg($ccm_conf);
     }
+
+    $TimeAging = EDG::WP4::CCM::CCfg::getCfgValue("purge_time") if (!defined($TimeAging));
+    die("Usage: $usage\n") if ($help);
 
     $CacheDir = EDG::WP4::CCM::CCfg::getCfgValue("cache_root");
     my $numKeep = EDG::WP4::CCM::CCfg::getCfgValue("keep_old");
