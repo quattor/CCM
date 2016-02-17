@@ -13,11 +13,23 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 64;
+use Test::More;
+# to be able to mock them with MockModule
+# order of use is important (fake sub namespace before the ProfileCache (and Fetch) loads it)
+use subs qw(
+    EDG::WP4::CCM::Fetch::ProfileCache::mkdir
+    EDG::WP4::CCM::Fetch::ProfileCache::chown
+    EDG::WP4::CCM::Fetch::ProfileCache::chmod
+    EDG::WP4::CCM::Fetch::ProfileCache::umask
+    EDG::WP4::CCM::Fetch::ProfileCache::getgrnam
+);
+use EDG::WP4::CCM::Fetch::ProfileCache qw(MakeCacheRoot);
+
 use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
     $TABCOMPLETION_FN
     NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
+
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(mkpath rmtree);
@@ -25,12 +37,15 @@ use CAF::Object;
 use Carp qw(croak);
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS);
+use Test::Quattor::Object;
 
 use Test::Quattor::TextRender::Base;
 
 my $caf_trd = mock_textrender();
 
+use Test::MockModule;
 
+my $mock_profcache = Test::MockModule->new('EDG::WP4::CCM::Fetch::ProfileCache');
 
 #$CAF::Object::NoAction = 1;
 
@@ -77,6 +92,62 @@ sub setup_cache
 }
 
 compile_profile();
+
+=pod
+
+=head2 Test MakeCacheRoot
+
+Test the creation of cache root
+
+=cut
+
+# shoudl not be used, all calls are mocked
+my $cr = "target/test/make_cache_root";
+
+my $calls = {};
+
+foreach my $m (qw(chmod chown mkdir umask getgrnam)) {
+  $calls->{$m} = [];
+  # return 20 (is not 0, and used as gid)
+  $mock_profcache->mock($m, sub { push(@{$calls->{$m}}, \@_); 20; });
+};
+
+my $dirs = { "$cr/tmp" => 1 };
+$mock_profcache->mock('_directory_exists', sub { my $dir = shift; return $dirs->{$dir}; });
+
+my $obj = Test::Quattor::Object->new();
+
+MakeCacheRoot($cr, 'mygroup', 1, $obj, "profile.3");
+
+is_deeply($calls->{mkdir}, [[$cr, 0755], ["$cr/data", 0755], ["$cr/profile.3", 0755]],
+          "mkdir called as expected (only on non-existing dirs)");
+is_deeply($calls->{chmod}, [[0755, "$cr/tmp"]],
+          "chmod called as expected (only on existing dir)");
+is_deeply($calls->{chown}, [[$>, 20, $cr], [$>, 20, "$cr/data"], [$>, 20, "$cr/tmp"], [$>, 20, "$cr/profile.3"]],
+          "chown called as expected");
+is_deeply($calls->{umask}, [], "umask not called (world_readable is set)");
+is_deeply($calls->{getgrnam}, [['mygroup']], "getgrnam called");
+
+# continue with normal profcache
+$mock_profcache->unmock('_directory_exists');
+
+# mock the builtin subs with the buitins
+no strict 'refs';
+foreach my $m (qw(chmod chown mkdir umask getgrnam)) {
+  $mock_profcache->mock($m, sub { my $f = "CORE::$m"; return &$f(@_); } );
+};
+use strict 'refs';
+
+my $make_cacheroot;
+$mock_profcache->mock('MakeCacheRoot', sub {
+    my @args = @_;
+    $make_cacheroot = \@_;
+    # continue without group and world _readables
+    $args[1] = undef;
+    $args[2] = 0;
+    my $orig = $mock_profcache->original('MakeCacheRoot');
+    return &$orig(@args);
+});
 
 =pod
 
@@ -275,11 +346,16 @@ foreach my $i (qw(cid url profile)) {
 
 is("$r{cid}", "0\n", "Correct CID read");
 
-
+$make_cacheroot = [];
+$f->{GROUP_READABLE} = 'mygroup';
+$f->{WORLD_READABLE} = 1;
 %r = $f->current($pf, %r);
 foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
-}
+  }
+# cache_root from test/resources/ccm.conf
+is_deeply($make_cacheroot, ["target/test/cache", "mygroup", 1, $f, "profile.1"],
+          "current calls MakeCacheRoot as expected");
 like("$r{profile}", qr{^<\?xml}, "Current profile will be written");
 is("$r{cid}", "1\n", "Correct CID will be written");
 is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
@@ -408,3 +484,7 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
+
+
+
+done_testing();

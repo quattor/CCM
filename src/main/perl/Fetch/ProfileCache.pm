@@ -69,6 +69,12 @@ Readonly our $ERROR => -1;
 Readonly our $FETCH_LOCK_FN => "fetch.lock";
 Readonly our $TABCOMPLETION_FN => "tabcompletion";
 
+# test if directory exists, for unittestting
+sub _directory_exists
+{
+    my $dir = shift;
+    return -d $dir;
+}
 
 # Function (not method) to create cacheroot and optional subdirectories
 # with appropiate permissions. Does not return anything.
@@ -116,7 +122,7 @@ sub MakeCacheRoot
     $reporter->verbose("Going to create/modify paths: @paths");
 
     foreach my $path (@paths) {
-        if (-d $path) {
+        if (_directory_exists($path)) {
             # chmod returns number of changed files, croaks on error
             chmod $mode, $path;
         } else {
