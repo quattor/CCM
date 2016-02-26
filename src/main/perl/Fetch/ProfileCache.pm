@@ -23,6 +23,8 @@ use warnings;
 
 use EDG::WP4::CCM::DB;
 
+use POSIX;
+
 # Which do we support, DB, CDB, GDBM?
 our @db_backends;
 
@@ -99,6 +101,15 @@ sub MakeCacheRoot
             $reporter->verbose("Valid $msg");
             $mode = 0750;
             $mask = 027;
+
+            # Change gid of this process: files created with
+            # umask 027 should be still accessible for this group
+            setgid($gid);
+            $) = "$gid $gid";
+            $( = $gid;
+            if ( ( $( != $gid ) or ( $) != $gid ) ) {
+                $reporter->error("Failed to set gid $gid with $msg");
+            };
         } else {
             $reporter->error("Invalid $msg");
         };
