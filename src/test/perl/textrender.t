@@ -270,8 +270,9 @@ my $trd_s = EDG::WP4::CCM::TextRender->new(
     eol => 0,
     );
 is($trd_s->{fail}, undef, "Fail is undefined with new variables (scalar string) ".($trd->{fail} || "<undef>"));
-is(ref($trd_s->{contents}), 'EDG::WP4::CCM::TT::Scalar',
-    "scalar contents is EDG::WP4::CCM::TT::Scalar");
+is_deeply($trd_s->{contents}, {}, "empty hashref as contents for scalar string/non-hashref contents");
+is(ref($trd_s->{ttoptions}->{VARIABLES}->{CCM}->{contents}), 'EDG::WP4::CCM::TT::Scalar',
+    "scalar contents via CCM.contents is EDG::WP4::CCM::TT::Scalar");
 
 $rt = Test::Quattor::RegexpTest->new(
     regexp => 'src/test/resources/rendertest/regexptest-extravars-scalar_string',
@@ -279,6 +280,29 @@ $rt = Test::Quattor::RegexpTest->new(
 );
 $rt->test();
 
+diag("$trd_s");
+diag explain $trd_s->{contents};
+
+# add additional test for arrayref
+$el = $cfg->getElement("/g");
+
+my $trd_s = EDG::WP4::CCM::TextRender->new(
+    'extravars_list',
+    $el,
+    includepath => getcwd()."/src/test/resources",
+    relpath => 'rendertest',
+    eol => 0,
+    );
+is($trd_s->{fail}, undef, "Fail is undefined with new variables (list) ".($trd->{fail} || "<undef>"));
+is_deeply($trd_s->{contents}, {}, "empty hashref as contents for list/non-hashref contents");
+is_deeply($trd_s->{ttoptions}->{VARIABLES}->{CCM}->{contents}, [qw(g1 g2)],
+    "list contents via CCM.contents as expected");
+
+$rt = Test::Quattor::RegexpTest->new(
+    regexp => 'src/test/resources/rendertest/regexptest-extravars-list',
+    text => "$trd_s",
+);
+$rt->test();
 
 diag("$trd_s");
 diag explain $trd_s->{contents};

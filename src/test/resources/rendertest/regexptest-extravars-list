@@ -1,0 +1,18 @@
+Test extravars with list
+---
+---
+^CCM.contents.defined YES$
+^CCM.contents ARRAY\(0x\w+\)$
+^$
+^$
+^ref ARRAY$
+^is_scalar NO$
+^is_list YES$
+^is_hash NO$
+^get_type $
+^is_boolean NO$
+^is_string NO$
+^is_double NO$
+^is_long NO$
+^path /g$
+^newpath /g/x/y/z$

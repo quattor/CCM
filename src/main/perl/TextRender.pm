@@ -492,6 +492,13 @@ sub make_contents
         $self->{ttoptions}->{VARIABLES}->{CCM}->{$k} = $v;
     }
 
+    # The returned contents here are passed via CAF::TextRender::tt
+    # to template->process; and are interpreted as the parameters available
+    # in the TT file. Because of this, we can only allow a hashref here.
+    # If you want to support rendering from non-hashref, you can but you have to
+    # use the CCM.contents and not expect any available variables.
+    $contents = {} if ($self->{method_is_tt} && ($ref ne 'HASH'));
+
     return $contents;
 }
 
