@@ -171,7 +171,7 @@ Readonly::Array our @CONFIG_OPTIONS => (
     {
         option => 'trust',
         suffix => '=s',
-        HELP   => 'Kerberos principal to trust if using encrypted profiles',
+        HELP   => 'Comma-separated list of kerberos principals to trust when using encrypted profiles',
     },
 
     {
@@ -211,6 +211,19 @@ Readonly::Array our @CONFIG_OPTIONS => (
         DEFAULT => 0,
         HELP => 'Create the tabcompletion file (during profile fetch)',
     },
+
+    {
+        option => 'principal',
+        suffix => '=s',
+        HELP => 'Principal to use for Kerberos setup',
+    },
+
+    {
+        option => 'keytab',
+        suffix => '=s',
+        HELP => 'Keytab to use for Kerberos setup',
+    },
+
 );
 
 Readonly::Array our @CFG_KEYS => sort map {$_->{option}} @CONFIG_OPTIONS;

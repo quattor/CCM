@@ -262,6 +262,23 @@ sub setProfileFailover
     return SUCCESS;
 }
 
+sub setPrincipal
+{
+    my ($self, $val) = @_;
+    throw_error("Invalid characters in principal: $val")
+        unless ($val =~ m/^[\w.-\/@]+$/);
+    $self->{PRINCIPAL} = $val;
+    return SUCCESS;
+}
+
+sub setKeytab
+{
+    my ($self, $val) = @_;
+    throw_error("Keytab $val not readable") unless (-r $val);
+    $self->{KEYTAB} = $val;
+    return SUCCESS;
+}
+
 sub getCacheRoot
 {
     my ($self) = @_;
