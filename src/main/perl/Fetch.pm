@@ -106,6 +106,15 @@ sub new
 
     $self->setProfileFormat($param->{DBFORMAT});
 
+    # Get correct permissions
+    my ($dopts, $fopts, $mask) = $self->GetPermissions($self->{GROUP_READABLE}, $self->{WORLD_READABLE});
+    $fopts->{log} = $self; # will be passed as option hash to CAF::File(Writer/Editor)
+    $self->{permission} = {
+        directory => $dopts,
+        file => $fopts,
+        mask => $mask,
+    };
+
     return $self;
 }
 

@@ -47,7 +47,7 @@ use EDG::WP4::CCM::TextRender qw(ccm_format);
 
 use CAF::FileWriter;
 use CAF::FileReader;
-use CAF::Lock v16.2.1 qw(FORCE_IF_STALE);
+use CAF::Lock qw(FORCE_IF_STALE);
 use Digest::MD5 qw(md5_hex);
 use Readonly;
 use LC::Exception qw(SUCCESS);
@@ -176,7 +176,7 @@ sub MakeCacheRoot
     my $dmode = $dopts->{mode};
 
     # Default paths to set
-    my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
+    my @paths = ($cache_root, "$cache_root/$DATA_DN", "$cache_root/tmp");
     # Add profilepath
     push (@paths, "$cache_root/$profiledir") if ($profiledir && $profiledir =~ m/^\w+\.\d+$/);
 
@@ -185,19 +185,41 @@ sub MakeCacheRoot
     foreach my $path (@paths) {
         if (_directory_exists($path)) {
             # chmod returns number of changed files, croaks on error
+            $reporter->debug(1, "MakeCacheRoot chmod mode $dmode path $path");
             chmod $dmode, $path;
         } else {
+            $reporter->debug(1, "MakeCacheRoot mkdir path $path mode $dmode");
             my $ok = mkdir $path, $dmode;
             die "Can't create $path: $!\n" unless $ok;
         }
 
         # use effective UID
         # chown returns number of changed files, croaks on error
-        chown $>, $gid, $path if (defined($gid));
+        if (defined($gid)) {
+            $reporter->debug(1, "MakeCacheRoot chown uid $> gid $gid path $path");
+            chown $>, $gid, $path
+        }
     };
 
 }
 
+# Create the globallock file.
+# If C<check> is set, check if the file already exists and do not overwrite if it does.
+sub createGlobalLock
+{
+    my ($self, $check) = @_;
+
+    my $fn = "$self->{CACHE_ROOT}/$GLOBAL_LOCK_FN";
+
+    if ($check && -f $fn) {
+        $self->debug(1, "Global lock $fn already exists, not overwriting it");
+    } else {
+        $self->debug(1, "Writing global lock $fn");
+        my $global = CAF::FileWriter->new($fn, %{$self->{permission}->{file}});
+        print $global "no\n";
+        $global->close();
+    };
+};
 
 # Sets up the required locks in the cache root.  It requires a
 # CAF::Lock for the profile itself, and another one, "global.lock" to
@@ -206,12 +228,10 @@ sub getLocks
 {
     my ($self) = @_;
 
-    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN", log => $self);
+    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN");
     $fl->set_lock($self->{LOCK_RETRIES}, $self->{LOCK_WAIT}, FORCE_IF_STALE)
         or die "Failed to lock $self->{CACHE_ROOT}/$FETCH_LOCK_FN";
-    my $global = CAF::FileWriter->new("$self->{CACHE_ROOT}/$GLOBAL_LOCK_FN", log => $self);
-    print $global "no\n";
-    $global->close();
+    $self->createGlobalLock();
     return $fl;
 }
 
@@ -223,7 +243,7 @@ sub previous
 
     my ($dir, %ret);
 
-    $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/$LATEST_CID_FN", log => $self);
+    $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/$LATEST_CID_FN", %{$self->{permission}->{file}});
 
     if ("$ret{cid}" eq '') {
         $ret{cid}->print("0\n");
@@ -233,11 +253,11 @@ sub previous
     $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$1";
     $ret{dir} = $dir;
 
-    $ret{url} = CAF::FileReader->new("$dir/profile.url", log => $self);
+    $ret{url} = CAF::FileReader->new("$dir/profile.url", %{$self->{permission}->{file}});
     chomp($ret{url}); # this actually works
 
-    $ret{context_url} = CAF::FileReader->new("$dir/context.url", log => $self);
-    $ret{profile}     = CAF::FileReader->new("$dir/profile.xml", log => $self);
+    $ret{context_url} = CAF::FileReader->new("$dir/context.url", %{$self->{permission}->{file}});
+    $ret{profile}     = CAF::FileReader->new("$dir/profile.xml", %{$self->{permission}->{file}});
 
     return %ret;
 }
@@ -253,20 +273,18 @@ sub current
     $cid = $1;
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
-    # Change the whole cacheroot and profile dir to allow correct permissions
-    my ($dopts, $fopts, $mask) = $self->GetPermissions($self->{GROUP_READABLE}, $self->{WORLD_READABLE});
     # Doesn't really matter if it's dopts or fopts gid
-    $self->SetMask($mask, $dopts->{group});
-
+    my $dopts = $self->{permission}->{directory};
+    $self->SetMask($self->{permission}->{mask}, $dopts->{group});
     $self->MakeCacheRoot($self->{CACHE_ROOT}, $dopts, "$PROFILE_DIR_N$cid");
 
     my %current = (
         dir => $dir,
-        url => CAF::FileWriter->new("$dir/profile.url", log => $self),
+        url => CAF::FileWriter->new("$dir/profile.url", %{$self->{permission}->{file}}),
         cid => CAF::FileWriter->new(
-            "$self->{CACHE_ROOT}/$CURRENT_CID_FN", log => $self
+            "$self->{CACHE_ROOT}/$CURRENT_CID_FN", %{$self->{permission}->{file}}
         ),
-        profile => CAF::FileWriter->new("$dir/profile.xml", log => $self),
+        profile => CAF::FileWriter->new("$dir/profile.xml", %{$self->{permission}->{file}}),
         eiddata => "$dir/eid2data",
         eidpath => "$dir/path2eid"
     );
@@ -290,7 +308,7 @@ sub generate_tabcompletion
     my $fmt = ccm_format('tabcompletion', $el);
 
     if (defined $fmt->get_text()) {
-        my $fh = $fmt->filewriter("$cfg->{cfg_path}/$TABCOMPLETION_FN", log => $self);
+        my $fh = $fmt->filewriter("$cfg->{cfg_path}/$TABCOMPLETION_FN", %{$self->{permission}->{file}});
         $fh->close();
     } else {
         $self->error("Failed to render tabcompletion: $fmt->{fail}")
@@ -489,34 +507,12 @@ sub enableForeignProfile
     return ($ERROR, "temporary directory $tmp_dir does not exist")
         unless (-d "$tmp_dir");
 
-    my $cache_root = $self->{"CACHE_ROOT"};
-
-    # Check existance of required directories in temporary foreign directory
-    unless ((-d $cache_root)) {
-        $self->debug(5, "Creating directory: $cache_root");
-        mkdir($cache_root, 0755)
-            or return ($ERROR, "can't make foreign profile dir: $cache_root: $!");
-    }
-
-    unless ((-d "$cache_root/$DATA_DN")) {
-        $self->debug(5, "Creating $cache_root/data directory ");
-        mkdir("$cache_root/data", 0755)
-            or return ($ERROR, "can't make foreign profile data dir: $cache_root/$DATA_DN: $!");
-    }
-
-    unless ((-d "$cache_root/tmp")) {
-        $self->debug(5, "Creating $cache_root/tmp directory ");
-        mkdir("$cache_root/tmp", 0755)
-            or return ($ERROR, "can't make foreign profile tmp dir: $cache_root/tmp: $!");
-    }
+    my $dopts = $self->{permission}->{directory};
+    $self->SetMask($self->{permission}->{mask}, $dopts->{group});
+    $self->MakeCacheRoot($self->{CACHE_ROOT}, $dopts);
 
     # Create global lock file
-    if (!(-f "$cache_root/$GLOBAL_LOCK_FN")) {
-        $self->debug(5, "Creating lock file in foreign cache root");
-        my $fh = CAF::FileWriter->new("$cache_root/$GLOBAL_LOCK_FN", log => $self);
-        print $fh "no\n";
-        $fh->close();
-    }
+    $self->createGlobalLock(1);
 }
 
 =item setProfileFormat

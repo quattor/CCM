@@ -110,7 +110,7 @@ $this_app->verbose("Creating cache_root $cache_root and subdirectories");
 # Change the whole cacheroot and profile dir to allow correct permissions
 my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
 SetMask($this_app, $mask, $dopts->{group});
-MakeCacheRoot($this_app, $self->{CACHE_ROOT}, $dopts);
+MakeCacheRoot($this_app, $cache_root, $dopts);
 
 # make global lock file (mask and GID take care of the permissions)
 $this_app->verbose("Creating lockfile");

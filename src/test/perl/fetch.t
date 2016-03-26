@@ -135,11 +135,26 @@ $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				CONFIG => 'src/test/resources/ccm.cfg'});
 is($f->{CACHE_ROOT}, "/foo/bar",
    "Cache root given to constructor overrides config file");
-$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
-				CONFIG => 'src/test/resources/ccm.cfg'});
+
+
+$getpermissions = [];
+$f = EDG::WP4::CCM::Fetch->new({
+    FOREIGN => 0,
+    CONFIG => 'src/test/resources/ccm.cfg',
+    GROUP_READABLE => 'mygroup',
+    WORLD_READABLE => 1,
+});
 ok($f, "Fetch profile created");
 isa_ok($f, "EDG::WP4::CCM::Fetch", "Object is a valid reference");
 is($f->{PROFILE_URL}, "https://www.google.com", "Profile URL correctly set");
+
+is_deeply($getpermissions, [$f, "mygroup", 1],
+          "new calls GetPermissions as expected");
+is_deeply($f->{permission}, {
+    directory => {mode => 0700},
+    file => {log => $f, mode => 0600},
+    mask => 077,
+}, "permission attribute is added (with mocked values)");
 
 =pod
 
@@ -303,18 +318,13 @@ foreach my $i (qw(cid url profile)) {
 
 is("$r{cid}", "0\n", "Correct CID read");
 
-$getpermissions = [];
 $setmask = [];
 $make_cacheroot = [];
-$f->{GROUP_READABLE} = 'mygroup';
-$f->{WORLD_READABLE} = 1;
 %r = $f->current($pf, %r);
 foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
   }
 # cache_root from test/resources/ccm.conf
-is_deeply($getpermissions, [$f, "mygroup", 1],
-          "current calls GetPermissions as expected");
 is_deeply($setmask, [$f, 077, undef], "current calls SetMask as expected after mocking");
 is_deeply($make_cacheroot, [$f, "target/test/cache", {mode => 0700 }, "profile.1"],
           "current calls MakeCacheRoot as expected after mocking");
