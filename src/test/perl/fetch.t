@@ -81,13 +81,27 @@ compile_profile();
 
 my $mock_profcache = Test::MockModule->new('EDG::WP4::CCM::Fetch::ProfileCache');
 
+my $getpermissions;
+$mock_profcache->mock('GetPermissions', sub {
+    my @args = @_;
+    $getpermissions = \@_;
+    my $orig = $mock_profcache->original('GetPermissions');
+    # Ignore all group/world _readables
+    return &$orig();
+});
+
+my $setmask;
+$mock_profcache->mock('SetMask', sub {
+    my @args = @_;
+    $setmask = \@_;
+    my $orig = $mock_profcache->original('SetMask');
+    return &$orig(@args);
+});
+
 my $make_cacheroot;
 $mock_profcache->mock('MakeCacheRoot', sub {
     my @args = @_;
     $make_cacheroot = \@_;
-    # continue without group and world _readables
-    $args[1] = undef;
-    $args[2] = 0;
     my $orig = $mock_profcache->original('MakeCacheRoot');
     return &$orig(@args);
 });
@@ -289,6 +303,8 @@ foreach my $i (qw(cid url profile)) {
 
 is("$r{cid}", "0\n", "Correct CID read");
 
+$getpermissions = [];
+$setmask = [];
 $make_cacheroot = [];
 $f->{GROUP_READABLE} = 'mygroup';
 $f->{WORLD_READABLE} = 1;
@@ -297,8 +313,11 @@ foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
   }
 # cache_root from test/resources/ccm.conf
-is_deeply($make_cacheroot, ["target/test/cache", "mygroup", 1, $f, "profile.1"],
-          "current calls MakeCacheRoot as expected");
+is_deeply($getpermissions, [$f, "mygroup", 1],
+          "current calls GetPermissions as expected");
+is_deeply($setmask, [$f, 077, undef], "current calls SetMask as expected after mocking");
+is_deeply($make_cacheroot, [$f, "target/test/cache", {mode => 0700 }, "profile.1"],
+          "current calls MakeCacheRoot as expected after mocking");
 like("$r{profile}", qr{^<\?xml}, "Current profile will be written");
 is("$r{cid}", "1\n", "Correct CID will be written");
 is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");

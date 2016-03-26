@@ -119,7 +119,7 @@ sub _check_type
 {
     my ($type, $obj, $name) = @_;
 
-    if (-e $obj && (($type eq "directory" && -d $obj) || ($type eq "file" && -f $obj) )) {
+    if (-e $obj && (($type eq "directory" && -d $obj) || ($type eq "file" && -r $obj) )) {
         return SUCCESS;
     } elsif($!{ENOENT}) {
         throw_error("$name $type does not exist ($type $obj)");
@@ -128,7 +128,7 @@ sub _check_type
         throw_error("No permission for $name $type ($type $obj)");
         return ();
     } else {
-        throw_error("Something wrong while trying to accessing $name $type ($type $obj): $!");
+        throw_error("Something wrong while trying to access $name $type ($type $obj): $!");
         return ();
     }
 }

@@ -77,7 +77,7 @@ use warnings;
 use Getopt::Long;
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
-use EDG::WP4::CCM::Fetch::ProfileCache qw(MakeCacheRoot);
+use EDG::WP4::CCM::Fetch::ProfileCache qw(GetPermissions SetMask MakeCacheRoot);
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
 
@@ -96,15 +96,9 @@ unless ($this_app = ccm_initialise->new($0, @ARGV)) {
 $this_app->verbose("ccm-initialise begin");
 
 # Options
-my $cache_root = undef;
-my $world_readable = 0;
-my $group_readable = undef;
-
 initCfg($this_app->option("cfgfile"));
 
-$cache_root = getCfgValue('cache_root');
-$group_readable = getCfgValue('group_readable');
-$world_readable = getCfgValue('world_readable');
+my $cache_root = getCfgValue('cache_root');
 
 # remove any existing cache
 $this_app->verbose("Removing cache_root $cache_root");
@@ -112,9 +106,13 @@ rmtree($cache_root, 0, 0);
 
 # Use Warn for both info and error
 $this_app->verbose("Creating cache_root $cache_root and subdirectories");
-MakeCacheRoot($cache_root, $group_readable, $world_readable, $this_app);
 
-# make lock files
+# Change the whole cacheroot and profile dir to allow correct permissions
+my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
+SetMask($this_app, $mask, $dopts->{group});
+MakeCacheRoot($this_app, $self->{CACHE_ROOT}, $dopts);
+
+# make global lock file (mask and GID take care of the permissions)
 $this_app->verbose("Creating lockfile");
 open TMP, ">$cache_root/global.lock";
 print TMP "no\n";

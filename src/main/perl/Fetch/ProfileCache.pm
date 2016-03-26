@@ -47,7 +47,7 @@ use EDG::WP4::CCM::TextRender qw(ccm_format);
 
 use CAF::FileWriter;
 use CAF::FileReader;
-use CAF::Lock qw(FORCE_IF_STALE);
+use CAF::Lock v16.2.1 qw(FORCE_IF_STALE);
 use Digest::MD5 qw(md5_hex);
 use Readonly;
 use LC::Exception qw(SUCCESS);
@@ -63,7 +63,8 @@ use parent qw(Exporter);
 our @EXPORT    = qw();
 our @EXPORT_OK = qw(
     $FETCH_LOCK_FN $TABCOMPLETION_FN $ERROR
-    ComputeChecksum MakeCacheRoot
+    ComputeChecksum
+    MakeCacheRoot GetPermissions SetMask
 );
 
 Readonly our $ERROR => -1;
@@ -78,20 +79,27 @@ sub _directory_exists
     return -d $dir;
 }
 
-# Function (not method) to create cacheroot and optional subdirectories
-# with appropiate permissions. Does not return anything.
+# Function (possibly method) to obtain the permission and ownership of
+# directories and files.
 # Arguments
-#    C<cache_root>: the cacheroot (additionally, also cacheroot/tmp and cacheroot/data are handled)
+#    C<reporter>: info/error reporter (can be C<$self>, and can be called as C<$self->GetPermissions>).
 #    C<group_readable>: the group_readble groupname
 #    C<world_readable>: world_readable boolean
-#    C<reporter>: info/error reporter
-#    C<profiledir>: optional relative profile dir path that will receive the permissions
-sub MakeCacheRoot
+# Returns
+#    hashref with directory mode and group id (if relevant)
+#    hashref with file mode and group id (if relevant)
+#    umask mask
+sub GetPermissions
 {
-    my ($cache_root, $group_readable, $world_readable, $reporter, $profiledir) = @_;
+    my ($reporter, $group_readable, $world_readable) = @_;
 
     my $gid;
-    my $mode = 0700;
+    my $dopts = {
+        mode => 0700,
+    };
+    my $fopts = {
+        mode => 0600,
+    };
     my $mask = 077;
 
     if ($group_readable) {
@@ -99,17 +107,14 @@ sub MakeCacheRoot
         my $msg = "group name for group_readable $group_readable";
         if(defined($gid)) {
             $reporter->verbose("Valid $msg");
-            $mode = 0750;
-            $mask = 027;
 
-            # Change gid of this process: files created with
-            # umask 027 should be still accessible for this group
-            setgid($gid);
-            $) = "$gid $gid";
-            $( = $gid;
-            if ( ( $( != $gid ) or ( $) != $gid ) ) {
-                $reporter->error("Failed to set gid $gid with $msg");
-            };
+            $dopts->{mode} = 0750;
+            $dopts->{group} = $gid;
+
+            $fopts->{mode} = 0640;
+            $fopts->{group} = $gid;
+
+            $mask = 027;
         } else {
             $reporter->error("Invalid $msg");
         };
@@ -122,8 +127,53 @@ sub MakeCacheRoot
             $reporter->verbose("world_readable set")
         }
         $mask = undef;
-        $mode = 0755;
+        $dopts->{mode} = 0755;
+        $fopts->{mode} = 0644;
     };
+
+    return $dopts, $fopts, $mask;
+};
+
+
+# Function (possibly method) that sets the umask and changes the current process GID.
+# Arguments
+#    C<reporter>: info/error reporter (can be C<$self>, and can be called as C<$self->SetMask>).
+#    C<mask>: mask
+#    C<gid>: (optional) group id
+sub SetMask
+{
+    my ($reporter, $mask, $gid) = @_;
+
+    # make sure files are created so only
+    # root and possibly the group can see them
+    umask($mask) if $mask;
+
+    if(defined($gid)) {
+        # Change gid of this process: files created with
+        # umask 027 should be still accessible for this group
+        setgid($gid);
+        $) = "$gid $gid";
+        $( = $gid;
+        if ( ( $( != $gid ) or ( $) != $gid ) ) {
+            $reporter->error("Failed to set gid $gid");
+        };
+    };
+};
+
+
+# Function (possibly method) to create cacheroot and optional subdirectories
+# with appropiate permissions. Does not return anything.
+# Arguments
+#    C<reporter>: info/error reporter (can be C<$self>, and can be called as C<$self->MakeCacheRoot>).
+#    C<cache_root>: the cacheroot (additionally, also cacheroot/tmp and cacheroot/data are handled)
+#    C<dopts>: hashref with directory permissions and group id (if relevant)
+#    C<profiledir>: optional relative profile dir path that will receive the permissions
+sub MakeCacheRoot
+{
+    my ($reporter, $cache_root, $dopts, $profiledir) = @_;
+
+    my $gid = $dopts->{group};
+    my $dmode = $dopts->{mode};
 
     # Default paths to set
     my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
@@ -135,21 +185,17 @@ sub MakeCacheRoot
     foreach my $path (@paths) {
         if (_directory_exists($path)) {
             # chmod returns number of changed files, croaks on error
-            chmod $mode, $path;
+            chmod $dmode, $path;
         } else {
-            my $ok = mkdir $path, $mode;
+            my $ok = mkdir $path, $dmode;
             die "Can't create $path: $!\n" unless $ok;
         }
-        if (defined($gid)) {
-            # use effective UID
-            # chown returns number of changed files, croaks on error
-            chown $>, $gid, $path;
-        };
+
+        # use effective UID
+        # chown returns number of changed files, croaks on error
+        chown $>, $gid, $path if (defined($gid));
     };
 
-    # make sure files are created so only
-    # root and possibly the group can see them
-    umask($mask) if $mask;
 }
 
 
@@ -160,14 +206,13 @@ sub getLocks
 {
     my ($self) = @_;
 
-    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN");
+    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN", log => $self);
     $fl->set_lock($self->{LOCK_RETRIES}, $self->{LOCK_WAIT}, FORCE_IF_STALE)
         or die "Failed to lock $self->{CACHE_ROOT}/$FETCH_LOCK_FN";
     my $global = CAF::FileWriter->new("$self->{CACHE_ROOT}/$GLOBAL_LOCK_FN", log => $self);
     print $global "no\n";
     $global->close();
     return $fl;
-
 }
 
 
@@ -209,8 +254,11 @@ sub current
     my $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$cid";
 
     # Change the whole cacheroot and profile dir to allow correct permissions
-    MakeCacheRoot($self->{CACHE_ROOT}, $self->{GROUP_READABLE}, $self->{WORLD_READABLE},
-                  $self, "$PROFILE_DIR_N$cid");
+    my ($dopts, $fopts, $mask) = $self->GetPermissions($self->{GROUP_READABLE}, $self->{WORLD_READABLE});
+    # Doesn't really matter if it's dopts or fopts gid
+    $self->SetMask($mask, $dopts->{group});
+
+    $self->MakeCacheRoot($self->{CACHE_ROOT}, $dopts, "$PROFILE_DIR_N$cid");
 
     my %current = (
         dir => $dir,

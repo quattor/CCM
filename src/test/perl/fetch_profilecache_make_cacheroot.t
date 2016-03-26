@@ -25,7 +25,7 @@ use subs qw(
     EDG::WP4::CCM::Fetch::ProfileCache::umask
     EDG::WP4::CCM::Fetch::ProfileCache::getgrnam
 );
-use EDG::WP4::CCM::Fetch::ProfileCache qw(MakeCacheRoot);
+use EDG::WP4::CCM::Fetch::ProfileCache qw(MakeCacheRoot SetMask GetPermissions);
 
 use Test::Quattor::Object;
 
@@ -57,7 +57,16 @@ $mock_profcache->mock('_directory_exists', sub { my $dir = shift; return $dirs->
 
 my $obj = Test::Quattor::Object->new();
 
-MakeCacheRoot($cr, 'mygroup', 1, $obj, "profile.3");
+my ($dopts, $fopts, $mask) = GetPermissions($obj, 'mygroup', 1);
+is_deeply($dopts, {mode => 0755, group => 20}, "Expected directory opts");
+is_deeply($fopts, {mode => 0644, group => 20}, "Expected file opts");
+ok(! defined($mask), "mask is undefined with worldreadable set");
+is_deeply($calls->{getgrnam}, [['mygroup']], "getgrnam called");
+
+SetMask($obj, $mask, $dopts->{group});
+is_deeply($calls->{umask}, [], "umask not called (mask=undef; world_readable is set)");
+
+MakeCacheRoot($obj, $cr, $dopts, "profile.3");
 
 is_deeply($calls->{mkdir}, [[$cr, 0755], ["$cr/data", 0755], ["$cr/profile.3", 0755]],
           "mkdir called as expected (only on non-existing dirs)");
@@ -65,8 +74,6 @@ is_deeply($calls->{chmod}, [[0755, "$cr/tmp"]],
           "chmod called as expected (only on existing dir)");
 is_deeply($calls->{chown}, [[$>, 20, $cr], [$>, 20, "$cr/data"], [$>, 20, "$cr/tmp"], [$>, 20, "$cr/profile.3"]],
           "chown called as expected");
-is_deeply($calls->{umask}, [], "umask not called (world_readable is set)");
-is_deeply($calls->{getgrnam}, [['mygroup']], "getgrnam called");
 
 
 done_testing;
