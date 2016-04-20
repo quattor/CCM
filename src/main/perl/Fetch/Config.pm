@@ -47,7 +47,7 @@ sub _config
 
     $self->setProfileURL(($param->{PROFILE_URL} || $param->{PROFILE} || getCfgValue('profile')));
     if (getCfgValue('trust')) {
-        $self->{"TRUST"} = [split(/\,\s*/, getCfgValue('trust'))];
+        $self->{"TRUST"} = [split(/\s*,\s*/, getCfgValue('trust'))];
     } else {
         $self->{"TRUST"} = [];
     }

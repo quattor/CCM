@@ -113,7 +113,7 @@ sub app_options {
             HELP    => 'Directory containing trusted CA certificates for use with HTTPS' },
 
           { NAME    => 'trust=s',
-            HELP    => 'Comma-separated list of Kerberos principals to trust if using encrypted profiles' },
+            HELP    => 'Comma-separated list of kerberos principals to trust when using encrypted profiles' },
 
           { NAME    => 'keep_old=i',
             HELP    => 'Number of old profiles to keep before purging' },
