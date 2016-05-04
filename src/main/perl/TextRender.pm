@@ -32,6 +32,21 @@ sub _is_valid_xml
     return $@ ? 0 : 1;
 }
 
+# Args arrayref C<value> and separator C<sep>
+# If the first element is a scalar (or undef),
+# return joined string with separator (with undef converted to empty string).
+# If first element is not a scalar, return original arrayref.
+# In all other cases (empty arrayref, undef), return empty string.
+our $_arrayref_join = sub {
+    my ($value, $sep) = @_;
+
+    my $res = '';
+    if ($value && @$value) {
+        $res = ref($value->[0]) ? $value : join($sep, map {defined($_) ? "$_" : "" } @$value );
+    };
+    return $res;
+};
+
 Readonly::Hash our %ELEMENT_CONVERT => {
     'json_boolean' => sub {
         my $value = shift;
@@ -103,6 +118,12 @@ Readonly::Hash our %ELEMENT_CONVERT => {
 
         # ?
         die("xml_primitive_string: Unable to create valid xml from '$value'");
+    },
+    'arrayref_join_comma' => sub {
+        return &$_arrayref_join(shift, ',');
+    },
+    'arrayref_join_space' => sub {
+        return &$_arrayref_join(shift, ' ');
     },
 };
 
@@ -284,6 +305,20 @@ Convert string to doublequoted string.
 
 Convert string to singlequoted string.
 
+=item joincomma
+
+Convert list of scalars in comma-separated list of strings
+(if first element is scalar). List where first element is
+non-scalar is not converted (but any of the nested list could).
+
+=item joinspace
+
+Convert list of scalars in space-separated list of strings
+(if first element is scalar). List where first element is
+non-scalar is not converted (but any of the nested list could).
+
+Caveat: is preceded by C<joincomma> option.
+
 =back
 
 Other C<getTree> options
@@ -368,6 +403,12 @@ sub _make_predefined_options
 
     if ($elopts->{xml}) {
         push(@{$opts{convert_string}}, $ELEMENT_CONVERT{xml_primitive_string});
+    }
+
+    if ($elopts->{joincomma}) {
+        push(@{$opts{convert_list}}, $ELEMENT_CONVERT{arrayref_join_comma});
+    } elsif ($elopts->{joinspace}) {
+        push(@{$opts{convert_list}}, $ELEMENT_CONVERT{arrayref_join_space});
     }
 
     if ($elopts->{yesno} || $elopts->{YESNO}) {

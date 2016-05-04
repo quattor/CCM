@@ -13,7 +13,7 @@ BEGIN {
 }
 
 use Readonly;
-use Test::Quattor qw(textrender);
+use Test::Quattor qw(textrender textrender_adv);
 use EDG::WP4::CCM::TextRender;
 use Test::Quattor::RegexpTest;
 use Test::Quattor::TextRender::Base;
@@ -51,6 +51,7 @@ Test the contents is element, and getTree element options
 =cut
 
 my $cfg = get_config_for_profile("textrender");
+my $cfg_adv = get_config_for_profile("textrender_adv");
 my ($el, $trd);
 
 # json module
@@ -182,6 +183,20 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{xml_primitive_string}->("my text 
    "<![CDATA[my text ]]>]]&gt;<![CDATA[ < othertext ]]>]]&gt;<![CDATA[]]>",
    "Correct conversion to valid xml 'my text ]]> < othertext ]]>'");
 
+is(&$EDG::WP4::CCM::TextRender::_arrayref_join(undef, ';'), '', '_arrayef_join with undef returns empty string');
+is(&$EDG::WP4::CCM::TextRender::_arrayref_join([], ';'), '', '_arrayef_join with empty arrayref returns empty string');
+is(&$EDG::WP4::CCM::TextRender::_arrayref_join([1,undef,'b'], ';'), '1;;b', '_arrayef_join with scalar arrayref returns joined string');
+is_deeply(&$EDG::WP4::CCM::TextRender::_arrayref_join([[1,2],2,{a=>'b'}], ';'),
+          [[1,2],2,{a=>'b'}],
+          '_arrayef_join with non-salar first element retrun original arrayref');
+
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{arrayref_join_comma}->(["abc", undef, 1]),
+   'abc,,1',
+   'comma separated arrayref');
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{arrayref_join_space}->(["abc", undef, 1]),
+   'abc  1',
+   'space separated arrayref');
+
 # Test with tiny, has to be single level hash
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el);
@@ -189,7 +204,7 @@ my $tinyout = "$trd";
 $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    "a=ab=1c=1d=1e=0",
-   "Correct Config::tiny without element options rendered");
+   "Correct Config::Tiny without element options rendered");
 
 isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path},
        "EDG::WP4::CCM::Path",
@@ -203,7 +218,7 @@ $tinyout = "$trd";
 $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    "a='a'b='1'c=1d=yese=no",
-   "Correct Config::tiny with yesno and singlequote rendered");
+   "Correct Config::Tiny with yesno and singlequote rendered");
 
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'YESNO' => 1, 'doublequote' => 1});
@@ -211,7 +226,7 @@ $tinyout = "$trd";
 $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    'a="a"b="1"c=1d=YESe=NO',
-   "Correct Config::tiny with YESNO and doublequote rendered");
+   "Correct Config::Tiny with YESNO and doublequote rendered");
 
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'truefalse' => 1});
@@ -219,7 +234,7 @@ $tinyout = "$trd";
 $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    'a=ab=1c=1d=truee=false',
-   "Correct Config::tiny with truefalse rendered");
+   "Correct Config::Tiny with truefalse rendered");
 
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'TRUEFALSE' => 1});
@@ -227,7 +242,20 @@ $tinyout = "$trd";
 $tinyout =~ s/\s//g; # squash whitespace
 is($tinyout,
    'a=ab=1c=1d=TRUEe=FALSE',
-   "Correct Config::tiny with TRUEFALSE rendered");
+   "Correct Config::Tiny with TRUEFALSE rendered");
+
+# cannot use regular $cfg->getElement("/g"),
+# as getTree will squash this to a scalar, and tiny expected a hashref
+$el = $cfg_adv->getElement("/a");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'joincomma' => 1});
+is("$trd", "a=x,y\n", "Correct Config::Tiny with joincomma rendered");
+
+# deepest list is first squashed to string,
+# so the list of list becomes a list of strings,
+# and then a space-separated list of space-spearated list of strings
+$el = $cfg_adv->getElement("/b");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'joinspace' => 1});
+is("$trd", "b=k l m n\n", "Correct Config::Tiny with joinspace rendered");
 
 =pod
 
@@ -272,7 +300,7 @@ my $trd_s = EDG::WP4::CCM::TextRender->new(
 is($trd_s->{fail}, undef, "Fail is undefined with new variables (scalar string) ".($trd->{fail} || "<undef>"));
 is_deeply($trd_s->{contents}, {}, "empty hashref as contents for scalar string/non-hashref contents");
 is(ref($trd_s->{ttoptions}->{VARIABLES}->{CCM}->{contents}), 'EDG::WP4::CCM::TT::Scalar',
-    "scalar contents via CCM.contents is EDG::WP4::CCM::TT::Scalar");
+   "scalar contents via CCM.contents is EDG::WP4::CCM::TT::Scalar");
 
 $rt = Test::Quattor::RegexpTest->new(
     regexp => 'src/test/resources/rendertest/regexptest-extravars-scalar_string',
@@ -286,7 +314,7 @@ diag explain $trd_s->{contents};
 # add additional test for arrayref
 $el = $cfg->getElement("/g");
 
-my $trd_s = EDG::WP4::CCM::TextRender->new(
+$trd_s = EDG::WP4::CCM::TextRender->new(
     'extravars_list',
     $el,
     includepath => getcwd()."/src/test/resources",
