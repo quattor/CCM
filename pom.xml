@@ -272,33 +272,16 @@
       <groupId>org.codehaus.mojo</groupId>
       <artifactId>rpm-maven-plugin</artifactId>
       <configuration>
-        <summary>Configuration Cache Manager: CCM</summary>
+        <summary>Configuration Cache Manager for Quattor</summary>
         <name>${project.artifactId}</name>
-        <provides>
-          <provide>ccm</provide>
-          <provide>perl(EDG::WP4::CCM::DB)</provide>
-          <provide>perl(EDG::WP4::CCM::CCfg)</provide>
-          <provide>perl(EDG::WP4::CCM::CacheManager)</provide>
-          <provide>perl(EDG::WP4::CCM::Configuration)</provide>
-          <provide>perl(EDG::WP4::CCM::Element)</provide>
-          <provide>perl(EDG::WP4::CCM::Fetch)</provide>
-          <provide>perl(EDG::WP4::CCM::Path)</provide>
-          <provide>perl(EDG::WP4::CCM::Property)</provide>
-          <provide>perl(EDG::WP4::CCM::Resource)</provide>
-          <provide>perl(EDG::WP4::CCM::SyncFile)</provide>
-        </provides>
+        <url>https://github.com/quattor/CCM/tree/master</url>
         <requires>
-          <require>perl-JSON-XS &gt;= 2.3.0</require>
           <require>perl(Crypt::SSLeay)</require>
           <require>perl(LWP::Protocol::https)</require>
         </requires>
-        <defaultDirmode>755</defaultDirmode>
         <mappings>
           <mapping>
             <directory>/usr/lib/perl/EDG/WP4/CCM</directory>
-            <filemode>755</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <directoryIncluded>false</directoryIncluded>
             <sources>
               <source>
@@ -310,8 +293,6 @@
           <mapping>
             <directory>/usr/sbin</directory>
             <filemode>755</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <directoryIncluded>false</directoryIncluded>
             <sources>
               <source>
@@ -331,9 +312,6 @@
           </mapping>
           <mapping>
             <directory>/etc/cron.d</directory>
-            <filemode>644</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <configuration>true</configuration>
             <documentation>false</documentation>
             <sources>
@@ -347,25 +325,19 @@
           </mapping>
           <mapping>
             <directory>/etc/logrotate.d</directory>
-            <filemode>644</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <configuration>true</configuration>
             <documentation>false</documentation>
             <sources>
               <source>
                 <location>${project.build.directory}/etc</location>
                 <includes>
-                  <include>*.logrotate</include>
+                  <include>ccm</include>
                 </includes>
               </source>
             </sources>
           </mapping>
           <mapping>
             <directory>/etc</directory>
-            <username>root</username>
-            <groupname>root</groupname>
-            <filemode>644</filemode>
             <configuration>noreplace</configuration>
             <documentation>false</documentation>
             <directoryIncluded>false</directoryIncluded>
@@ -380,9 +352,6 @@
           </mapping>
           <mapping>
             <directory>/etc/bash_completion.d</directory>
-            <username>root</username>
-            <groupname>root</groupname>
-            <filemode>644</filemode>
             <configuration>true</configuration>
             <documentation>false</documentation>
             <directoryIncluded>false</directoryIncluded>
@@ -397,11 +366,6 @@
           </mapping>
           <mapping>
             <directory>/usr/share/quattor</directory>
-            <username>root</username>
-            <groupname>root</groupname>
-            <filemode>644</filemode>
-            <configuration>true</configuration>
-            <documentation>false</documentation>
             <directoryIncluded>false</directoryIncluded>
             <sources>
               <source>
@@ -414,10 +378,6 @@
           </mapping>
           <mapping>
             <directory>${man.page.dir}/man8</directory>
-            <filemode>644</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
-            <configuration>false</configuration>
             <documentation>true</documentation>
             <directoryIncluded>false</directoryIncluded>
             <sources>
@@ -429,9 +389,6 @@
           </mapping>
           <mapping>
             <directory>/usr/share/doc/${project.artifactId}-${project.version}</directory>
-            <filemode>644</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <documentation>true</documentation>
             <directoryIncluded>false</directoryIncluded>
             <sources>
@@ -445,9 +402,6 @@
           </mapping>
           <mapping>
             <directory>/usr/share/templates/</directory>
-            <filemode>644</filemode>
-            <username>root</username>
-            <groupname>root</groupname>
             <sources>
               <source>
                 <location>${project.build.directory}/share/templates/</location>

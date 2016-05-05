@@ -1,4 +1,0 @@
-/var/log/ccm-purge.log {
-        monthly
-        missingok
-}
