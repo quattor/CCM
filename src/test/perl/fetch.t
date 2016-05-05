@@ -252,7 +252,8 @@ $mock_hr->mock('content_encoding', 'krbencrypt');
 
 # return regular decoded content, it's not encrypted anyway
 my $decrypt = 0;
-$mock_d->mock('_gss_decrypt', sub {$decrypt = 1; shift; return ('AUTHOR/the.server@EXAMPLE.COM', shift); });
+my $author = 'AUTHOR/the.server@EXAMPLE.COM';
+$mock_d->mock('_gss_decrypt', sub {$decrypt = 1; shift; return ($author, shift); });
 
 
 is_deeply($f->{TRUST}, [], "By default TRUST attr is empty hashref");
@@ -290,6 +291,26 @@ isa_ok($pf, 'CAF::FileReader', "matching trust ok, retrieve returns FileReader")
 ok($decrypt, "_gss_decrypt called on matching trust");
 is("$@", "", "No eval exception set");
 $pf->cancel() if defined($pf);
+
+my $f_trust = EDG::WP4::CCM::Fetch->new({
+    FOREIGN => 0,
+    CONFIG => 'src/test/resources/ccm_trust.cfg',
+    GROUP_READABLE => 'mygroup',
+    WORLD_READABLE => 1,
+});
+ok($f_trust, "Fetch trust profile created");
+isa_ok($f_trust, "EDG::WP4::CCM::Fetch", "Object is a valid reference for trust config");
+is_deeply($f_trust->{TRUST}, [qw(SOMETHING NO_MATCH all.lower.domain@all.lower.realm AUTHOR/the.server@EXAMPLE.COM)],
+          "trust from config file");
+$pf = undef;
+$decrypt = 0;
+$author = 'all.lower.domain@all.lower.realm';
+$pf = $f_trust->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
+isa_ok($pf, 'CAF::FileReader', "matching alllower trust ok, retrieve returns FileReader");
+ok($decrypt, "_gss_decrypt called on matching alllower trust");
+is("$@", "", "No eval exception set for alllower");
+$pf->cancel() if defined($pf);
+
 
 # unmock
 $mock_hr->unmock('content_encoding');
