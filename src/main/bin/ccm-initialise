@@ -7,131 +7,119 @@
 # Initialise local config cache
 #
 
+package ccm_initialise;
+
+use strict;
+use warnings;
+
+# required for CAF (Common Application Framework)
 BEGIN {
-    # use perl libs in /usr/lib/perl
     unshift(@INC, '/usr/lib/perl');
 }
+
+use CAF::Application;
+use CAF::Reporter;
+use LC::Exception qw(SUCCESS throw_error);
+our @ISA = qw(CAF::Application CAF::Reporter);
+
+# needed for method overriding
+no warnings 'redefine';
+
+#
+# application specific options:
+#
+sub app_options {
+
+    # local lexicals
+    my @options;
+
+    # build options
+    push (@options,
+
+          { NAME    => 'cfgfile=s',
+            HELP    => 'configuration file for ccm-initialise' },
+
+          { NAME    => 'debug|d=i',
+            DEFAULT => '0',
+            HELP    => 'Turn on debugging messages' });
+
+    return \@options;
+}
+
+#
+# initialise
+#
+sub _initialize {
+
+    # local lexicals
+    my $self = shift;
+
+    # version and usage
+    $self->{'VERSION'} = "${project.version}";
+    $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
+
+    # initialise
+    unless ($self->SUPER::_initialize(@_)) {
+        return undef;
+    }
+
+    return SUCCESS;
+}
+
+
+#-- Main ---------------------------------------------------------------------------------------------#
+
+package main;
+
 
 use strict;
 use warnings;
 use Getopt::Long;
 use File::Path;
-use EDG::WP4::CCM::CCfg;
+use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
+use EDG::WP4::CCM::Fetch::ProfileCache qw(GetPermissions SetMask MakeCacheRoot);
+
+$ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
+
+our ($this_app);
+
+# unbuffer STDOUT & STDERR
+autoflush STDOUT 1;
+autoflush STDERR 1;
+
+# initialise main class
+unless ($this_app = ccm_initialise->new($0, @ARGV)) {
+    throw_error("Cannot start application");
+    exit (1);
+}
+
+$this_app->verbose("ccm-initialise begin");
 
 # Options
-my $debug = undef;
-my $config = undef;
-my $cache_root = undef;
-my $world_readable = 0;
-my $group_readable = undef;
+initCfg($this_app->option("cfgfile"));
 
-sub Quit
-{
-    my $msg = shift;
-
-    if ($msg) {
-        print STDERR "cache-initialise: $msg\n";
-        exit(1);
-    } else {
-        exit(0);
-    }
-}
-
-sub Warn
-{
-    my $msg = shift;
-
-    print "[WARN] $msg \n";
-
-    return 'ok';
-}
-
-sub Debug
-{
-    my $msg = shift;
-    if (defined($debug)) {
-        print $msg . "\n";
-    }
-
-    return 'ok';
-}
-
-sub Config
-{
-    EDG::WP4::CCM::CCfg::initCfg(shift);
-
-    $cache_root = EDG::WP4::CCM::CCfg::getCfgValue('cache_root');
-    $group_readable = EDG::WP4::CCM::CCfg::getCfgValue('group_readable');
-    $world_readable = EDG::WP4::CCM::CCfg::getCfgValue('world_readable');
-}
-
-
-# Main program
-
-# validate options
-Quit("usage: cache-initialise [OPTIONS]
-  -d, --debug          turn on debugging
-  --config=FILE        location of fetch config file (for cache root)")
-    unless (GetOptions('debug' => \$debug, 'config=s' => \$config)
-            and scalar @ARGV == 0);
-
-# process config file
-Config($config);
+my $cache_root = getCfgValue('cache_root');
 
 # remove any existing cache
+$this_app->verbose("Removing cache_root $cache_root");
 rmtree($cache_root, 0, 0);
 
-# make directory structure
-my $owner = 0;
-my $gid;
-my $mode = 0700;
-my $mask = 077;
+# Use Warn for both info and error
+$this_app->verbose("Creating cache_root $cache_root and subdirectories");
 
-if ($group_readable) {
-    $gid = getgrnam($group_readable);
-    if(defined($gid)) {
-        $mode = 0750;
-        $mask = 027;
-    } else {
-        Warn("Invalid group name for group_readable $group_readable");
-    };
-};
+# Change the whole cacheroot and profile dir to allow correct permissions
+my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
+SetMask($this_app, $mask, $dopts->{group});
+MakeCacheRoot($this_app, $cache_root, $dopts);
 
-if ($world_readable) {
-    if($group_readable) {
-        Warn("Both group_readable and world_readable are set, world_readable setting honoured.");
-    }
-    $mask = undef;
-    $mode = 0755;
-};
-
-my @paths = ($cache_root, "$cache_root/data", "$cache_root/tmp");
-foreach my $path (@paths) {
-    if (-d $path) {
-        # chmod returns number of changed files, croaks on error
-        chmod $mode, $path;
-    } else {
-        my $ok = mkdir $path, $mode;
-        die "Can't create $path: $!\n" unless $ok;
-    }
-    if (defined($gid)) {
-        # use effective UID
-        # chown returns number of changed files, croaks on error
-        chown $>, $gid, $path;
-    };
-};
-
-# make sure files are created so only
-# root and possibly the group can see them
-umask($mask) if $mask;
-
-
-# make lock files
+# make global lock file (mask and GID take care of the permissions)
+$this_app->verbose("Creating lockfile");
 open TMP, ">$cache_root/global.lock";
 print TMP "no\n";
 close TMP;
 
-Quit();
+$this_app->verbose("ccm-initialise complete");
+exit(0);
 
 __END__
 

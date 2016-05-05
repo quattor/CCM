@@ -13,11 +13,12 @@ Script that tests the EDG::WP4::CCM::Fetch module.
 
 use strict;
 use warnings;
-use Test::More tests => 64;
+use Test::More;
 use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN $DATA_DN
     $TABCOMPLETION_FN
     NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
+
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(mkpath rmtree);
@@ -30,7 +31,7 @@ use Test::Quattor::TextRender::Base;
 
 my $caf_trd = mock_textrender();
 
-
+use Test::MockModule;
 
 #$CAF::Object::NoAction = 1;
 
@@ -78,6 +79,33 @@ sub setup_cache
 
 compile_profile();
 
+my $mock_profcache = Test::MockModule->new('EDG::WP4::CCM::Fetch::ProfileCache');
+
+my $getpermissions;
+$mock_profcache->mock('GetPermissions', sub {
+    my @args = @_;
+    $getpermissions = \@_;
+    my $orig = $mock_profcache->original('GetPermissions');
+    # Ignore all group/world _readables
+    return &$orig();
+});
+
+my $setmask;
+$mock_profcache->mock('SetMask', sub {
+    my @args = @_;
+    $setmask = \@_;
+    my $orig = $mock_profcache->original('SetMask');
+    return &$orig(@args);
+});
+
+my $make_cacheroot;
+$mock_profcache->mock('MakeCacheRoot', sub {
+    my @args = @_;
+    $make_cacheroot = \@_;
+    my $orig = $mock_profcache->original('MakeCacheRoot');
+    return &$orig(@args);
+});
+
 =pod
 
 =head2 Profile retrieval
@@ -107,11 +135,26 @@ $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				CONFIG => 'src/test/resources/ccm.cfg'});
 is($f->{CACHE_ROOT}, "/foo/bar",
    "Cache root given to constructor overrides config file");
-$f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
-				CONFIG => 'src/test/resources/ccm.cfg'});
+
+
+$getpermissions = [];
+$f = EDG::WP4::CCM::Fetch->new({
+    FOREIGN => 0,
+    CONFIG => 'src/test/resources/ccm.cfg',
+    GROUP_READABLE => 'mygroup',
+    WORLD_READABLE => 1,
+});
 ok($f, "Fetch profile created");
 isa_ok($f, "EDG::WP4::CCM::Fetch", "Object is a valid reference");
 is($f->{PROFILE_URL}, "https://www.google.com", "Profile URL correctly set");
+
+is_deeply($getpermissions, [$f, "mygroup", 1],
+          "new calls GetPermissions as expected");
+is_deeply($f->{permission}, {
+    directory => {mode => 0700},
+    file => {log => $f, mode => 0600},
+    mask => 077,
+}, "permission attribute is added (with mocked values)");
 
 =pod
 
@@ -275,11 +318,16 @@ foreach my $i (qw(cid url profile)) {
 
 is("$r{cid}", "0\n", "Correct CID read");
 
-
+$setmask = [];
+$make_cacheroot = [];
 %r = $f->current($pf, %r);
 foreach my $i (qw(url cid profile)) {
     isa_ok($r{$i}, "CAF::FileWriter", "Correct object created for the current $i");
-}
+  }
+# cache_root from test/resources/ccm.conf
+is_deeply($setmask, [$f, 077, undef], "current calls SetMask as expected after mocking");
+is_deeply($make_cacheroot, [$f, "target/test/cache", {mode => 0700 }, "profile.1"],
+          "current calls MakeCacheRoot as expected after mocking");
 like("$r{profile}", qr{^<\?xml}, "Current profile will be written");
 is("$r{cid}", "1\n", "Correct CID will be written");
 is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
@@ -408,3 +456,7 @@ is($f->fetchProfile(), undef, "Network errors are correctly diagnosed");
 my $cm = EDG::WP4::CCM::CacheManager->new($f->{CACHE_ROOT});
 my $cfg = $cm->getUnlockedConfiguration() or die "Mierda";
 ok($cfg->elementExists("/"), "There is a root element in the cache");
+
+
+
+done_testing();
