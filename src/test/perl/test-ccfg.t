@@ -173,7 +173,7 @@ Readonly::Hash my %DEFAULT_CFG => {
     "force" => undef,
     "get_timeout" => 30,
     "group_readable" => undef,
-    "json_typed" => 0,
+    "json_typed" => 1,
     "keep_old" => 2,
     "key_file" => undef,
     "lock_retries" => 3,
@@ -184,7 +184,7 @@ Readonly::Hash my %DEFAULT_CFG => {
     "purge_time" => 86400,
     "retrieve_retries" => 3,
     "retrieve_wait" => 30,
-    "tabcompletion" => 0,
+    "tabcompletion" => 1,
     "trust" => undef,
     "world_readable" => undef,
 };
