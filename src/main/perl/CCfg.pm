@@ -190,7 +190,7 @@ Readonly::Array our @CONFIG_OPTIONS => (
 
     {
         option => 'json_typed',
-        DEFAULT => 0,
+        DEFAULT => 1,
         HELP => 'Extract typed data from JSON profiles',
     },
 
@@ -208,7 +208,7 @@ Readonly::Array our @CONFIG_OPTIONS => (
 
     {
         option => 'tabcompletion',
-        DEFAULT => 0,
+        DEFAULT => 1,
         HELP => 'Create the tabcompletion file (during profile fetch)',
     },
 );
