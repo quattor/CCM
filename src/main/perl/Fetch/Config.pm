@@ -47,7 +47,7 @@ sub _config
 
     $self->setProfileURL(($param->{PROFILE_URL} || $param->{PROFILE} || getCfgValue('profile')));
     if (getCfgValue('trust')) {
-        $self->{"TRUST"} = [split(/\,\s*/, getCfgValue('trust'))];
+        $self->{"TRUST"} = [split(/\s*,\s*/, getCfgValue('trust'))];
     } else {
         $self->{"TRUST"} = [];
     }
@@ -259,6 +259,23 @@ sub setProfileFailover
 {
     my ($self, $val) = @_;
     $self->{"PROFILE_FAILOVER"} = $val;
+    return SUCCESS;
+}
+
+sub setPrincipal
+{
+    my ($self, $val) = @_;
+    throw_error("Invalid characters in principal: $val")
+        unless ($val =~ m/^[\w.-\/@]+$/);
+    $self->{PRINCIPAL} = $val;
+    return SUCCESS;
+}
+
+sub setKeytab
+{
+    my ($self, $val) = @_;
+    throw_error("Keytab $val not readable") unless (-r $val);
+    $self->{KEYTAB} = $val;
     return SUCCESS;
 }
 
