@@ -467,7 +467,7 @@ We expect it:
 is($f->fetchProfile(), SUCCESS, "Initial fetchProfile worked correctly (JSON profile)");
 $f->{FORCE} = 0;
 is($f->fetchProfile(), SUCCESS, "fetchProfile of the same JSON profile succeeded");
-is($f->{FORCE}, 0, "And the FORCE flag was not modified");
+is($f->{FORCE}, 0, "And the FORCE flag was not modified 1");
 
 =pod
 
@@ -484,7 +484,7 @@ is($f->{FORCE}, 1, "A change in the URL forces to re-download");
 # format-specific issue.
 $f->{FORCE} = 0;
 is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on the same XML profile");
-is($f->{FORCE}, 0, "And the FORCE flag was not modified");
+is($f->{FORCE}, 0, "And the FORCE flag was not modified 2");
 
 =pod
 

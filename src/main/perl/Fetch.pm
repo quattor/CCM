@@ -139,14 +139,6 @@ Returns undef if it cannot fetch the profile due to a network error,
 
 =cut
 
-sub _cleanup
-{
-    my ($current, $previous) = @_;
-    $current->{cid}->cancel()     if $current->{cid};
-    $previous->{cid}->cancel()    if $previous->{cid};
-    $current->{profile}->cancel() if $current->{profile};
-}
-
 sub fetchProfile
 {
 
@@ -181,43 +173,48 @@ sub fetchProfile
 
     my $profile = $self->download("profile");
 
+    my $res;
     if (!defined($profile)) {
         $self->error("Failed to fetch profile $self->{PROFILE_URL}");
-        return undef;
+    } elsif ("$profile" eq "0") {
+        # Have to do string comparison, because profile can be a FileReader or 0
+        $self->verbose("fetchProfile: nothing to do, ",
+                       "local cache is newer than profile (and no FORCE)");
+        $res = SUCCESS;
+    } else {
+        local $SIG{__DIE__} = sub {
+            warn "Cleaning on die";
+            $self->_cleanup(\%current, \%previous, 1);
+            confess(@_);
+        };
+
+        $self->verbose("Downloaded new profile");
+
+        %current = $self->current($profile, %previous);
+        if ($self->process_profile("$profile", %current) == $ERROR) {
+            $self->error("Failed to process profile for $self->{PROFILE_URL}");
+            $self->_cleanup(\%current, \%previous, 1);
+            return $ERROR;
+        }
+
+        # Make the new profile/CID the latest.cid
+        my $new_cid = "$current{cid}";
+        # "previous" is all about latest.cid
+        $previous{cid}->set_contents($new_cid);
+
+        # Make the new profile/CID the current.cid
+        $self->_cleanup(\%current, \%previous);
+
+        # TODO do we need a different/additonal control for foreign tabcompletion
+        # (i.e. does tabcompletion on foreign profiles make any sense)
+        # Do not check return code, this is not fatal or anything.
+        # An error is logged in case of problem
+        $self->generate_tabcompletion($new_cid) if $self->{TABCOMPLETION};
+
+        $res = SUCCESS;
     }
 
-    return SUCCESS unless $profile;
-
-    local $SIG{__DIE__} = sub {
-        warn "Cleaning on die";
-        $self->_cleanup(\%current, \%previous);
-        confess(@_);
-    };
-    $self->verbose("Downloaded new profile");
-
-    %current = $self->current($profile, %previous);
-    if ($self->process_profile("$profile", %current) == $ERROR) {
-        $self->error("Failed to process profile for $self->{PROFILE_URL}");
-        $self->_cleanup(\%current, \%previous);
-        return $ERROR;
-    }
-
-    # Make the new profile/CID the latest.cid
-    my $new_cid = "$current{cid}";
-
-    $previous{cid}->set_contents($new_cid);
-    $previous{cid}->close();
-
-    # Make the new profile/CID the current.cid
-    $current{cid}->close();
-
-    # TODO do we need a different/additonal control for foreign tabcompletion
-    # (i.e. does tabcompletion on foreign profiles make any sense)
-    # Do not check return code, this is not fatal or anything.
-    # An error is logged in case of problem
-    $self->generate_tabcompletion($new_cid) if $self->{TABCOMPLETION};
-
-    return SUCCESS;
+    return $res;
 }
 
 =pod

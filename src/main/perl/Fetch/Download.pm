@@ -61,11 +61,12 @@ sub setupHttps
 Stores $url into $cache if it's newer than $time, or if $self->{FORCE}
 is set.
 
-It returns undef in case of error, 0 if it there were no changes (the
-server returned a 304 code) and a C<CAF::FileWriter> object with the
+It returns undef in case of error, 0 if it there were no changes on the
+remote server since C<$time> (the server returned a 304 code)
+and a C<CAF::FileWriter> object with the
 downloaded contents if they had to be downloaded.
 
-Should be called ony by C<download>
+Should be called ony by C<download>.
 
 =cut
 
@@ -157,10 +158,16 @@ case of error it retries $self->{RETRIEVE_RETRIES} times, falling back
 to a failover URL if necessary (thus up to 2*$self->{RETRIEVE_RETRIES}
 may happen.
 
-Returns -1 in case of error, 0 if nothing had to be retrieved (files
-in the server were older than our local cache) and a C<CAF::FileWriter>
-object with the downloaded contents, if something was actually
-downloaded.
+Returns undef (or dies) in case of error, or the result from C<retrieve> method otherwise:
+
+=over
+
+=item 0 if nothing had to be retrieved (files in the server were older than our local cache)
+
+=item a C<CAF::FileWriter> object with the downloaded contents, if something was actually
+downloaded
+
+=back
 
 =cut
 
