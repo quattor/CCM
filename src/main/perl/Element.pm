@@ -13,7 +13,7 @@ use File::Spec;
 use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Configuration;
-use EDG::WP4::CCM::Path;
+use EDG::WP4::CCM::Path qw(escape unescape);
 use EDG::WP4::CCM::Property;
 use EDG::WP4::CCM::Resource;
 use Exporter;
@@ -86,39 +86,7 @@ Type constants:
 
 =over
 
-
 =cut
-
-=item unescape($string)
-
-Returns an unescaped version of the string. This method is exported
-for use with all the components that deal with escaped keys.
-
-=cut
-
-sub unescape
-{
-    my $str = shift;
-    $str =~ s!(_[0-9a-f]{2})!sprintf ("%c", hex($1))!eg;
-    return $str;
-}
-
-=pod
-
-=item escape($string)
-
-Returns an escaped version of the string.  This method is exported on
-demand for use with all tools that have to escape and unescape values.
-
-=cut
-
-sub escape
-{
-    my $str = shift;
-
-    $str =~ s/(^[0-9]|[^a-zA-Z0-9])/sprintf("_%lx", ord($1))/eg;
-    return $str;
-}
 
 =item new($config, $ele_path)
 

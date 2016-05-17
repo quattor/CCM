@@ -1,5 +1,9 @@
 #${PMpre} EDG::WP4::CCM::Path${PMpost}
 
+use parent qw(Exporter);
+our @EXPORT    = qw(unescape);
+our @EXPORT_OK = qw(escape);
+
 use LC::Exception qw(SUCCESS throw_error);
 
 our $ec = LC::Exception::Context->new->will_store_errors;
@@ -23,6 +27,8 @@ EDG::WP4::CCM::Path - Path class
 
 Module provides implementation of the Path class. Class is used
 to manipulate absolute paths
+
+=head2 Public methods
 
 =over
 
@@ -133,6 +139,41 @@ sub merge
         $newpath->down($subpath);
     }
     return $newpath
+}
+
+=back
+
+=head2 Public functions
+
+=over
+
+=item unescape
+
+Returns an unescaped version of the argument. This method is exported
+for use with all the components that deal with escaped keys.
+
+=cut
+
+sub unescape
+{
+    my $str = shift;
+    $str =~ s!(_[0-9a-f]{2})!sprintf ("%c", hex($1))!eg;
+    return $str;
+}
+
+=item escape
+
+Returns an escaped version of the argument.  This method is exported on
+demand for use with all tools that have to escape and unescape values.
+
+=cut
+
+sub escape
+{
+    my $str = shift;
+
+    $str =~ s/(^[0-9]|[^a-zA-Z0-9])/sprintf("_%lx", ord($1))/eg;
+    return $str;
 }
 
 
