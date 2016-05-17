@@ -253,11 +253,11 @@ sub previous
     $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$1";
     $ret{dir} = $dir;
 
-    $ret{url} = CAF::FileReader->new("$dir/profile.url", %{$self->{permission}->{file}});
+    $ret{url} = CAF::FileReader->new("$dir/profile.url");
     chomp($ret{url}); # this actually works
 
-    $ret{context_url} = CAF::FileReader->new("$dir/context.url", %{$self->{permission}->{file}});
-    $ret{profile}     = CAF::FileReader->new("$dir/profile.xml", %{$self->{permission}->{file}});
+    $ret{context_url} = CAF::FileReader->new("$dir/context.url");
+    $ret{profile}     = CAF::FileReader->new("$dir/profile.xml");
 
     return %ret;
 }
@@ -281,9 +281,8 @@ sub current
     my %current = (
         dir => $dir,
         url => CAF::FileWriter->new("$dir/profile.url", %{$self->{permission}->{file}}),
-        cid => CAF::FileWriter->new(
-            "$self->{CACHE_ROOT}/$CURRENT_CID_FN", %{$self->{permission}->{file}}
-        ),
+        cid => CAF::FileWriter->new("$self->{CACHE_ROOT}/$CURRENT_CID_FN",
+                                    %{$self->{permission}->{file}}),
         profile => CAF::FileWriter->new("$dir/profile.xml", %{$self->{permission}->{file}}),
         eiddata => "$dir/eid2data",
         eidpath => "$dir/path2eid"
@@ -295,6 +294,28 @@ sub current
     $current{url}->print("$self->{PROFILE_URL}\n");
     $current{profile}->print("$profile");
     return %current;
+}
+
+# Close all CAF::File* for current and previous hashref
+# If cancel is true, cancel before close
+# Replace the values with FileReader instances to keep
+# the values usable.
+sub _cleanup
+{
+    my ($self, $current, $previous, $cancel) = @_;
+
+    # Previous only has cid as an Editor, but cancelling / closing a FileReader is harmless
+    # Previous also has a context_url FileReader, which does not exist for current (what is it?)
+    foreach my $prof ($current, $previous) {
+        foreach my $attr (qw(cid profile url)) {
+            my $fh = $prof->{$attr};
+            # Make this is not a scalar string (esp in unittests)
+            if (defined($fh) && ref($fh)) {
+                $fh->cancel() if $cancel;
+                $fh->close();
+            }
+        }
+    }
 }
 
 # Generate the tabcompletion file
