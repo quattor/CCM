@@ -1,19 +1,8 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package      EDG::WP4::CCM::Path;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::Path${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
-use parent qw(Exporter);
 
-our @EXPORT    = qw();
-our @EXPORT_OK = qw();
-our $VERSION   = '${project.version}';
+our $ec = LC::Exception::Context->new->will_store_errors;
 
 use overload '""' => 'toString';
 
@@ -23,10 +12,12 @@ EDG::WP4::CCM::Path - Path class
 
 =head1 SYNOPSIS
 
- $path = Path->new(["/hardware/memory/size"]);
- $string = $path->toString();
- $path = $path->down($string);
- $path = $path->up();
+    $path = EDG::WP4::CCM::Path->new("/hardware/memory/size");
+    print "$path"; # stringification
+
+    $path = $path->down($level);
+
+    $path = $path->up();
 
 =head1 DESCRIPTION
 
@@ -35,18 +26,15 @@ to manipulate absolute paths
 
 =over
 
-=cut
-
-our $ec = LC::Exception::Context->new->will_store_errors;
-
 =item new ($path)
 
-create new object of Path type. Empty string is not
-allowed as an input parameter. If input parameter is not specified,
-Path is initialized to the root path ("/").
+Create new C<EDG::WP4::CCM::Path> instance.
 
-$path is a string representation of the path as defined in the NVA-API
-Specification document
+If C<path> argument is not specified, root path (C</>) is used.
+Empty string is not allowed as an argument.
+
+C<path> is a string representation of the path as defined in the NVA-API
+Specification document.
 
 =cut
 
@@ -67,9 +55,9 @@ sub new
     # must start with /, but not with //+
     unless (defined($start) && $start eq '' && (!@s || $s[0] ne '')) {
         throw_error("path $path must be an absolute path: start '"
-                . ($start || '')
-                . "', remainder "
-                . join(' / ', @s));
+                    . ($start || '')
+                    . "', remainder "
+                    . join(' / ', @s));
         return ();
     }
 
@@ -78,9 +66,11 @@ sub new
     return $self;
 }
 
-=item toString ()
+=item toString
 
-get the string representation of path
+Get the string representation of path. The C<EDG::WP4::CCM::Path>
+instances also support stringification (this C<toString> also is used
+for that).
 
 =cut
 
@@ -90,11 +80,11 @@ sub toString
     return "/" . join('/', @$self);
 }
 
-=item up ()
+=item up
 
-removes last chunk of the path and returns it.
-if the path is already "/" then then methods
-rises an exception
+Removes last chunk of the path and returns it.
+If the path is already C</> then the method
+raises an exception.
 
 =cut
 
@@ -110,8 +100,8 @@ sub up
 
 =item down ($chunk)
 
-add one chunk to a path, chunk cannot be compound path
-(it cannot contain "/" or be empty)
+Add one chunk to the path. The chunk cannot be compound path
+(it cannot contain "/" or be empty).
 
 =cut
 
@@ -126,9 +116,9 @@ sub down
     return $self;
 }
 
-=item merge (@subpaths)
+=item merge
 
-Return a new instance with optional subpaths added
+Return a new instance with optional (list of) subpaths added.
 
 =cut
 
