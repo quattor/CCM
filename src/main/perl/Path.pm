@@ -51,7 +51,7 @@ sub new
         $path = "/";
     }
 
-    my @s = split('/', $path, -1);
+    my @s = path_split($path);
     my $start = shift @s;
 
     # remove trailing /
@@ -97,6 +97,7 @@ raises an exception.
 sub up
 {
     my ($self) = @_;
+    
     if (@$self == 0) {
         throw_error("could not go up, it will generate empty path");
         return ();
@@ -104,7 +105,7 @@ sub up
     return pop(@$self);
 }
 
-=item down ($chunk)
+=item down
 
 Add one chunk to the path. The chunk cannot be compound path
 (it cannot contain "/" or be empty).
@@ -114,11 +115,15 @@ Add one chunk to the path. The chunk cannot be compound path
 sub down
 {
     my ($self, $chunk) = @_;
-    if ($chunk =~ /\// || $chunk eq "") {
+
+    my @chunks = path_split($chunk);
+
+    # This check is not needed, should be safe to add all chunks
+    if (scalar @chunks != 1) {
         throw_error("input is not a simple path chunk");
         return ();
     }
-    push(@$self, $chunk);
+    push(@$self, @chunks);
     return $self;
 }
 
@@ -176,6 +181,39 @@ sub escape
     return $str;
 }
 
+=item path_split
+
+Function to split a string in list of subpaths.
+Supports escaping of subpaths wrapped in C<{...}>.
+
+=cut
+
+sub path_split
+{
+    my $path = shift;
+
+    # First handle escape {} string
+    # use -1, make sure no trailing empty strings are removed
+    # Use postive lookahead, not a match for trailing /|$
+    my @to_esc = split(/(\/|^)\{(.+?)\}(?=(?:\/|$))/, $path, -1);
+    # Handle empty string path
+    # Splitting an empty string always returns an empty list
+    push(@to_esc, '') if ! @to_esc;
+
+    # This is an array with odd number of elements <val>[<sep><val>[<sep><val>[...]]]
+    # <sep> is the matching group of the split pattern
+    # Shift first element (initial <val>)
+    my $esc_path = shift(@to_esc);
+
+    while (@to_esc) {
+        # First 2 are the matched groups that make up <sep>
+        #   The second group must be escaped
+        # 3rd is the <val>
+        $esc_path .= join('', shift(@to_esc), escape(shift(@to_esc)), shift(@to_esc));
+    }
+
+    return split('/', $esc_path, -1);
+}
 
 =pod
 

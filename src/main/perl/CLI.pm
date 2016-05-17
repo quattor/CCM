@@ -45,7 +45,7 @@ sub _initialize {
     # Final arguments are all profpaths
     if (@$argsref) {
         $self->{profpaths} = $argsref;
-        $self->debug(2, "Add non-option cmdline profpaths: ", join(',', $self->{profpaths}));
+        $self->debug(2, "Add non-option cmdline profpaths: ", join(',', @{$self->{profpaths}}));
     } else {
         $self->{profpaths} = [];
         $self->debug(2, "No non-option cmdline profpaths");
