@@ -10,15 +10,19 @@ use warnings;
 use Test::More;
 use CCMTest qw (eok);
 use LC::Exception qw(SUCCESS);
-use EDG::WP4::CCM::Path qw ();
+use EDG::WP4::CCM::Path qw (escape unescape);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-eok($ec, EDG::WP4::CCM::Path->new("///a/b/c"), 
+=head2 new
+
+=cut
+
+eok($ec, EDG::WP4::CCM::Path->new("///a/b/c"),
     'EDG::WP4::CCM::Path->new("///a/b/c")');
-eok($ec, EDG::WP4::CCM::Path->new("//a/b/c"), 
+eok($ec, EDG::WP4::CCM::Path->new("//a/b/c"),
     'EDG::WP4::CCM::Path->new("//a/b/c")');
-eok($ec, EDG::WP4::CCM::Path->new("a/b/c"), 
+eok($ec, EDG::WP4::CCM::Path->new("a/b/c"),
     'EDG::WP4::CCM::Path->new("a/b/c")');
 eok ($ec, EDG::WP4::CCM::Path->new(""),
     'EDG::WP4::CCM::Path->new("")');
@@ -50,9 +54,18 @@ my @paths = @$path;
 # so stringification kicks in, and this doesn't match anymore
 is_deeply(\@paths, ['a', 'b', 'c'], "Correct array reference");
 
+=head2 toString / stringification
+
+=cut
+
 ok ($path = EDG::WP4::CCM::Path->new("/a/b/c/"),
     'EDG::WP4::CCM::Path->new("/a/b/c/")');
 is ($path->toString(), "/a/b/c", "$path->toString()");
+is("$path", "/a/b/c", "path stringification");
+
+=head2 up / down
+
+=cut
 
 ok ($path->up() && ($path->toString() eq "/a/b"), "$path->up()");
 ok ($path->up() && ($path->toString() eq "/a"), "$path->up()");
@@ -61,6 +74,10 @@ ok ($path->up() && ($path->toString() eq "/"), "$path->up()");
 ok ($path->down("b") && ($path->toString() eq "/b"), '$path->down("b")');
 eok ($ec, $path->down("/b"), '$path->down("/b")');
 eok ($ec, $path->down(""), '$path->down("")');
+
+=head2 merge
+
+=cut
 
 $path = EDG::WP4::CCM::Path->new("/a/b/c");
 isa_ok($path, "EDG::WP4::CCM::Path", "new returns EDG::WP4::CCM::Path instance");
@@ -72,5 +89,19 @@ is("$newpath", "$path", "Stringification ok");
 $newpath = $path->merge("d", "e", "f");
 isa_ok($newpath, "EDG::WP4::CCM::Path", "merge returns EDG::WP4::CCM::Path instance");
 is("$newpath", "$path/d/e/f", "Stringification ok");
+
+=head2 escape / unescape
+
+=cut
+
+is(unescape(escape("kernel-2.6.32")), "kernel-2.6.32",
+   "Escaping and unescaping cancel each other out");
+
+is(escape("kernel-2.6.32"), "kernel_2d2_2e6_2e32",
+   "Escaping works as expected");
+is(unescape("kernel_2d2_2e6_2e32"), "kernel-2.6.32",
+   "Unescaping works as expected");
+
+
 
 done_testing();

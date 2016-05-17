@@ -1,8 +1,9 @@
-#!/usr/bin/perl -w
 use strict;
 use warnings;
+
 use Test::More;
 
+# Old API, actual code in Path
 use EDG::WP4::CCM::Element qw(escape unescape);
 
 =pod
