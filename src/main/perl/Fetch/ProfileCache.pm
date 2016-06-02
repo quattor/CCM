@@ -29,6 +29,7 @@ use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN
     $DATA_DN $PROFILE_DIR_N);
 use EDG::WP4::CCM::TextRender qw(ccm_format);
+use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);
 
 use CAF::FileWriter;
 use CAF::FileReader;
@@ -311,6 +312,8 @@ sub generate_tabcompletion
     my $cmgr = EDG::WP4::CCM::CacheManager->new($self->{CACHE_ROOT}, $self->{_CCFG});
     my $cfg = $cmgr->getLockedConfiguration(undef, $cid);
     my $el = $cfg->getElement('/');
+
+    set_safe_unescape();
     my $fmt = ccm_format('tabcompletion', $el);
 
     if (defined $fmt->get_text()) {
@@ -319,7 +322,8 @@ sub generate_tabcompletion
     } else {
         $self->error("Failed to render tabcompletion: $fmt->{fail}")
     }
-
+    # Reset after all stringification is done
+    reset_safe_unescape();
 }
 
 # Stores a persistent cache in the directories defined by %cur, from a
