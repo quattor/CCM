@@ -7,6 +7,7 @@ unique template basic;
 
 "/special/not_escaped_d/not_escaped_d" = "not_escaped_d";
 "/special/{escaped data}/{escaped data}" = "escaped data";
+"/special/safe_unescape/{/a/b/c}" = "safe unescape";
 
 # Some larger, deeper example
 "/z/deep/a" = "a";
@@ -19,4 +20,3 @@ unique template basic;
     "etest", "ok",
 );
 "/z/deep/list/2/fake" = 1;
-

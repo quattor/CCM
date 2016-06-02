@@ -8,7 +8,7 @@
 -%]
 <[%- pantype -%][%- format ? ' format="' _  format _ '"' : '' -%][%- name ? ' name="' _  name _ '"' : '' -%]>
 [%- IF CCM.is_scalar(data) -%]
-[%- data -%]
+[%-     data -%]
 [%- ELSIF CCM.is_list(data) %]
 [%     FOREACH value IN data -%]
 [%-          INCLUDE CCM/pancxml_element.tt data=value name='' format='' FILTER indent -%]

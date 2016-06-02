@@ -32,7 +32,7 @@ sub eok ($$$) {
       $cec->ignore_error();
       return SUCCESS;
     }
-  } 
+  }
   ok (0, "exception: $descr");
 }
 

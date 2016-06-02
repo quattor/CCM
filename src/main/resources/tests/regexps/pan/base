@@ -13,6 +13,7 @@ element=truefalse,doublequote
 ^"/data/oneandahalf" = 1.5; # double$
 ^"/special/escaped_20data/escaped_20data" = "escaped data"; # string$
 ^"/special/not_escaped_d/not_escaped_d" = "not_escaped_d"; # string$
+^"/special/safe_unescape/\{/a/b/c\}" = "safe unescape"; # string$
 ^"/z/deep/a" = "a"; # string$
 ^"/z/deep/list/0/a/b" = "a"; # string$
 ^"/z/deep/list/1/atest" = 1; # long$

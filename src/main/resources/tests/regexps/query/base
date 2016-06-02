@@ -16,10 +16,12 @@ element=truefalse,singlequote
 ^\s{4}\$ one : 1$
 ^\s{4}\$ oneandahalf : 1.5$
 ^\s{2}\+-special$
-^\s{4}\+-escaped data$
+^\s{4}\+-escaped_20data$
 ^\s{6}\$ escaped_20data : 'escaped data'$
 ^\s{4}\+-not_escaped_d$
 ^\s{6}\$ not_escaped_d : 'not_escaped_d'$
+^\s{4}\+-safe_unescape$
+^\s{6}\$ \{/a/b/c\} : 'safe unescape'$
 ^\s{2}\+-z$
 ^\s{4}\+-deep$
 ^\s{6}\$ a : 'a'$
