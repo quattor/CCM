@@ -137,7 +137,6 @@ sub new
 
     if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $self->{PATH} = $ele_path;
-        $ele_path = $ele_path->toString();
     } else {
         $self->{PATH} = EDG::WP4::CCM::Path->new($ele_path);
         if (!$self->{PATH}) {
@@ -146,16 +145,24 @@ sub new
         }
     }
 
-    $self->{NAME} = $self->{PATH}->toString();
-    $self->{NAME} =~ /.*\/(.*)/;
-    $self->{NAME} = $1;
+    # LAST is last element (can be undef if this is root element)
+    # get_last is Path::_safe_unescaped,
+    # LAST is used by getTree, so it should still be possible to
+    # use the getTree key to build a subpath,
+    # even if is ugly/redundant as name of a subpath
+    # (but use NAME for "pretty" last subpath)
+    # so safe_unescape should generate the leading/trailing {}
+    $self->{LAST} = $self->{PATH}->get_last();
 
-    # the name of the element wiht Path("/") is "/"
-    if ($self->{NAME} eq "") {
-        $self->{NAME} = "/";
-    }
+    # NAME is last element or '/'
+    # get_last is Path::_safe_unescaped,
+    # so NAME can vary if Path's @safe_unescape is non-empty
+    # This is a "pretty" name,
+    # so safe_unescape should not generate the leading/trailing {}
+    $self->{NAME} = $self->{PATH}->depth(1) ? $self->{PATH}->get_last() : '/';
 
-    $self->{EID} = _resolve_eid($prof_dir, $ele_path);
+    $self->{EID} = _resolve_eid($prof_dir, $self->{PATH}->toString());
+
     if (!defined($self->{EID})) {
         throw_error("failed to resolve element's ID", $ec->error);
         return ();
@@ -234,9 +241,11 @@ sub elementExists
     $config   = shift;    # profile's directory path
     $ele_path = shift;    # element's configuration path
 
-    if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
-        $ele_path = $ele_path->toString();
+    if (! UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
+        $ele_path = EDG::WP4::CCM::Path->new("$ele_path");
     }
+    $ele_path = $ele_path->toString();
+
     $prof_dir = $config->getConfigPath();
     my ($hashref, $eid);
 
@@ -276,9 +285,10 @@ sub createElement
     $config   = shift;    # profile's directory path
     $ele_path = shift;    # element's configuration path
 
-    if (UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
-        $ele_path = $ele_path->toString();
+    if (! UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
+        $ele_path = EDG::WP4::CCM::Path->new("$ele_path");
     }
+    $ele_path = $ele_path->toString();
 
     $ele_type = _read_type($config, $ele_path);
     if (!$ele_type) {
@@ -587,7 +597,10 @@ SWITCH:
             $ret = {};
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
-                $$ret{$el->getName()} = $el->getTree($nextdepth, %opts);
+                # we can use LAST here, as only the root element returns an undef
+                # and this cannot be the root element
+                # we have to use LAST here, as we want the key to be a valid subpath
+                $$ret{$el->{LAST}} = $el->getTree($nextdepth, %opts);
             }
             $convm = $opts{convert_nlist};
             last SWITCH;
