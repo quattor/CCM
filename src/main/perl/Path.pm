@@ -2,13 +2,30 @@
 
 use parent qw(Exporter);
 our @EXPORT    = qw(unescape);
-our @EXPORT_OK = qw(escape);
+our @EXPORT_OK = qw(escape set_safe_unescape reset_safe_unescape);
 
+use Readonly;
 use LC::Exception qw(SUCCESS throw_error);
 
 our $ec = LC::Exception::Context->new->will_store_errors;
 
-use overload '""' => 'toString';
+use overload '""' => '_stringify', 'bool' => '_boolean';
+
+# Default safe_unescape list
+Readonly::Array our @SAFE_UNESCAPE => qw(
+    /software/components/metaconfig/services
+);
+
+# This is a module variable and can be set with C<set_safe_unescape>
+# and emptied with C<reset_safe_unescape> exported functions.
+# See C<set_safe_unescape> function for more explanation.
+# All paths end with trailing /, via set_safe_unescape.
+my @safe_unescape;
+
+# An arrayref, when defined, C<reset_safe_unescape> will set
+# @safe_unescape using C<set_safe_unescape> using this value.
+# Mainly for unittesting purposes.
+our $_safe_unescape_restore;
 
 =head1 NAME
 
@@ -69,21 +86,107 @@ sub new
 
     my $self = \@s;
     bless($self, $class);
+
     return $self;
+}
+
+=item depth
+
+Return the number of subpaths, starting from C</>.
+
+=cut
+
+sub depth
+{
+    my $self = shift;
+    return scalar @$self;
+}
+
+=item get_last
+
+Return last (safe unescaped) subpath or undef in case of C</>.
+The C<strip_unescape> boolean is passed to C<_safe_unescape>.
+
+=cut
+
+# Do not use 'last' as method name (last is a list/array TT VMethod)
+sub get_last
+{
+    my ($self, $strip_unescape) = @_;
+
+    my $last;
+
+    # if parent exists, it implies self->depth > 0,
+    # so we can use [-1] safely
+    my $parent = $self->parent();
+    if ($parent) {
+        $last = _safe_unescape($parent, @{$self}[-1], $strip_unescape);
+    }
+
+    return $last;
 }
 
 =item toString
 
-Get the string representation of path. The C<EDG::WP4::CCM::Path>
-instances also support stringification (this C<toString> also is used
-for that).
+Get the (raw) string representation of path.
+
+The C<EDG::WP4::CCM::Path> instances also support stringification
+(the C<_stringify> method is used for that) and might create different result
+due to C<safe_unescape>.
 
 =cut
+
+# This method is used for creating and reading the configuration databases
+# and should not be modified without making changes in Element and Configuration
 
 sub toString
 {
     my ($self) = @_;
-    return "/" . join('/', @$self);
+
+    return "/" . join("/", @$self);
+};
+
+=item _boolean
+
+bool overload: C<Path> instance is always true (avoids stringification on logic test)
+
+=cut
+
+# stringification on logic test is known to cause problems with safe_unescape
+
+sub _boolean
+{
+    return 1;
+}
+
+=item _stringify
+
+Method for overloaded stringification.
+
+This includes support for C<safe_unescape> to wrap
+unescaped subpaths in C<{}>.
+
+=cut
+
+sub _stringify
+{
+    my ($self) = @_;
+
+    my $txt;
+
+    if(@safe_unescape && $self->depth()) {
+        $txt = "/";
+        # Slow
+        foreach my $subpath (@$self) {
+            $txt .= _safe_unescape($txt, $subpath) . "/";
+        };
+        # Remove trailing /
+        chop($txt);
+    } else {
+        $txt = $self->toString();
+    }
+
+    return $txt;
 }
 
 =item up
@@ -97,18 +200,19 @@ raises an exception.
 sub up
 {
     my ($self) = @_;
-    
-    if (@$self == 0) {
+
+    if ($self->depth()) {
+        return pop(@$self);
+    } else {
         throw_error("could not go up, it will generate empty path");
         return ();
     }
-    return pop(@$self);
 }
 
 =item down
 
-Add one chunk to the path. The chunk cannot be compound path
-(it cannot contain "/" or be empty).
+Add C<chunk> to the path. The chunk can be compound path.
+(A leading C</> will be ignored).
 
 =cut
 
@@ -117,13 +221,8 @@ sub down
     my ($self, $chunk) = @_;
 
     my @chunks = path_split($chunk);
+    push(@$self, grep {defined($_) && $_ ne ''} @chunks);
 
-    # This check is not needed, should be safe to add all chunks
-    if (scalar @chunks != 1) {
-        throw_error("input is not a simple path chunk");
-        return ();
-    }
-    push(@$self, @chunks);
     return $self;
 }
 
@@ -133,6 +232,8 @@ Return a new instance with optional (list of) subpaths added.
 
 =cut
 
+# merge is the name of similar TT VMethod for list/array
+# (and in TT it also returns a new instance)
 
 sub merge
 {
@@ -144,6 +245,28 @@ sub merge
         $newpath->down($subpath);
     }
     return $newpath
+}
+
+=item parent
+
+Return a new instance with parent path.
+Returns undef if current element is C</>.
+
+=cut
+
+
+sub parent
+{
+
+    my ($self) = @_;
+
+    my $parent;
+    if ($self->depth()) {
+        $parent = EDG::WP4::CCM::Path->new("$self");
+        $parent->up();
+    }
+
+    return $parent;
 }
 
 =back
@@ -162,6 +285,7 @@ for use with all the components that deal with escaped keys.
 sub unescape
 {
     my $str = shift;
+
     $str =~ s!(_[0-9a-f]{2})!sprintf ("%c", hex($1))!eg;
     return $str;
 }
@@ -214,6 +338,82 @@ sub path_split
 
     return split('/', $esc_path, -1);
 }
+
+=item set_safe_unescape
+
+Set the list of parent paths whose children are known to be escaped paths.
+(The list is set to all arguments passed, not appended to current safe_unescape list).
+
+These child subpaths are safe to represent as their unescaped value
+wrapped in C<{}> when <toString> method is called (e.g. during stringification).
+
+Parent paths who have a safe-to escape parent path of their own should be added
+already escaped.
+
+The list is stored in the C<safe_unescape> module variable and
+can emptied with C<reset_safe_unescape> exported functions.
+
+If no argument is passed, a predefined list of paths is used. The paths are known
+to be escaped in quattor profiles, e.g. C</software/components/metaconfig/services>.
+(To reset the active C<safe_unescape> list, use C<reset_safe_unescape> function.
+
+=cut
+
+sub set_safe_unescape
+{
+    my @paths = @_;
+
+    @paths = @SAFE_UNESCAPE if ! @paths;
+
+    # Make sure the paths end with single trailing /
+    @safe_unescape = map { $_ =~ s/\/*$/\//; $_ } @paths;
+}
+
+=item reset_safe_unescape
+
+Reset the C<safe_unescape> list.
+
+=cut
+
+sub reset_safe_unescape
+{
+    if ($_safe_unescape_restore) {
+        set_safe_unescape(@$_safe_unescape_restore);
+    } else {
+        @safe_unescape = ();
+    };
+}
+
+=item _safe_unescape
+
+Given C<path> and C<subpath>, test is C<path> is in C<@safe_unescape>
+and if it is, return unescaped subpath enclosed in C<{}> (or not enclosed if
+C<strip_unescape> is true).
+
+If not, return unmodified subpath.
+
+=cut
+
+sub _safe_unescape
+{
+    my ($path, $subpath, $strip_unescape) = @_;
+
+    # stringification of $path in case it is a Path instance
+    $path = "$path";
+    # Add trailing /, same as @safe_unescape.
+    $path =~ s/\/*$/\//;
+
+    # Slow
+    if (grep {$_ eq $path} @safe_unescape) {
+        my $unescaped = unescape($subpath);
+        if ($unescaped ne $subpath) {
+            $subpath = $strip_unescape ? $unescaped : "{$unescaped}";
+        };
+    };
+
+    return $subpath;
+}
+
 
 =pod
 
