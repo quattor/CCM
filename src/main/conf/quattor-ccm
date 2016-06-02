@@ -59,7 +59,11 @@ _quattor_ccm_pan_path()
     pref=$2
     # default is start from /
     # require at least one extra character in completion
-    $_quattor_grep_path -e "^${pref:-/}\(/\|[^/]\+/\?\)\$" $_quattor_ccm_cache_root/profile.$cid/tabcompletion 2>/dev/null | $_quattor_sed_path ':a;N;$!ba;s/\n/ /g;'
+    # patterns
+    #   only trailing /
+    #   non-/ with optional trailing /
+    #   single (pan) subpath enclosed in {} with optinal trailing /
+    $_quattor_grep_path -e "^${pref:-/}\(/\|\([^/}]\+\|\(\{\)\?[^{}]\+\?\}\)/\?\)\$" $_quattor_ccm_cache_root/profile.$cid/tabcompletion 2>/dev/null | $_quattor_sed_path ':a;N;$!ba;s/\n/ /g;'
 }
 
 _quattor_ccm_tabcomp_cids()
