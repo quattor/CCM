@@ -24,7 +24,7 @@ our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
     LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
     escape);
 our $VERSION = '${project.version}';
-use EDG::WP4::CCM::DB;
+use EDG::WP4::CCM::DB qw(read_db);
 
 # builtin types with magic constants
 
@@ -209,7 +209,7 @@ sub new
 
 =item _get_tied_db
 
-Wrapper around EDG::WP4::CCM::DB::read() to attempt to cache the tied
+Wrapper around read_db() to attempt to cache the tied
 hash.  Takes a scalar reference (to be filled in with either a new
 hash ref or the cached hash ref) instead of a hash ref.
 
@@ -237,8 +237,7 @@ profile data goes into a whole new path.)
 
             # Should any old references be untied here?
             $CACHE->{$base}->{db} = \%newhash;
-            $CACHE->{$base}->{err} =
-                EDG::WP4::CCM::DB::read(\%newhash, $path);
+            $CACHE->{$base}->{err} = read_db(\%newhash, $path);
         }
         $$returnref = $CACHE->{$base}->{db};
         return $CACHE->{$base}->{err};

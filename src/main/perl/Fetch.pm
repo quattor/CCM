@@ -108,7 +108,9 @@ sub new
 
     # Get correct permissions
     my ($dopts, $fopts, $mask) = $self->GetPermissions($self->{GROUP_READABLE}, $self->{WORLD_READABLE});
+    # File permissions opts contains a log instance
     $fopts->{log} = $self; # will be passed as option hash to CAF::File(Writer/Editor)
+
     $self->{permission} = {
         directory => $dopts,
         file => $fopts,
