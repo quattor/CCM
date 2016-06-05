@@ -14,9 +14,12 @@ use EDG::WP4::CCM::Path qw (escape unescape set_safe_unescape reset_safe_unescap
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-is_deeply(\@EDG::WP4::CCM::Path::SAFE_UNESCAPE, [qw(
-    /software/components/metaconfig/services
-)], "List of known safe_unescape");
+is_deeply(\@EDG::WP4::CCM::Path::SAFE_UNESCAPE, [
+    '/software/components/filecopy/services/',
+    '/software/components/metaconfig/services/',
+    '/software/packages/',
+    qr{/software/packages/[^/]+/},
+], "List of known safe_unescape");
 
 =head2 escape / unescape
 
@@ -158,6 +161,19 @@ $newpath = $path->merge("d", "e", "f", "{/a/b/c}");
 isa_ok($newpath, "EDG::WP4::CCM::Path", "merge returns EDG::WP4::CCM::Path instance 2");
 # the stringifcation of $path shows that $path itself is unmodified
 is("$newpath", "$path/d/e/f/_2fa_2fb_2fc", "Stringification ok 2");
+
+=head2 _test_safe_unescape
+
+=cut
+
+reset_safe_unescape();
+set_safe_unescape(qw(/a/b /a/b/{/a/b/c}/e/f/), qr{^/a/c/[^/]+/});
+is(EDG::WP4::CCM::Path::_safe_unescape('/a/a', '_2fa_2fb_2fc'), '_2fa_2fb_2fc', 'basic _safe_unescape no matching parent');
+is(EDG::WP4::CCM::Path::_safe_unescape('/a/b', '_2fa_2fb_2fc'), '{/a/b/c}', 'basic _safe_unescape exact stringmatch');
+is(EDG::WP4::CCM::Path::_safe_unescape('/a/b/{/a/b/c}/e/f/', '_2fa_2fb_2fc'), '{/a/b/c}', 'basic _safe_unescape exact stringmatch with safe escaped parent');
+is(EDG::WP4::CCM::Path::_safe_unescape('/a/c/whatever', '_2fa_2fb_2fc'), '{/a/b/c}', 'basic _safe_unescape with compiled regexp parent');
+
+reset_safe_unescape();
 
 =head2 set_safe_unescape / reset_safe_unescape
 

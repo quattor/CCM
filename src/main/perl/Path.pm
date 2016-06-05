@@ -12,8 +12,11 @@ our $ec = LC::Exception::Context->new->will_store_errors;
 use overload '""' => '_stringify', 'bool' => '_boolean';
 
 # Default safe_unescape list
-Readonly::Array our @SAFE_UNESCAPE => qw(
-    /software/components/metaconfig/services
+Readonly::Array our @SAFE_UNESCAPE => (
+    '/software/components/filecopy/services/',
+    '/software/components/metaconfig/services/',
+    '/software/packages/',
+    qr{/software/packages/[^/]+/}, # software package names should have no / in their name
 );
 
 # This is a module variable and can be set with C<set_safe_unescape>
@@ -341,8 +344,11 @@ sub path_split
 
 =item set_safe_unescape
 
-Set the list of parent paths whose children are known to be escaped paths.
+Set the list of (parent) paths whose children are known to be escaped paths.
 (The list is set to all arguments passed, not appended to current safe_unescape list).
+
+Paths can either be strings (an exact match will be used)
+or compiled regular expressions.
 
 These child subpaths are safe to represent as their unescaped value
 wrapped in C<{}> when <toString> method is called (e.g. during stringification).
@@ -365,8 +371,13 @@ sub set_safe_unescape
 
     @paths = @SAFE_UNESCAPE if ! @paths;
 
-    # Make sure the paths end with single trailing /
-    @safe_unescape = map { $_ =~ s/\/*$/\//; $_ } @paths;
+    @safe_unescape = ();
+    foreach my $path (@paths) {
+        if (ref($path) eq '') {
+            $path =~ s/\/*$/\//;
+        }
+        push(@safe_unescape, $path);
+    }
 }
 
 =item reset_safe_unescape
@@ -404,7 +415,7 @@ sub _safe_unescape
     $path =~ s/\/*$/\//;
 
     # Slow
-    if (grep {$_ eq $path} @safe_unescape) {
+    if (grep {(ref($_) eq 'Regexp') ? ($path =~ $_) : ($path eq $_)} @safe_unescape) {
         my $unescaped = unescape($subpath);
         if ($unescaped ne $subpath) {
             $subpath = $strip_unescape ? $unescaped : "{$unescaped}";
