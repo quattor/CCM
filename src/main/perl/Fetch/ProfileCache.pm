@@ -228,7 +228,7 @@ sub getLocks
 {
     my ($self) = @_;
 
-    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN");
+    my $fl = CAF::Lock->new("$self->{CACHE_ROOT}/$FETCH_LOCK_FN", log => $self);
     $fl->set_lock($self->{LOCK_RETRIES}, $self->{LOCK_WAIT}, FORCE_IF_STALE)
         or die "Failed to lock $self->{CACHE_ROOT}/$FETCH_LOCK_FN";
     $self->createGlobalLock();
