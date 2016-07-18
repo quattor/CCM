@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
-use JSON::XS 2.3.0;
+use JSON::XS v2.3.0;
 
 $SIG{__DIE__} = \&confess;
 
