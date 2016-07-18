@@ -278,6 +278,8 @@
         <requires>
           <require>perl(Crypt::SSLeay)</require>
           <require>perl(LWP::Protocol::https)</require>
+          <!-- perl-JSON-XS rpm dependency set explicitly; EL5 metadata doesn't play nice with 'perl(JSON::XS) >= 2.3.0' -->
+          <require>perl-JSON-XS &gt;= 2.3.0</require>
         </requires>
         <mappings>
           <mapping>
