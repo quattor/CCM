@@ -52,7 +52,7 @@ use Digest::MD5 qw(md5_hex);
 use Readonly;
 use LC::Exception qw(SUCCESS);
 use XML::Parser;
-use JSON::XS v2.3.0 qw(decode_json encode_json);
+use JSON::XS 2.3.0 qw(decode_json encode_json);
 use File::Path qw(mkpath);
 use Encode qw(encode_utf8);
 
