@@ -25,21 +25,6 @@ use EDG::WP4::CCM::DB;
 
 use POSIX;
 
-# Which do we support, DB, CDB, GDBM?
-our @db_backends;
-
-BEGIN {
-    foreach my $db (qw(DB_File CDB_File GDBM_File)) {
-        local $@;
-        eval " require $db; $db->import ";
-        push(@db_backends, $db) unless $@;
-    }
-    if (!scalar @db_backends) {
-        die("No backends available for CCM\n");
-    }
-}
-
-
 use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN
     $DATA_DN $PROFILE_DIR_N);
@@ -501,15 +486,14 @@ sub MakeDatabase
     my $eid = 0;
     $self->AddPath('', $profile, \$eid, \%path2eid, \%eid2data, '');
 
-    my $err = EDG::WP4::CCM::DB::write(\%path2eid, $path2eid_db, $dbformat);
-    if ($err) {
-        $self->error($err);
-        return $ERROR;
-    }
-    $err = EDG::WP4::CCM::DB::write(\%eid2data, $eid2data_db, $dbformat);
-    if ($err) {
-        $self->error("$err");
-        return $ERROR;
+    foreach my $db ([$path2eid_db, \%path2eid],
+                    [$eid2data_db, \%eid2data]) {
+        my $ccmdb = EDG::WP4::CCM::DB->new($db->[0], log => $self);
+        my $err = $ccmdb->write($db->[1], $dbformat, $self->{permission}->{file});
+        if ($err) {
+            $self->error($err);
+            return $ERROR;
+        }
     }
 
     return SUCCESS;

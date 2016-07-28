@@ -18,7 +18,7 @@ use Digest::MD5 qw(md5_hex);
 use Errno qw(ESRCH EPERM);
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg);
-use EDG::WP4::CCM::DB;
+use EDG::WP4::CCM::DB qw(read_db);
 use LC::Stat qw(:ST);
 
 #
@@ -266,8 +266,8 @@ sub save_active_urls
     # delete($NonactiveURL{$md5});
 
     # search URLs in fetch porperties
-    my $readErr = EDG::WP4::CCM::DB::read(\%hash,
-                                          "${CacheDir}/${profile}/eid2data");
+    my $readErr = read_db(\%hash,
+                          "${CacheDir}/${profile}/eid2data");
     die("Failed to read eid2data: $readErr") if defined($readErr);
 
     foreach $key ( keys(%hash) ) {
