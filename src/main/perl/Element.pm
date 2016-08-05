@@ -385,18 +385,6 @@ sub getName
 
 }
 
-=item getUnescapedName()
-
-Returns the name of the object, unescaped
-
-=cut
-
-sub getUnescapedName
-{
-    my $self = shift;
-    return unescape($self->getName());
-}
-
 =item getPath()
 
 Returns a Path object with the element's path
