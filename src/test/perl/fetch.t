@@ -22,10 +22,9 @@ use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
 use EDG::WP4::CCM::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(mkpath rmtree);
-use CAF::Object;
+use CAF::Object qw(SUCCESS CHANGED);
 use Carp qw(croak);
 use CAF::Reporter;
-use LC::Exception qw(SUCCESS);
 
 use Test::Quattor::TextRender::Base;
 use Test::MockModule;
@@ -475,7 +474,7 @@ We expect it:
 # At this point, the profile is defined as a JSON profile...
 # First download the profile to be sure that it is already there
 # before the test.
-is($f->fetchProfile(), SUCCESS, "Initial fetchProfile worked correctly (JSON profile)");
+is($f->fetchProfile(), CHANGED, "Initial fetchProfile worked correctly (JSON profile)");
 $f->{FORCE} = 0;
 is($f->fetchProfile(), SUCCESS, "fetchProfile of the same JSON profile succeeded");
 is($f->{FORCE}, 0, "And the FORCE flag was not modified 1");
@@ -489,7 +488,7 @@ is($f->{FORCE}, 0, "And the FORCE flag was not modified 1");
 $f->{PROFILE_URL} =~ s{json}{xml};
 $f->{FORCE} = 0;
 $f->setup_reporter(0, 0, 1);
-is($f->fetchProfile(), SUCCESS, "fetchProfile worked correctly on XML profile");
+is($f->fetchProfile(), CHANGED, "fetchProfile worked correctly on XML profile");
 is($f->{FORCE}, 1, "A change in the URL forces to re-download");
 # Check that FORCE flag is also respected/not modified with XML profile in case of
 # format-specific issue.
@@ -507,8 +506,8 @@ is($f->{TABCOMPLETION}, 0, "tabcompletion generation off");
 
 $f->{FORCE} = 1;
 $f->{TABCOMPLETION} = 1;
-is($f->fetchProfile(), SUCCESS,
-   "fetchProfile worked correctly on the same XML profile (with tabcompletion enabled)");
+is($f->fetchProfile(), CHANGED,
+   "fetchProfile worked correctly on the same XML profile (with force and tabcompletion enabled)");
 
 my %latest = $f->previous();
 
