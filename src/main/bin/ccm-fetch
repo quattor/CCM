@@ -16,7 +16,7 @@ BEGIN {
 
 use CAF::Application;
 use CAF::Reporter;
-use LC::Exception qw(SUCCESS throw_error);
+use CAF::Object qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR_FORCE);
 our @ISA = qw(CAF::Application CAF::Reporter);
 
@@ -168,7 +168,7 @@ use warnings;
 
 # modules
 use English;
-use LC::Exception qw(SUCCESS throw_error);
+use CAF::Object qw(SUCCESS CHANGED throw_error);
 use File::Basename;
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
@@ -281,7 +281,7 @@ $fetch->setPrincipal($this_app->option("principal"))
 $fetch->setKeytab($this_app->option("keytab"))
     if defined $this_app->option("keytab");
 
-#fetch rpofile
+# fetch profile
 my $errno = $fetch->fetchProfile();
 
 if (!defined($errno)) {
@@ -290,6 +290,10 @@ if (!defined($errno)) {
 } elsif ($errno == -1){
     $this_app->error("Unable to fetch profile");
     exit(1);
+} elsif ($errno == CHANGED) {
+    $this_app->info("Profile updated");
+} else {
+    $this_app->verbose("Fetched profile was not new");
 }
 
 exit (0);
