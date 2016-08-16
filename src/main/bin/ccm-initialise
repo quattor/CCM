@@ -18,9 +18,9 @@ BEGIN {
 }
 
 use CAF::Application;
-use CAF::Reporter;
+use CAF::Reporter 16.8.1;
 use LC::Exception qw(SUCCESS throw_error);
-our @ISA = qw(CAF::Application CAF::Reporter);
+our @ISA = qw(CAF::Application CAF::Reporter CAF::Path);
 
 # needed for method overriding
 no warnings 'redefine';
@@ -38,6 +38,10 @@ sub app_options {
 
           { NAME    => 'cfgfile=s',
             HELP    => 'configuration file for ccm-initialise' },
+
+          { NAME    => 'logfile=s',
+            HELP    => 'path/filename to use for ccm-initialise logs',
+            DEFAULT => '/var/log/ccm-initialise.log' },
 
           { NAME    => 'debug|d=i',
             DEFAULT => '0',
@@ -58,10 +62,17 @@ sub _initialize {
     $self->{'VERSION'} = "${project.version}";
     $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
 
+    $self->{LOG_APPEND} = 1;
+    $self->{LOG_TSTAMP} = 1;
+
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
         return undef;
     }
+
+    $self->set_report_logfile($self->{'LOG'});
+    # Enable verbose_logfile
+    $self->setup_reporter(undef, undef, undef, undef, 1);
 
     return SUCCESS;
 }
@@ -98,6 +109,10 @@ $this_app->verbose("ccm-initialise begin");
 # Options
 initCfg($this_app->option("cfgfile"));
 
+my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
+# Set logfile permissions
+$this_app->status($this_app->option('logfile'), %$fopts);
+
 my $cache_root = getCfgValue('cache_root');
 
 # remove any existing cache
@@ -108,7 +123,6 @@ rmtree($cache_root, 0, 0);
 $this_app->verbose("Creating cache_root $cache_root and subdirectories");
 
 # Change the whole cacheroot and profile dir to allow correct permissions
-my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
 SetMask($this_app, $mask, $dopts->{group});
 MakeCacheRoot($this_app, $cache_root, $dopts);
 
