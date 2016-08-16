@@ -94,17 +94,30 @@ sub retrieve
     my $ua = LWP::UserAgent->new();
     my $rq = HTTP::Request->new(GET => $url);
 
-    my $ht = scalar(localtime($time));
-    if (!$self->{FORCE}) {
+    # If human readable time ($ht) is not defined, then treat a 304 repsonse as an error
+    my $ht;
+    if ($self->{FORCE}) {
+        $self->verbose("FORCE set, not setting if_modified_since in request");
+    } elsif (! defined($time)) {
+        $self->verbose("modification time not defined, not setting if_modified_since in request");
+    } else {
+        $ht = scalar(localtime($time));
         $self->debug(1, "Retrieve if newer than $ht");
         $rq->if_modified_since($time);
     }
+
     $ua->timeout($self->{GET_TIMEOUT});
     $rq->header("Accept-Encoding" => join(" ", qw(gzip x-gzip x-bzip2 deflate)));
     my $rs = $ua->request($rq);
     if ($rs->code() == 304) {
-        $self->verbose("No changes on $url since $ht");
-        return 0;
+        if (defined($ht)) {
+            $self->verbose("No changes on $url since $ht");
+            return 0;
+        } else {
+            $self->error("Server responded with code 304 for $url even though ",
+                        "if_modified_since was not set in request. No profile retrieved.");
+            return;
+        }
     }
 
     if (!$rs->is_success()) {
@@ -179,11 +192,13 @@ sub download
 
     my $cache = join("/", $self->{CACHE_ROOT}, $DATA_DN, $self->EncodeURL($url));
 
-    if (!-f $cache) {
-        CAF::FileWriter->new($cache, log => $self)->close();
+    my $mtime;
+    if (-f $cache) {
+        my @st = stat($cache) or die "Unable to stat profile cache: $cache ($!)";
+        $mtime = $st[ST_MTIME];
+    } else {
+        $self->info("No existing cache $cache, not specifying the modification date while retrieving")
     }
-
-    my @st = stat($cache) or die "Unable to stat profile cache: $cache ($!)";
 
     my @urls = ($url);
     push @urls, split(/,/, $self->{uc($type) . "_FAILOVER"})
@@ -192,7 +207,7 @@ sub download
     foreach my $u (@urls) {
         next if (!defined($u));
         for my $i (1 .. $self->{RETRIEVE_RETRIES}) {
-            my $rt = $self->retrieve($u, $cache, $st[ST_MTIME]);
+            my $rt = $self->retrieve($u, $cache, $mtime);
             return $rt if defined($rt);
             $self->debug(
                 1,
