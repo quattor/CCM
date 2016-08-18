@@ -567,6 +567,20 @@ Array ref of anonymous methods to convert the argument
 Array ref of anonymous methods to convert the argument
 (float/double value) to another representation/format.
 
+=item convert_list
+
+Array ref of anonymous methods to convert the argument
+(list of elements) to another representation/format.
+
+Each element is already processed before the conversion.
+
+=item convert_nlist
+
+Array ref of anonymous methods to convert the argument
+(nlist of elements) to another representation/format.
+
+Each element is already processed before the conversion.
+
 =back
 
 The arrayref of anonymous methods are applied as follows:
@@ -596,6 +610,7 @@ SWITCH:
                 $el = $self->getNextElement();
                 push(@$ret, $el->getTree($nextdepth, %opts));
             }
+            $convm = $opts{convert_list};
             last SWITCH;
         };
 
@@ -606,6 +621,7 @@ SWITCH:
                 $el = $self->getNextElement();
                 $$ret{$el->getName()} = $el->getTree($nextdepth, %opts);
             }
+            $convm = $opts{convert_nlist};
             last SWITCH;
         };
 

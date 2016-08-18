@@ -59,6 +59,17 @@ Readonly::Hash my %CONVTREE => {
     ]
 };
 
+# Squashed tree by converting list/nlist
+Readonly::Hash my %CONVTREE_SQUASH => {
+    'a' => '"1","2","3"',
+    'b' => '"hello"',
+    'c' => 'DOUBLE(1.5)',
+    'd' => 'TRUE',
+    'e' => 'f=LONG(1);ff=FALSE',
+    'g' => '"1",LONG(2),"3",LONG(4)',
+    'h' => 'a=LONG(10);b="11",a=LONG(12)',
+};
+
 
 my $cfg = get_config_for_profile("element_test");
 
@@ -93,39 +104,74 @@ is_deeply($lvl1->{g}->getTree, $rt->{g}, "getTree of lvl1 key=g returns same as 
 
 # test conversion
 $el = $cfg->getElement("/");
-my $newtree = $el->getTree(undef,
-                           convert_boolean => [sub {
-                               my $value = shift;
-                               return $value ? "true" : "false";
-                           }, sub {
-                               my $value = shift;
-                               return uc $value;
-                           }],
-                           convert_string => [sub {
-                               my $value = shift;
-                               return "$value";
-                           }, sub {
-                               my $value = shift;
-                               return "\"$value\"";
-                           }],
-                           convert_long => [sub {
-                               my $value = shift;
-                               return 0 + $value;
-                           }, sub {
-                               my $value = shift;
-                               my $long = B::svref_2object(\$value)->isa("B::IV") ? "" : "NO";
-                               return "${long}LONG($value)";
-                           }],
-                           convert_double => [sub {
-                               my $value = shift;
-                               return 0.0 + $value;
-                           }, sub {
-                                my $value = shift;
-                                my $long = B::svref_2object(\$value)->isa("B::NV") ? "" : "NO";
-                                return "${long}DOUBLE($value)";
-                           }],
-    );
-is_deeply($newtree, \%CONVTREE, "getTree with properties converted");
+my $convs = {
+    convert_boolean => [
+        sub {
+            my $value = shift;
+            return $value ? "true" : "false";
+        }, sub {
+            my $value = shift;
+            return uc $value;
+        }],
+    convert_string => [
+        sub {
+            my $value = shift;
+            return "$value";
+        }, sub {
+            my $value = shift;
+            return "\"$value\"";
+        }],
+    convert_long => [
+        sub {
+            my $value = shift;
+            return 0 + $value;
+        }, sub {
+            my $value = shift;
+            my $long = B::svref_2object(\$value)->isa("B::IV") ? "" : "NO";
+            return "${long}LONG($value)";
+        }],
+    convert_double => [
+        sub {
+            my $value = shift;
+            return 0.0 + $value;
+        }, sub {
+            my $value = shift;
+            my $long = B::svref_2object(\$value)->isa("B::NV") ? "" : "NO";
+            return "${long}DOUBLE($value)";
+        }],
+};
+my $newtree = $el->getTree(undef, %$convs);
+is_deeply($newtree, \%CONVTREE, "getTree with scalars converted");
+
+# Now also with list/nlist conversion
+$convs->{convert_list} = [
+    sub {
+        my $value = shift;
+        # Only if 1st element is scalar
+        if ($value && @$value && (! ref($value->[0]))) {
+            return join(',', @$value );
+        }
+        return $value;
+    },
+];
+$convs->{convert_nlist} = [
+    sub {
+        my $value = shift;
+        # Only if 1st element is scalar
+        # and this is not the root tree (test via element d)
+        if ($value && %$value && ! $value->{d}) {
+            if (! ref((values(%$value))[0])) {
+                return join(';', map { "$_=".$value->{$_} } sort keys %$value );
+            };
+        };
+        return $value;
+    },
+];
+
+$el = $cfg->getElement("/");
+$newtree = $el->getTree(undef, %$convs);
+is_deeply($newtree, \%CONVTREE_SQUASH, "getTree with scalars and list converted");
+
 
 # Test JSON formatted tree
 $el = $cfg->getElement("/");
