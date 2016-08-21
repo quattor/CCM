@@ -126,6 +126,17 @@ my $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				   CONFIG => 'src/test/resources/ccm.cfg',
 				   PROFILE => "file://foo/bar"});
 is($f->{PROFILE_URL}, "file://foo/bar", "PROFILE parameter honored");
+
+$f = EDG::WP4::CCM::Fetch->new({CONFIG => 'src/test/resources/ccm_tabcompletion.cfg'});
+is($f->{TABCOMPLETION}, 1, "TABCOMPLETION set via config file");
+
+$f = EDG::WP4::CCM::Fetch->new({
+                               CONFIG => 'src/test/resources/ccm_tabcompletion.cfg',
+                               TABCOMPLETION => 0,
+                              });
+is($f->{TABCOMPLETION}, 0, "TABCOMPLETION set via new (in uppercase) precedes value in config file");
+
+
 $f = EDG::WP4::CCM::Fetch->new({FOREIGN => 0,
 				CONFIG => 'src/test/resources/ccm.cfg',
 				PROFILE => "file://foo/bar",

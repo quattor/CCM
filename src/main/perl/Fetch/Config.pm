@@ -40,9 +40,11 @@ sub _config
 
     my @keys = qw(tmp_dir context_url);
     push(@keys, @CFG_KEYS);
-    foreach my $p (@keys) {
+    foreach my $key (@keys) {
         # do not override any predefined uppercase attributes
-        $self->{uc($p)} ||= $param->{uc($p)} || getCfgValue($p);
+        if (! defined($self->{uc($key)})) {
+            $self->{uc($key)} = defined($param->{uc($key)}) ? $param->{uc($key)} : getCfgValue($key);
+        };
     }
 
     $self->setProfileURL(($param->{PROFILE_URL} || $param->{PROFILE} || getCfgValue('profile')));
