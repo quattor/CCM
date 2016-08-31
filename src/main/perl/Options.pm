@@ -12,7 +12,8 @@ use CAF::Application qw($OPTION_CFGFILE);
 use CAF::Reporter;
 use LC::Exception qw(SUCCESS);
 use EDG::WP4::CCM::CCfg qw(@CONFIG_OPTIONS $CONFIG_FN setCfgValue);
-use EDG::WP4::CCM::Element qw(escape);
+use EDG::WP4::CCM::Path qw(escape);
+use EDG::WP4::CCM::CacheManager;
 use Readonly;
 
 our @ISA = qw(CAF::Application CAF::Reporter);

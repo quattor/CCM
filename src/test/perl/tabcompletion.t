@@ -7,12 +7,14 @@ use CAF::FileWriter;
 use Readonly;
 use File::Path qw(mkpath rmtree);
 use Test::Quattor::ProfileCache;
+use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);
 use EDG::WP4::CCM::TextRender qw(ccm_format @CCM_FORMATS);
 use Test::Quattor::TextRender::Base;
 
 use EDG::WP4::CCM::CCfg qw(@CFG_KEYS);
 use EDG::WP4::CCM::Options;
 use EDG::WP4::CCM::CLI;
+
 
 my $caf_trd = mock_textrender();
 
@@ -25,7 +27,9 @@ print $fh "cache_root $cfg->{cache_path}\n";
 $fh->close();
 
 my $el = $cfg->getElement('/');
+set_safe_unescape();
 my $fmt = ccm_format('tabcompletion', $el);
+reset_safe_unescape();
 diag("$fmt");
 
 $fh = CAF::FileWriter->new("$cfg->{cfg_path}/tabcompletion");
@@ -317,7 +321,48 @@ test_comp(\@CCM_FORMATS, "Tabcomplete formats with _quattor_ccm_CLI",
 
 # test ccm binding
 test_bash(qr{^complete -F _quattor_ccm_CLI ccm$}m,
-          "tabcompletion frunction _quattor_ccm_CLI for ccm command",
+          "tabcompletion function _quattor_ccm_CLI for ccm command",
           ["complete", "-p"]);
+
+
+=head2 Test safe_unescape
+
+=cut
+
+$cfg = prepare_profile_cache('tabcompletion_safe_unescape');
+
+$fh = CAF::FileWriter->new("$cfg->{cache_path}/ccm.conf");
+print $fh "cache_root $cfg->{cache_path}\n";
+$fh->close();
+
+$el = $cfg->getElement('/');
+set_safe_unescape();
+$fmt = ccm_format('tabcompletion', $el);
+diag("$fmt");
+
+$fh = CAF::FileWriter->new("$cfg->{cfg_path}/tabcompletion");
+print $fh "$fmt";
+$fh->close();
+
+# reset after stringification
+reset_safe_unescape();
+
+test_func(qr{^/software/$}, "Report pan path SU ''",
+          '_quattor_ccm_pan_path', $cfg->{cid});
+
+# known issues
+#  tabcompletion with safe_unescape paths is misordered:
+#     eg test/abc and test2/abc will be sorted according
+#     to the escaped version, in which test2_2fabc is sorted before test_2fabc
+
+#  after ../ -> {..}
+test_func(qr{^/software/components/metaconfig/services/\{/my/test/file\}/ /software/components/metaconfig/services/\{/my/test2/file2\}/$},
+          "Report pan path '/software/components/metaconfig/services/'",
+          '_quattor_ccm_pan_path', $cfg->{cid}, '/software/components/metaconfig/services/');
+
+#  path with ../{... -> ..}
+test_func(qr{^/software/components/metaconfig/services/\{/my/test/file\}/ /software/components/metaconfig/services/\{/my/test2/file2\}/$},
+          "Report pan path '/software/components/metaconfig/services/{/my/t'",
+          '_quattor_ccm_pan_path', $cfg->{cid}, '/software/components/metaconfig/services/{/my/t');
 
 done_testing();

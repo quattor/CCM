@@ -27,6 +27,9 @@ element=truefalse,xml
 ^        <nlist name="not_escaped_d">$
 ^            <string name="not_escaped_d">not_escaped_d</string>$
 ^        </nlist>$
+^        <nlist name="safe_unescape">$
+^            <string name="\{/a/b/c\}">safe unescape</string>$
+^        </nlist>$
 ^    </nlist>$
 ^    <nlist name="z">$
 ^        <nlist name="deep">$
@@ -51,4 +54,3 @@ element=truefalse,xml
 ^        </nlist>$
 ^    </nlist>$
 ^</nlist>$
-

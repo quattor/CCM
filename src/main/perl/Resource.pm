@@ -224,6 +224,7 @@ sub getCurrentElement
     } else {
         $el_path = $path . "/" . $self->{ELEMENTS}[$self->{CURRENT}];
     }
+
     $element = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
     unless ($element) {
         throw_error("failed to create element $el_path", $ec->error);

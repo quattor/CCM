@@ -9,8 +9,9 @@ use strict;
 use warnings;
 
 use base qw(EDG::WP4::CCM::Options);
-use LC::Exception qw(SUCCESS);
+use CAF::Object qw(SUCCESS);
 use EDG::WP4::CCM::TextRender qw(ccm_format @CCM_FORMATS);
+use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);
 use Readonly;
 
 Readonly::Hash my %CLI_ACTIONS => {
@@ -45,7 +46,7 @@ sub _initialize {
     # Final arguments are all profpaths
     if (@$argsref) {
         $self->{profpaths} = $argsref;
-        $self->debug(2, "Add non-option cmdline profpaths: ", join(',', $self->{profpaths}));
+        $self->debug(2, "Add non-option cmdline profpaths: ", join(',', @{$self->{profpaths}}));
     } else {
         $self->{profpaths} = [];
         $self->debug(2, "No non-option cmdline profpaths");
@@ -89,6 +90,8 @@ sub action_show
     my $cfg = $self->getCCMConfig();
     return if (! defined($cfg));
 
+    set_safe_unescape();
+
     foreach my $path (@{$self->gatherPaths(@{$self->{profpaths}})}) {
         if(! $cfg->elementExists($path)) {
             $self->debug(4, "action_show: no element for path $path");
@@ -116,6 +119,8 @@ sub action_show
             return;
         };
     }
+
+    reset_safe_unescape();
 
     return SUCCESS;
 }

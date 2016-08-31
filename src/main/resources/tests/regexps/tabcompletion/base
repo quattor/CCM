@@ -19,6 +19,8 @@ contentspath=/
 ^/special/escaped_20data/escaped_20data$
 ^/special/not_escaped_d/$
 ^/special/not_escaped_d/not_escaped_d$
+^/special/safe_unescape/$
+^/special/safe_unescape/\{/a/b/c\}$
 ^/z/$
 ^/z/deep/$
 ^/z/deep/a$

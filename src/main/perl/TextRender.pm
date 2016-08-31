@@ -10,7 +10,7 @@ use warnings;
 use CAF::TextRender qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
-use EDG::WP4::CCM::Element qw(escape unescape);
+use EDG::WP4::CCM::Path qw(escape unescape);
 use XML::Parser;
 use base qw(CAF::TextRender Exporter);
 
