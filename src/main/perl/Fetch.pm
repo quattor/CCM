@@ -137,7 +137,8 @@ profiles do not use failover URLs: if the primary URL is unavailable,
 then the fetch will fail.
 
 Returns undef if it cannot fetch the profile due to a network error,
--1 in case of other failure, C<SUCCESS> in case of successful fetch.
+C<<$EDG::WP4::CCM::Fetch::ProfileCache::ERROR>> in case of other failure,
+C<SUCCESS> in case of successful fetch.
 
 =cut
 
