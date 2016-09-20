@@ -370,4 +370,16 @@ test_func(qr{^/software/components/metaconfig/services/\{/my/test/file\}/ /softw
           "Report pan path '/software/components/metaconfig/services/{/my/t'",
           '_quattor_ccm_pan_path', $cfg->{cid}, '/software/components/metaconfig/services/{/my/t');
 
+=head2 test components tabcompletion using safe_unescape profile
+
+=cut
+
+test_comp(qr{^inactive metaconfig mycomponent$},
+          "Tabcomplete components",
+          "_quattor_ccm_tabcomp_active_cid=$cfg->{cid}", '_quattor_ccm_tabcomp_components');
+
+test_comp(qr{^metaconfig mycomponent$},
+          "Tabcomplete components m",
+          "_quattor_ccm_tabcomp_active_cid=$cfg->{cid}", 'COMP_WORDS=(SCRIPTNAME m)', 'COMP_CWORD=1', '&&', '_quattor_ccm_tabcomp_components');
+
 done_testing();
