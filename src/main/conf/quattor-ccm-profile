@@ -15,14 +15,32 @@
 #        "replace", dict("all", "yes"),
 #        ));
 #
-if [[ $- == *i* ]]; then
+
+# source the tabcompletion script if variable is not yet defined
+# (and current uid is lower than minuid)
+function _quattor_load_bash_completion ()
+{
+    local fn variable
+
+    fn=/etc/bash_completion.d/$1
+    loaded=$2
+
     # do not load if already loaded
-    if [ -z "$quattor_ccm_tabcompletion_loaded" ]; then
-        minuid=${CCM_TABCOMPLETION_MINUID:-9999}
-        myid=`id -u 2>/dev/null`
-        if [ ${myid:-0} -lt $minuid ]; then
-            source /etc/bash_completion.d/quattor-ccm
-            quattor_ccm_tabcompletion_loaded=1
+    if [[ -z "${!loaded}" && -f $fn ]]; then
+        # these are not local, and unset at the end
+        if [ -z "$_q_minuid" ]; then
+            _q_minuid=${CCM_TABCOMPLETION_MINUID:-9999}
+            _q_myid=`id -u 2>/dev/null`
+        fi
+        if [ ${_q_myid:-0} -lt $_q_minuid ]; then
+            source $fn
         fi
     fi
+}
+
+if [[ $- == *i* ]]; then
+    _quattor_load_bash_completion quattor-ccm _quattor_ccm_CLI_longoptions
 fi
+
+unset _q_minuid _q_myid
+unset -f _quattor_load_bash_completion

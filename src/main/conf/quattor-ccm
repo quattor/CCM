@@ -74,7 +74,7 @@ _quattor_ccm_tabcomp_cids()
 
 _quattor_ccm_tabcomp_pan_path()
 {
-    local cid cur prev
+    local cid cur prev new
     if [ -z "$_quattor_ccm_tabcomp_active_cid" ]; then
         _quattor_ccm_tabcomp_active_cid=`_quattor_ccm_get_current_cid`
     fi

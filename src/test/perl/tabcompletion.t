@@ -114,6 +114,11 @@ sub test_comp
     test_bash($test, $msg, \@args, 1);
 }
 
+# test the existence of the _quattor_ccm_CLI_longoptions variable
+# it is used in quattor-ccm-profile script, and must exist to avoid reloading
+like((run_bash(['echo', '$_quattor_ccm_CLI_longoptions']))[0], qr{^--},
+     "_quattor_ccm_CLI_longoptions variable is not empty");
+
 # Test get CIDs
 
 test_func(qr{$cidsreg}, "Report all CIDs",
