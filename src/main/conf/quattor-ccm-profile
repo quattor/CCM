@@ -40,6 +40,7 @@ function _quattor_load_bash_completion ()
 
 if [[ $- == *i* ]]; then
     _quattor_load_bash_completion quattor-ccm _quattor_ccm_CLI_longoptions
+    _quattor_load_bash_completion ncm-ncd.sh _quattor_ncm_ncd_longoptions
 fi
 
 unset _q_minuid _q_myid
