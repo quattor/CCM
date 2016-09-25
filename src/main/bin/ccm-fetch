@@ -173,6 +173,7 @@ use File::Basename;
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
+use EDG::WP4::CCM::Fetch::ProfileCache qw($ERROR);
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
 
@@ -287,7 +288,7 @@ my $errno = $fetch->fetchProfile();
 if (!defined($errno)) {
     $this_app->error("Network error detected");
     exit(2);
-} elsif ($errno == -1){
+} elsif ($errno == $ERROR) {
     $this_app->error("Unable to fetch profile");
     exit(1);
 } elsif ($errno == CHANGED) {
