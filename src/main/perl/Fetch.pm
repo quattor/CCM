@@ -32,7 +32,7 @@ well as foreign node profiles.
 use strict;
 use warnings;
 
-use LC::Exception qw(SUCCESS throw_error);
+use CAF::Object qw(SUCCESS CHANGED throw_error);
 use Carp qw(carp confess);
 
 use constant NOQUATTOR          => "/etc/noquattor";
@@ -138,7 +138,10 @@ then the fetch will fail.
 
 Returns undef if it cannot fetch the profile due to a network error,
 C<<$EDG::WP4::CCM::Fetch::ProfileCache::ERROR>> in case of other failure,
-C<SUCCESS> in case of successful fetch.
+C<SUCCESS> in case of successful fetch, but no updated profile
+and C<CHANGED> in case of successful fetch and
+updated profile.
+
 
 =cut
 
@@ -214,7 +217,7 @@ sub fetchProfile
         # An error is logged in case of problem
         $self->generate_tabcompletion($new_cid) if $self->{TABCOMPLETION};
 
-        $res = SUCCESS;
+        $res = CHANGED;
     }
 
     return $res;
