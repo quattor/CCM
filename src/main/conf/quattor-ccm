@@ -74,7 +74,7 @@ _quattor_ccm_tabcomp_cids()
 
 _quattor_ccm_tabcomp_pan_path()
 {
-    local cid cur prev
+    local cid cur prev new
     if [ -z "$_quattor_ccm_tabcomp_active_cid" ]; then
         _quattor_ccm_tabcomp_active_cid=`_quattor_ccm_get_current_cid`
     fi
@@ -104,6 +104,18 @@ _quattor_ccm_tabcomp_pan_path()
     return 0
 }
 
+# retrieve list of components from tabcompletion
+# cannot filter on active components based on tabcompletion data
+_quattor_ccm_tabcomp_components()
+{
+    local cid cur prev new
+    if [ -z "$_quattor_ccm_tabcomp_active_cid" ]; then
+        _quattor_ccm_tabcomp_active_cid=`_quattor_ccm_get_current_cid`
+    fi
+
+    COMPREPLY=( $(_quattor_ccm_pan_path $_quattor_ccm_tabcomp_active_cid /software/components/${COMP_WORDS[$COMP_CWORD]} | $_quattor_sed_path 's#/software/components/##g;s#/##g') )
+    return 0
+}
 
 # for args "a b", return longoptios string "--a --b"
 _quattor_ccm_make_long_options()

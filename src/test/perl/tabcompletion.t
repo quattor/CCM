@@ -114,6 +114,11 @@ sub test_comp
     test_bash($test, $msg, \@args, 1);
 }
 
+# test the existence of the _quattor_ccm_CLI_longoptions variable
+# it is used in quattor-ccm-profile script, and must exist to avoid reloading
+like((run_bash(['echo', '$_quattor_ccm_CLI_longoptions']))[0], qr{^--},
+     "_quattor_ccm_CLI_longoptions variable is not empty");
+
 # Test get CIDs
 
 test_func(qr{$cidsreg}, "Report all CIDs",
@@ -364,5 +369,17 @@ test_func(qr{^/software/components/metaconfig/services/\{/my/test/file\}/ /softw
 test_func(qr{^/software/components/metaconfig/services/\{/my/test/file\}/ /software/components/metaconfig/services/\{/my/test2/file2\}/$},
           "Report pan path '/software/components/metaconfig/services/{/my/t'",
           '_quattor_ccm_pan_path', $cfg->{cid}, '/software/components/metaconfig/services/{/my/t');
+
+=head2 test components tabcompletion using safe_unescape profile
+
+=cut
+
+test_comp(qr{^inactive metaconfig mycomponent$},
+          "Tabcomplete components",
+          "_quattor_ccm_tabcomp_active_cid=$cfg->{cid}", '_quattor_ccm_tabcomp_components');
+
+test_comp(qr{^metaconfig mycomponent$},
+          "Tabcomplete components m",
+          "_quattor_ccm_tabcomp_active_cid=$cfg->{cid}", 'COMP_WORDS=(SCRIPTNAME m)', 'COMP_CWORD=1', '&&', '_quattor_ccm_tabcomp_components');
 
 done_testing();
