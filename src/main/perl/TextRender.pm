@@ -163,7 +163,7 @@ Initialize the process object. Arguments:
 
 =item module
 
-The rendering module to use (see L<CAF::TextRender> for details).
+The rendering module to use (see B<CAF::TextRender> for details).
 
 CCM provides following additional builtin modules:
 
