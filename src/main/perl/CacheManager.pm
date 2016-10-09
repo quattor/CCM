@@ -95,6 +95,7 @@ sub new
         "get_timeout"      => getCfgValue("get_timeout"),
         "retrieve_retries" => getCfgValue("retrieve_retries"),
         "retrieve_wait"    => getCfgValue("retrieve_wait"),
+        "name_template"    => getCfgValue("name_template"),
     };
     $self->{"global_lock_file"} = EDG::WP4::CCM::SyncFile->new($gl);
     $self->{"current_cid_file"} = EDG::WP4::CCM::SyncFile->new($cc);
@@ -277,7 +278,7 @@ Security and C<$cred> parameter meaning are not defined
 C<get{Locked,Unlock,Anonymous}Configuration> methods).
 
 The configuration template name can also be passed via an
-optional named argument C<name> (e.g. C<< name => basic >>).
+optional named argument C<name_template> (e.g. C<< name_template => basic >>).
 
 =cut
 
@@ -305,7 +306,12 @@ sub getConfiguration
         return ();
     }
 
-    my $cfg = $self->_getConfig($locked, $cred, $actual_cid, $anonymous, $opts{name});
+    my %c_opts;
+    if (exists($opts{name_template})) {
+        $c_opts{name_template} = $opts{name_template};
+    };
+
+    my $cfg = $self->_getConfig($locked, $cred, $actual_cid, $anonymous, %c_opts);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
@@ -396,12 +402,13 @@ sub getAnonymousConfiguration
 # $cred - credential [unused / unsupported in current code; pass undef]
 # $cid - (optional) configuration id (use current CID if undefined)
 # $anonymous - (optional) anonymous flag
-# $name - (optional) name template
+# options
+#   $name_template - (optional) name template
 #
 
 sub _getConfig
 {
-    my ($self, $lc, $cred, $cid, $anonymous, $name) = @_;
+    my ($self, $lc, $cred, $cid, $anonymous, %opts) = @_;
     my $locked = $self->isLocked();
     unless (defined($locked)) {
         throw_error("$self->isLocked()", $ec->error);
@@ -416,7 +423,9 @@ sub _getConfig
         }
     }
 
-    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous, $name);
+    my $name_template = exists($opts{name_template}) ? $opts{name_template} : $self->{name_template};
+
+    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous, $name_template);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
