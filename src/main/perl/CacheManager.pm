@@ -276,6 +276,9 @@ Security and C<$cred> parameter meaning are not defined
 (but is kept for compatibility with other
 C<get{Locked,Unlock,Anonymous}Configuration> methods).
 
+The configuration template name can also be passed via an
+optional named argument C<name> (e.g. C<< name => basic >>).
+
 =cut
 
 sub getConfiguration
@@ -302,7 +305,7 @@ sub getConfiguration
         return ();
     }
 
-    my $cfg = $self->_getConfig($locked, $cred, $actual_cid, $anonymous);
+    my $cfg = $self->_getConfig($locked, $cred, $actual_cid, $anonymous, $opts{name});
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();
@@ -393,11 +396,12 @@ sub getAnonymousConfiguration
 # $cred - credential [unused / unsupported in current code; pass undef]
 # $cid - (optional) configuration id (use current CID if undefined)
 # $anonymous - (optional) anonymous flag
+# $name - (optional) name template
 #
 
 sub _getConfig
 {
-    my ($self, $lc, $cred, $cid, $anonymous) = @_;
+    my ($self, $lc, $cred, $cid, $anonymous, $name) = @_;
     my $locked = $self->isLocked();
     unless (defined($locked)) {
         throw_error("$self->isLocked()", $ec->error);
@@ -412,7 +416,7 @@ sub _getConfig
         }
     }
 
-    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous);
+    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous, $name);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();

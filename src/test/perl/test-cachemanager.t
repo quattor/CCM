@@ -246,29 +246,29 @@ $mock->mock('_getConfig', sub {
 });
 
 $cm->getConfiguration($cred);
-is_deeply($args_getConfig, [0, $cred, $ccid, -1],
+is_deeply($args_getConfig, [0, $cred, $ccid, -1, undef],
           "expected arguments for undefined cid");
 
 $cm->getConfiguration($cred, 2);
-is_deeply($args_getConfig, [1, $cred, 2, -1],
+is_deeply($args_getConfig, [1, $cred, 2, -1, undef],
           "expected arguments for defined cid");
 
 $cm->getConfiguration($cred, -1);
-is_deeply($args_getConfig, [1, $cred, $mcid, -1],
+is_deeply($args_getConfig, [1, $cred, $mcid, -1, undef],
           "expected arguments for cid == -1");
 
 $cm->getConfiguration($cred, undef, locked => 1, anonymous => 1);
-is_deeply($args_getConfig, [1, $cred, $ccid, 1],
+is_deeply($args_getConfig, [1, $cred, $ccid, 1, undef],
           "expected arguments for undefined cid with forced locked and anonymous");
 
 $cm->getConfiguration($cred, 2, locked => 0, anonymous => 1);
-is_deeply($args_getConfig, [0, $cred, 2, 1],
+is_deeply($args_getConfig, [0, $cred, 2, 1, undef],
           "expected arguments for defined cid with forced locked and anonymous");
 
 # cid == -1 gets resolved to most recent via getCid
-$cm->getConfiguration($cred, -1, locked => 0, anonymous => 0);
-is_deeply($args_getConfig, [0, $cred, $mcid, 0],
-          "expected arguments for cid == -1 with forced locked and anonymous");
+$cm->getConfiguration($cred, -1, locked => 0, anonymous => 0, name => 'testname');
+is_deeply($args_getConfig, [0, $cred, $mcid, 0, 'testname'],
+          "expected arguments for cid == -1 with forced locked and anonymous and name template testname");
 
 
 $mock->unmock('_getConfig');

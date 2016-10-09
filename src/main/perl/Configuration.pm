@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package      EDG::WP4::CCM::Configuration;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::Configuration${PMpost}
 
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
@@ -15,12 +7,13 @@ use EDG::WP4::CCM::Element;
 use CAF::FileWriter;
 
 use EDG::WP4::CCM::Path;
+use EDG::WP4::CCM::TextRender;
+use Readonly;
 
-use parent qw(Exporter);
-
-our @EXPORT    = qw();
-our @EXPORT_OK = qw();
-our $VERSION   = '${project.version}';
+Readonly my $METADATA_PATH => '/metadata';
+# Supported name formats
+Readonly::Array our @NAME_TEMPLATE_TYPES => qw(name);
+Readonly our $DEFAULT_NAME_TEMPLATE_TYPE => 'name';
 
 =head1 NAME
 
@@ -56,6 +49,7 @@ Create Configuration object. It takes three arguments:
     C<cid>: the configuration id
     C<locked>: boolean lock flag
     C<anonymous>: boolean anonymous flag
+    C<name>: name template
 
 If a configuration with specified CID does not exists, an exception is
 thrown.
@@ -88,7 +82,7 @@ runtimes), can set the C<anonymous> flag and use the configuration
 
 sub new
 {
-    my ($class, $cache_manager, $cid, $locked, $anonymous) = @_;
+    my ($class, $cache_manager, $cid, $locked, $anonymous, $name) = @_;
 
     my $cache_path = $cache_manager->getCachePath();
     unless ($cache_path =~ m{^([-./\w]+)}) {
@@ -117,6 +111,7 @@ sub new
         "cfg_path"      => $cfg_path,
         "cid_to_number" => undef, # counter to keep track of number of times a CID is in use
         "anonymous"     => defined($anonymous) ? $anonymous : 0, # clean 0
+        "name"          => defined($name) ? {template => $name} : undef,
     };
 
     bless($self, $class);
@@ -389,6 +384,72 @@ sub _prepareElement
     }
 
     return $path;
+}
+
+=item getName
+
+Return the name of the Configuration
+based on the name template set during initialisation.
+
+The C<type> argument (default C<name>) specifies which
+name format is used.
+The actual template used is C<< CCM/names/<name>/C<type>.tt >>.
+
+Following types are defined
+
+=over
+
+=item name: (compact) name
+
+=back
+
+The data used for rendering is the C<< /metadata >> tree.
+
+The rendered text is stripped from any leading and/or trailing whitespace
+and is added to the C<name> attribute,
+the next C<getName> call will return the cached value.
+
+If no template was set, undef is returned.
+If there was rendering (or any other) failure,
+undef is returned and the fail attribute is set.
+
+=cut
+
+sub getName
+{
+    my ($self, $type) = @_;
+
+    $type = $DEFAULT_NAME_TEMPLATE_TYPE if ! defined ($type);
+    return $self->fail("Invalid name template type $type")
+        if (! grep {$_ eq $type} @NAME_TEMPLATE_TYPES);
+
+    if (defined($self->{name})) {
+        if (! defined($self->{name}->{$type})) {
+            # Set the cache value
+            if ($self->elementExists($METADATA_PATH)) {
+                my $trd = EDG::WP4::CCM::TextRender->new(
+                    "names/$self->{name}->{template}/$type.tt",
+                    $self->getElement($METADATA_PATH),
+                    relpath => 'CCM',
+                    eol => 0,
+                    );
+                # Trigger the rendering, but keep the TextRender instance
+                my $txt = $trd->get_text();
+                if ($trd->{fail}) {
+                    return $self->fail("Failed to getName: $trd->{fail}");
+                } else {
+                    chomp($txt);
+                    $self->{name}->{$type} = $txt;
+                }
+            } else {
+                return $self->fail("getName no metadata tree found");
+            }
+        }
+        # Use cached value
+        return $self->{name}->{$type};
+    } else {
+        return;
+    }
 }
 
 =item getElement ($path)

@@ -1,0 +1,7 @@
+Test for names basic name
+---
+renderpath=/
+rendermodule=names/basic/name
+contentspath=/metadata
+---
+^mybranch-sandbox-user123-3b91b01-1476014841$
