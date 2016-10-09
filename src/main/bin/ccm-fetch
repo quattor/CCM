@@ -15,10 +15,10 @@ BEGIN {
 }
 
 use CAF::Application;
-use CAF::Reporter;
+use CAF::Reporter 16.8.1;
 use CAF::Object qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR_FORCE);
-our @ISA = qw(CAF::Application CAF::Reporter);
+our @ISA = qw(CAF::Application CAF::Reporter CAF::Path);
 
 # needed for method overriding
 no warnings 'redefine';
@@ -37,6 +37,10 @@ sub app_options {
           { NAME    => 'cfgfile=s',
             DEFAULT => '/etc/ccm.conf',
             HELP    => 'configuration file for CCM' },
+
+          { NAME    => 'logfile=s',
+            HELP    => 'path/filename to use for ccm-fetch logs',
+            DEFAULT => '/var/log/ccm-fetch.log' },
 
           { NAME    => 'profile|p=s',
             HELP    => 'URL of profile to fetch' },
@@ -150,10 +154,17 @@ sub _initialize {
     $self->{'VERSION'} = "${project.version}";
     $self->{'USAGE'}   = sprintf("Usage: %s [OPTIONS...]", $0);
 
+    $self->{LOG_APPEND} = 1;
+    $self->{LOG_TSTAMP} = 1;
+
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
         return undef;
     }
+
+    $self->set_report_logfile($self->{'LOG'});
+    # Enable verbose_logfile
+    $self->setup_reporter(undef, undef, undef, undef, 1);
 
     return SUCCESS;
 }
@@ -173,7 +184,7 @@ use File::Basename;
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
-use EDG::WP4::CCM::Fetch::ProfileCache qw($ERROR);
+use EDG::WP4::CCM::Fetch::ProfileCache qw($ERROR GetPermissions);
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
 
@@ -196,13 +207,15 @@ unless ($this_app = ccm_fetch->new($0, @ARGV)) {
     exit (1);
 }
 
-#my $ec = LC::Exception::Context->new->will_store_all;
-
 # get Config path
 my $opts = {};
 if (defined $this_app->option("cfgfile")) {
     $opts->{CONFIG} = $this_app->option("cfgfile");
 }
+my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
+# Set logfile permissions
+$this_app->status($this_app->option('logfile'), %$fopts);
+
 if (defined $this_app->option("profile")) {
     $opts->{PROFILE} = $this_app->option("profile");
 }
@@ -228,11 +241,6 @@ if (!$fetch) {
     throw_error("Initialization failed");
     exit (1);
 }
-
-
-# set debug
-$fetch->setup_reporter($this_app->option("debug"), $this_app->option("quiet"),
-		       $this_app->option("verbose"));
 
 # set timeout
 $fetch->setTimeout($this_app->option("get_timeout"))

@@ -1,5 +1,4 @@
-# run regularly ccm-fetch. To avoid lost notifications
+# To avoid lost notifications, run ccm-fetch regularly.
 #
-
-0 * * * * root (perl -e 'sleep rand 3600'; /usr/sbin/ccm-fetch) >>/var/log/ccm-fetch.log 2>&1
-
+RANDOM_DELAY=60
+0 * * * * root (date --iso-8601=seconds --utc; /usr/sbin/ccm-fetch) >>/var/log/ccm-fetch.log 2>&1

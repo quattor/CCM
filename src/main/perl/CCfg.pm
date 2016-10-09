@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package      EDG::WP4::CCM::CCfg;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::CCfg${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
 use Net::Domain qw(hostname hostdomain);
@@ -53,177 +45,122 @@ Readonly our $CONFIG_FN   => "/etc/ccm.conf";
 # Based 15.4 DEFAULT_CFG from CCfg.pm (keys and default values)
 # and order and help of ccm-fetch (not all ccm-fetch options are here)
 Readonly::Array our @CONFIG_OPTIONS => (
-    {
-        option => 'profile',
-        suffix => '|p=s',
-        HELP => 'URL of profile to fetch',
-    },
+    { option => 'profile',
+      suffix => '|p=s',
+      HELP => 'URL of profile to fetch' },
 
-    {
-        option => 'profile_failover',
-        suffix => '=s',
-        HELP => 'URL of profile to fetch when --profile is not available, can be comma separated',
-    },
+    { option => 'profile_failover',
+      suffix => '=s',
+      HELP => 'URL of profile to fetch when --profile is not available, can be comma separated' },
 
-    {
-        option => 'context',
-        suffix => '|c=s',
-        HELP    => 'URL of context to fetch',
-    },
+    { option => 'context',
+      suffix => '|c=s',
+      HELP    => 'URL of context to fetch' },
 
-    {
-        option => 'preprocessor',
-        suffix => '=s',
-        HELP    => 'Path of executable to be used to preprocess a profile with a context',
-    },
+    { option => 'preprocessor',
+      suffix => '=s',
+      HELP    => 'Path of executable to be used to preprocess a profile with a context' },
 
-    {
-        option => 'cache_root',
-        suffix => '=s',
-        DEFAULT => '/var/lib/ccm',
-        HELP    => 'Basepath for the configuration cache',
-    },
+    { option => 'cache_root',
+      suffix => '=s',
+      DEFAULT => '/var/lib/ccm',
+      HELP    => 'Basepath for the configuration cache' },
 
-    {
-        option => 'get_timeout',
-        suffix => '=i',
-        DEFAULT => 30,
-        HELP    => 'Timeout in seconds for HTTP GET operation',
-    },
+    { option => 'get_timeout',
+      suffix => '=i',
+      DEFAULT => 30,
+      HELP    => 'Timeout in seconds for HTTP GET operation' },
 
-    {
-        option => 'group_readable',
-        suffix => '=s',
-        HELP    => 'Group readable profile (value is the groupname)',
-    },
+    { option => 'group_readable',
+      suffix => '=s',
+      HELP    => 'Group readable profile (value is the groupname)' },
 
-    {
-        option => 'world_readable',
-        suffix => '=i',
-        HELP    => 'World readable profile flag 1/0',
-    },
+    { option => 'world_readable',
+      suffix => '=i',
+      HELP    => 'World readable profile flag 1/0' },
 
-    {
-        option => 'force',
-        suffix => '|f',
-        HELP    => 'Fetch regardless of modification times',
-    },
+    { option => 'force',
+      suffix => '|f',
+      HELP    => 'Fetch regardless of modification times' },
 
-    {
-        option => 'dbformat',
-        suffix => '=s',
-        DEFAULT => 'GDBM_File',
-        HELP    => 'Format to use for storing profile',
-    },
+    { option => 'dbformat',
+      suffix => '=s',
+      DEFAULT => 'GDBM_File',
+      HELP    => 'Format to use for storing profile' },
 
-    {
-        option => 'retrieve_retries',
-        suffix => '=i',
-        DEFAULT => 3,
-        HELP    => 'Number of times fetch will attempt to retrieve a profile',
-    },
+    { option => 'retrieve_retries',
+      suffix => '=i',
+      DEFAULT => 3,
+      HELP    => 'Number of times fetch will attempt to retrieve a profile' },
 
-    {
-        option => 'lock_retries',
-        suffix => '=i',
-        DEFAULT => 3,
-        HELP    => 'Number of times fetch will attempt to get the fetch lock',
-    },
+    { option => 'lock_retries',
+      suffix => '=i',
+      DEFAULT => 3,
+      HELP    => 'Number of times fetch will attempt to get the fetch lock' },
 
-    {
-        option => 'retrieve_wait',
-        suffix => '=i',
-        DEFAULT => 30,
-        HELP    => 'Number of seconds that fetch will wait between retrieve attempts',
-    },
+    { option => 'retrieve_wait',
+      suffix => '=i',
+      DEFAULT => 30,
+      HELP    => 'Number of seconds that fetch will wait between retrieve attempts' },
 
-    {
-        option => 'lock_wait',
-        suffix => '=i',
-        DEFAULT => 30,
-        HELP    =>  'Number of seconds that fetch will wait between lock attempts',
-    },
+    { option => 'lock_wait',
+      suffix => '=i',
+      DEFAULT => 30,
+      HELP    =>  'Number of seconds that fetch will wait between lock attempts' },
 
-    {
-        option => 'key_file',
-        suffix => '=s',
-        HELP    => 'Absolute file name for key file to use with HTTPS.',
-    },
+    { option => 'key_file',
+      suffix => '=s',
+      HELP    => 'Absolute file name for key file to use with HTTPS.' },
 
-    {
-        option => 'cert_file',
-        suffix => '=s',
-        HELP    => 'Absolute file name for certificate file to use with HTTPS.',
-    },
+    { option => 'cert_file',
+      suffix => '=s',
+      HELP    => 'Absolute file name for certificate file to use with HTTPS.' },
 
-    {
-        option => 'ca_file',
-        suffix => '=s',
-        HELP    => 'File containing a bundle of trusted CA certificates for use with HTTPS.',
-    },
+    { option => 'ca_file',
+      suffix => '=s',
+      HELP    => 'File containing a bundle of trusted CA certificates for use with HTTPS.' },
 
-    {
-        option => 'ca_dir',
-        suffix => '=s',
-        HELP   => 'Directory containing trusted CA certificates for use with HTTPS',
-    },
+    { option => 'ca_dir',
+      suffix => '=s',
+      HELP   => 'Directory containing trusted CA certificates for use with HTTPS' },
 
-    {
-        option => 'trust',
-        suffix => '=s',
-        HELP   => 'Comma-separated list of kerberos principals to trust when using encrypted profiles',
-    },
+    { option => 'trust',
+      suffix => '=s',
+      HELP   => 'Comma-separated list of kerberos principals to trust when using encrypted profiles' },
 
-    {
-        option => 'keep_old',
-        suffix => '=i',
-        DEFAULT => 2,
-        HELP   => 'Number of old profiles to keep before purging',
-    },
+    { option => 'keep_old',
+      suffix => '=i',
+      DEFAULT => 2,
+      HELP   => 'Number of old profiles to keep before purging' },
 
-    {
-        option => 'purge_time',
-        suffix => '=i',
-        DEFAULT => 86400,
-        HELP   => 'Number of seconds before purging inactive profiles',
-    },
+    { option => 'purge_time',
+      suffix => '=i',
+      DEFAULT => 86400,
+      HELP   => 'Number of seconds before purging inactive profiles' },
 
-    {
-        option => 'json_typed',
-        DEFAULT => 1,
-        HELP => 'Extract typed data from JSON profiles',
-    },
+    { option => 'json_typed',
+      DEFAULT => 1,
+      HELP => 'Extract typed data from JSON profiles' },
 
-    {
-        option => 'debug',
-        suffix => '|d=i',
-        HELP => 'Turn on debugging messages',
-    },
+    { option => 'debug',
+      suffix => '|d=i',
+      HELP => 'Turn on debugging messages' },
 
-    {
-        option => 'base_url',
-        suffix => '=s',
-        HELP => 'Base url to use when the profile is relative',
-    },
+    { option => 'base_url',
+      suffix => '=s',
+      HELP => 'Base url to use when the profile is relative' },
 
-    {
-        option => 'tabcompletion',
-        DEFAULT => 1,
-        HELP => 'Create the tabcompletion file (during profile fetch)',
-    },
+    { option => 'tabcompletion',
+      DEFAULT => 1,
+      HELP => 'Create the tabcompletion file (during profile fetch)' },
 
-    {
-        option => 'principal',
-        suffix => '=s',
-        HELP => 'Principal to use for Kerberos setup',
-    },
+    { option => 'principal',
+      suffix => '=s',
+      HELP => 'Principal to use for Kerberos setup' },
 
-    {
-        option => 'keytab',
-        suffix => '=s',
-        HELP => 'Keytab to use for Kerberos setup',
-    },
-
+    { option => 'keytab',
+      suffix => '=s',
+      HELP => 'Keytab to use for Kerberos setup' },
 );
 
 Readonly::Array our @CFG_KEYS => sort map {$_->{option}} @CONFIG_OPTIONS;
