@@ -49,7 +49,7 @@ Create Configuration object. It takes three arguments:
     C<cid>: the configuration id
     C<locked>: boolean lock flag
     C<anonymous>: boolean anonymous flag
-    C<name>: name template
+    C<name_template>: name template
 
 If a configuration with specified CID does not exists, an exception is
 thrown.
@@ -82,7 +82,7 @@ runtimes), can set the C<anonymous> flag and use the configuration
 
 sub new
 {
-    my ($class, $cache_manager, $cid, $locked, $anonymous, $name) = @_;
+    my ($class, $cache_manager, $cid, $locked, $anonymous, $name_template) = @_;
 
     my $cache_path = $cache_manager->getCachePath();
     unless ($cache_path =~ m{^([-./\w]+)}) {
@@ -111,7 +111,7 @@ sub new
         "cfg_path"      => $cfg_path,
         "cid_to_number" => undef, # counter to keep track of number of times a CID is in use
         "anonymous"     => defined($anonymous) ? $anonymous : 0, # clean 0
-        "name"          => defined($name) ? {template => $name} : undef,
+        "name"          => defined($name_template) ? {template => $name_template} : undef,
     };
 
     bless($self, $class);
@@ -393,7 +393,7 @@ based on the name template set during initialisation.
 
 The C<type> argument (default C<name>) specifies which
 name format is used.
-The actual template used is C<< CCM/names/<name>/C<type>.tt >>.
+The actual template used is C<< CCM/names/<name_template>/C<type>.tt >>.
 
 Following types are defined
 

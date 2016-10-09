@@ -44,14 +44,15 @@ foreach my $name_template (glob("$ttdir/*")) {
 # We can assume all TT files are unittested
 
 # first arg is unused cred
-my $cfg1 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid});
+# default name basic is set via CCfg, so force undef
+my $cfg1 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name_template => undef);
 # no name attr set
 ok(! defined($cfg1->{name}), "No name template passed, no name attribute set");
 $cfg1->{fail} = undef;
 ok(! defined($cfg1->getName()), "getName returns undef with no name template set");
 ok(! defined($cfg1->{fail}), "getName does not set fail attr with no name template set");
 
-my $cfg2 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name => 'does_not_exist');
+my $cfg2 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name_template => 'does_not_exist');
 is_deeply($cfg2->{name}, {template => 'does_not_exist'},
           "name template does_not_exist passed, name attribute set");
 $cfg2->{fail} = undef;
@@ -62,7 +63,7 @@ like($cfg2->{fail},
 
 # Test renderfailure?
 $caf_trd->mock('tt', sub {my $self = shift; return $self->fail("mocked failure");});
-my $cfg3 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name => 'basic');
+my $cfg3 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name_template => 'basic');
 $cfg3->{fail} = undef;
 ok(! defined($cfg3->getName()), "getName returns undef in case of render failure");
 is($cfg3->{fail},
@@ -73,7 +74,7 @@ is($cfg3->{fail},
 $caf_trd->unmock('tt');
 
 # Test success
-my $cfg4 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name => 'basic');
+my $cfg4 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name_template => 'basic');
 is_deeply($cfg4->{name}, {template => 'basic'},
           "name template basic passed, name attribute set");
 $cfg4->{fail} = undef;
@@ -87,7 +88,7 @@ ok(! defined($cfg5->getName('unsupported_type')), "getName returns undef with un
 is($cfg5->{fail}, 'Invalid name template type unsupported_type', "getName set fail attr unsupported type");
 
 # No metadata
-my $cfg6 = $cfg_no_metadata->{cache_manager}->getConfiguration(undef, $cfg_no_metadata->{cid}, name => 'basic');
+my $cfg6 = $cfg_no_metadata->{cache_manager}->getConfiguration(undef, $cfg_no_metadata->{cid}, name_template => 'basic');
 $cfg6->{fail} = undef;
 ok(! defined($cfg6->getName()), "getName returns undef with missing metadata");
 is($cfg6->{fail}, 'getName no metadata tree found', "getName set fail attr with missing metadata");
