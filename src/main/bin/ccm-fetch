@@ -17,7 +17,7 @@ BEGIN {
 use CAF::Application;
 use CAF::Reporter 16.8.1;
 use CAF::Object qw(SUCCESS throw_error);
-use EDG::WP4::CCM::Fetch qw(NOQUATTOR_FORCE);
+use EDG::WP4::CCM::Fetch::Config qw(NOQUATTOR_FORCE);
 our @ISA = qw(CAF::Application CAF::Reporter CAF::Path);
 
 # needed for method overriding
@@ -181,7 +181,7 @@ use warnings;
 use English;
 use CAF::Object qw(SUCCESS CHANGED throw_error);
 use File::Basename;
-use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
+use EDG::WP4::CCM::Fetch::Config qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);

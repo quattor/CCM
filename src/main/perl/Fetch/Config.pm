@@ -1,8 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-
-package EDG::WP4::CCM::Fetch::Config;
+#${PMpre} EDG::WP4::CCM::Fetch::Config${PMpost}
 
 =head1 NAME
 
@@ -19,11 +15,16 @@ CCM config and/or the commandline
 
 =cut
 
-use strict;
-use warnings;
-
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue @CFG_KEYS);
 use LC::Exception qw(SUCCESS throw_error);
+
+use parent qw(Exporter);
+our @EXPORT    = qw();
+our @EXPORT_OK = qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
+
+use constant NOQUATTOR          => "/etc/noquattor";
+use constant NOQUATTOR_EXITCODE => 3;
+use constant NOQUATTOR_FORCE    => "force-quattor";
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
