@@ -184,6 +184,7 @@ use File::Basename;
 use EDG::WP4::CCM::Fetch qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
+use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
 use EDG::WP4::CCM::Fetch::ProfileCache qw($ERROR GetPermissions);
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
@@ -212,6 +213,8 @@ my $opts = {};
 if (defined $this_app->option("cfgfile")) {
     $opts->{CONFIG} = $this_app->option("cfgfile");
 }
+initCfg($this_app->option("cfgfile"));
+
 my ($dopts, $fopts, $mask) = GetPermissions($this_app, getCfgValue('group_readable'), getCfgValue('world_readable'));
 # Set logfile permissions
 $this_app->status($this_app->option('logfile'), %$fopts);
