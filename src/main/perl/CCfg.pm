@@ -10,7 +10,6 @@ use Readonly;
 
 our @EXPORT    = qw();
 our @EXPORT_OK = qw(initCfg getCfgValue setCfgValue resetCfg);
-our $VERSION   = '${project.version}';
 
 =head1 NAME
 
