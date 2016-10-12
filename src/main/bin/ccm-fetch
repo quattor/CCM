@@ -181,10 +181,11 @@ use warnings;
 use English;
 use CAF::Object qw(SUCCESS CHANGED throw_error);
 use File::Basename;
-use EDG::WP4::CCM::Fetch::Config qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
-use EDG::WP4::CCM::CacheManager;
 use LC::Exception;
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
+use EDG::WP4::CCM::CacheManager;
+use EDG::WP4::CCM::Fetch;
+use EDG::WP4::CCM::Fetch::Config qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 use EDG::WP4::CCM::Fetch::ProfileCache qw($ERROR GetPermissions);
 
 $ENV{PATH} = join(":", qw(/bin /usr/bin /sbin /usr/sbin));
