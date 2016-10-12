@@ -43,6 +43,8 @@ is($CURRENT_CID_FN, "current.cid", "Exported CURRENT_CID_FN");
 is($LATEST_CID_FN, "latest.cid", "Exported LATEST_CID_FN");
 is($DATA_DN, "data", "Exported DATA_DN");
 is($TABCOMPLETION_FN, "tabcompletion", "Exported TABCOMPLETION_FN");
+
+# These come from EDG::WP4::CCM::Fetch::Config, but are still exported via Fetch
 is(NOQUATTOR, "/etc/noquattor", "Exported NOQUATTOR");
 is(NOQUATTOR_EXITCODE, "3", "Exported NOQUATTOR_EXITCODE");
 is(NOQUATTOR_FORCE, "force-quattor", "Exported NOQUATTOR_FORCE");

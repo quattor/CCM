@@ -1,8 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-
-package EDG::WP4::CCM::Fetch;
+#${PMpre} EDG::WP4::CCM::Fetch${PMpost}
 
 =head1 NAME
 
@@ -29,15 +25,8 @@ well as foreign node profiles.
 
 =cut
 
-use strict;
-use warnings;
-
 use CAF::Object qw(SUCCESS CHANGED throw_error);
 use Carp qw(carp confess);
-
-use constant NOQUATTOR          => "/etc/noquattor";
-use constant NOQUATTOR_EXITCODE => 3;
-use constant NOQUATTOR_FORCE    => "force-quattor";
 
 # only to re-export
 use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
@@ -46,6 +35,8 @@ use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
 use EDG::WP4::CCM::Fetch::ProfileCache qw($FETCH_LOCK_FN
     $TABCOMPLETION_FN ComputeChecksum
     $ERROR);
+
+use EDG::WP4::CCM::Fetch::Config qw(NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 
 use parent qw(Exporter CAF::Reporter EDG::WP4::CCM::Fetch::Config
               EDG::WP4::CCM::Fetch::Download
