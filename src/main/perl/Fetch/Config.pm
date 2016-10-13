@@ -148,15 +148,6 @@ sub setProfileURL
     return SUCCESS;
 }
 
-sub setProfilenTime
-{
-    my ($self, $val) = @_;
-    throw_error("Profile time should be natural number: $val")
-        unless ($val =~ m/^\d+$/);
-    $self->{PROFILE_NTIME} = $val;
-    return SUCCESS;
-}
-
 sub setGroupReadable
 {
     my ($self, $val) = @_;
