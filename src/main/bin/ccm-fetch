@@ -57,9 +57,6 @@ sub app_options {
           { NAME    => 'context_time=s',
             HELP    => 'Unix timestamp as modification time of context' },
 
-          { NAME    => 'preprocessor=s',
-            HELP    => 'Path of executable to be used to preprocess a profile with a context' },
-
           { NAME    => 'foreign',
             HELP    => 'whether a foreign profile or local profile' },
 
@@ -258,10 +255,6 @@ $fetch->setForce($this_app->option("force"))
 $fetch->setProfileFailover($this_app->option("profile_failover"))
 		if defined $this_app->option("profile_failover");
 
-# set preprocessor
-$fetch->setPreprocessor($this_app->option("preprocessor"))
-		if defined $this_app->option("preprocessor");
-
 # set cache root
 $fetch->setCacheRoot($this_app->option("cache_root"))
 		if defined $this_app->option("cache_root");
@@ -379,11 +372,6 @@ URL of context to fetch.
 
 UNIX timestamp to expect as the modification time of the new context.
 This will normally be provided by the notification service.
-
-=item B<--preprocessor>=I<program>
-
-The executable to be called when preprocessing a profile with
-a context file.
 
 =item B<--foreign>=I<1/0>
 

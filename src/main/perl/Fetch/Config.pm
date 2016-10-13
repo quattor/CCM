@@ -85,16 +85,6 @@ sub setCacheRoot
     return SUCCESS;
 }
 
-# Set preprocessor application
-sub setPreprocessor
-{
-    my ($self, $val) = @_;
-    throw_error("file does not exist or not executable: $val")
-        unless (-x $val);
-    $self->{"PREPROCESSOR"} = $val;
-    return SUCCESS;
-}
-
 # Set CA directory
 sub setCADir
 {

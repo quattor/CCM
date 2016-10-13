@@ -56,10 +56,6 @@ Readonly::Array our @CONFIG_OPTIONS => (
       suffix => '|c=s',
       HELP    => 'URL of context to fetch' },
 
-    { option => 'preprocessor',
-      suffix => '=s',
-      HELP    => 'Path of executable to be used to preprocess a profile with a context' },
-
     { option => 'cache_root',
       suffix => '=s',
       DEFAULT => '/var/lib/ccm',
