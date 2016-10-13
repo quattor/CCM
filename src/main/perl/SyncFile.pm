@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package      EDG::WP4::CCM::SyncFile;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::SyncFile${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CCfg qw(getCfgValue);
@@ -17,7 +9,7 @@ use CAF::FileWriter;
 use parent qw(Exporter);
 our @EXPORT    = qw();
 our @EXPORT_OK = qw(new read write);
-our $VERSION   = '${project.version}';
+
 
 =head1 NAME
 
@@ -38,7 +30,6 @@ flock non blocking call is used for acquiring the lock in lock
 acquiring subroutine. The subroutine retries several times if lock
 cannot be acquired. If after retries lock is still not acquired, error
 is reported.
-
 
 =over
 
@@ -138,7 +129,7 @@ sub get_file_name
     return $self->{"file_name"};
 }
 
-=item new ($file_name)
+=item new
 
 create new SyncFile object where $file_name is the name of the sync
 file
@@ -160,6 +151,7 @@ sub new
 =pod
 
 =back
+
 =cut
 
 1;
