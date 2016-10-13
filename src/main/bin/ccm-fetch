@@ -344,7 +344,7 @@ modification times.
 Execute even if CCM updates are globally disabled. This option exists
 to allow administrators to make one-off updates in a controlled manner.
 
-=item B<--config>=I<file>
+=item B<--cfgfile>=I<file>
 
 Use configuration file I<file>.  Default location:
 /etc/ccm.conf.  See below for the parameters that may be
