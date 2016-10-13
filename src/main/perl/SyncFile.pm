@@ -23,13 +23,8 @@ EDG::WP4::CCM::SyncFile
 
 =head1 DESCRIPTION
 
-SyncFile module provides synchronised (exclusive) read/write access to
-cid files and global.lock file. It uses flock (2).
-
-flock non blocking call is used for acquiring the lock in lock
-acquiring subroutine. The subroutine retries several times if lock
-cannot be acquired. If after retries lock is still not acquired, error
-is reported.
+SyncFile module provides read/write access to
+cid files and global.lock file.
 
 =over
 
@@ -70,52 +65,6 @@ sub write
     return SUCCESS;
 }
 
-#
-# lock using blocking flock call
-#
-
-sub _block
-{
-    unless (flock(FH, 2)) {
-        throw_error("flock (FH, 2)", $!);
-        return ();
-    }
-    return SUCCESS;
-}
-
-#
-# lock using unblocking call with timeout mechanism
-#
-
-sub _lock
-{
-    my ($self) = @_;
-    my $locked = flock(FH, 6);
-    my $i = 1;
-    $locked = flock(FH, 6);
-    while (!$locked && $i++ < $self->{"retries"}) {
-        sleep($self->{"wait"});
-        $locked = flock(FH, 6);
-    }
-    unless ($locked) {
-        throw_error("could not get lock (flock (FH, 6))", $!);
-        return ();
-    }
-    return SUCCESS;
-}
-
-#
-# unlock using flock call
-#
-
-sub _unlock
-{
-    unless (flock(FH, 8)) {
-        throw_error("flock (FH, 8)", $!);
-        return ();
-    }
-    return SUCCESS;
-}
 
 =item get_file_name ()
 
@@ -138,11 +87,9 @@ file
 
 sub new
 {
-    my ($class, $file_name, $wait, $retries) = @_;
+    my ($class, $file_name) = @_;
     my $self = {
         "file_name" => $file_name,
-        "wait"      => getCfgValue("lock_wait"),
-        "retries"   => getCfgValue("retrieve_retries"),
     };
     bless($self, $class);
     return $self;
