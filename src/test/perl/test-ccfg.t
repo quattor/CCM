@@ -167,7 +167,6 @@ Readonly::Hash my %DEFAULT_CFG => {
     "ca_file" => undef,
     "cache_root" => "/var/lib/ccm",
     "cert_file" => undef,
-    "context" => undef,
     "dbformat" => "GDBM_File",
     "debug" => undef,
     "force" => undef,
@@ -179,7 +178,6 @@ Readonly::Hash my %DEFAULT_CFG => {
     "keytab" => undef,
     "lock_retries" => 3,
     "lock_wait" => 30,
-    "preprocessor" => undef,
     "principal" => undef,
     "profile" => undef,
     "profile_failover" => undef,
@@ -204,8 +202,8 @@ is($CONFIG_FN, "/etc/ccm.conf", "Expected default ccm config file");
 
 # Hard test for possible values (sorted)
 is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
-context dbformat debug force get_timeout group_readable json_typed keep_old
-key_file keytab lock_retries lock_wait preprocessor principal profile profile_failover
+dbformat debug force get_timeout group_readable json_typed keep_old
+key_file keytab lock_retries lock_wait principal profile profile_failover
 purge_time retrieve_retries retrieve_wait tabcompletion trust world_readable
 )], "CFG_KEYS exports all possible configuration keys");
 

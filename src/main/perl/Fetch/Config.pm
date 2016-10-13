@@ -39,7 +39,7 @@ sub _config
 
     $self->{_CCFG} = $cfg;
 
-    my @keys = qw(tmp_dir context_url);
+    my @keys = qw(tmp_dir);
     push(@keys, @CFG_KEYS);
     foreach my $key (@keys) {
         # do not override any predefined uppercase attributes
@@ -82,16 +82,6 @@ sub setCacheRoot
     my ($self, $val) = @_;
     throw_error("directory does not exist: $val") unless (-d $val);
     $self->{"CACHE_ROOT"} = $val;
-    return SUCCESS;
-}
-
-# Set preprocessor application
-sub setPreprocessor
-{
-    my ($self, $val) = @_;
-    throw_error("file does not exist or not executable: $val")
-        unless (-x $val);
-    $self->{"PREPROCESSOR"} = $val;
     return SUCCESS;
 }
 
@@ -155,40 +145,6 @@ sub setProfileURL
         or die "Invalid profile url $self->{PROFILE_URL}";
     $self->{PROFILE_URL} = $1;
     $self->debug(5, "URL is " . $self->{"PROFILE_URL"});
-    return SUCCESS;
-}
-
-sub setContext
-{
-    my ($self, $val) = @_;
-    $self->{"CONTEXT_URL"} = $val;
-    return SUCCESS;
-}
-
-sub setContextTime
-{
-    my ($self, $val) = @_;
-    throw_error("Context time should be natural number: $val")
-        unless ($val =~ m/^\d+$/);
-    $self->{CONTEXT_TIME} = $val;
-    return SUCCESS;
-}
-
-sub setContextnTime
-{
-    my ($self, $val) = @_;
-    throw_error("Context time should be natural number: $val")
-        unless ($val =~ m/^\d+$/);
-    $self->{CONTEXT_NTIME} = $val;
-    return SUCCESS;
-}
-
-sub setProfilenTime
-{
-    my ($self, $val) = @_;
-    throw_error("Profile time should be natural number: $val")
-        unless ($val =~ m/^\d+$/);
-    $self->{PROFILE_NTIME} = $val;
     return SUCCESS;
 }
 

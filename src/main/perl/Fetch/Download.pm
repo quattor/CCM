@@ -166,7 +166,7 @@ sub retrieve
 
 =item download
 
-Downloads the files associated with $type (profile or context). In
+Downloads the files associated with $type (profile). In
 case of error it retries $self->{RETRIEVE_RETRIES} times, falling back
 to a failover URL if necessary (thus up to 2*$self->{RETRIEVE_RETRIES}
 may happen.

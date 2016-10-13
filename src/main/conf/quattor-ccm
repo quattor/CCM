@@ -128,7 +128,7 @@ _quattor_ccm_make_long_options()
 }
 
 # sorted list of options for CCM::Options based tools
-_quattor_ccm_CCfg_options=(base_url cache_root ca_dir ca_file cert_file context dbformat debug force get_timeout group_readable json_typed keep_old key_file keytab lock_retries lock_wait preprocessor principal profile profile_failover purge_time retrieve_retries retrieve_wait tabcompletion trust world_readable)
+_quattor_ccm_CCfg_options=(base_url cache_root ca_dir ca_file cert_file dbformat debug force get_timeout group_readable json_typed keep_old key_file keytab lock_retries lock_wait principal profile profile_failover purge_time retrieve_retries retrieve_wait tabcompletion trust world_readable)
 
 # sorted list of options for CCM::Options based tools
 # (except those already in _quattor_ccm_CCfg_options)
