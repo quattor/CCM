@@ -16,7 +16,7 @@ EDG::WP4::CCM::Fetch
 =head1 DESCRIPTION
 
 Module provides Fetch class. This helps in retrieving XML profiles and
-contexts from specified URLs. It allows users to retrieve local, as
+from specified URLs. It allows users to retrieve local, as
 well as foreign node profiles.
 
 =head1 Functions

@@ -244,7 +244,6 @@ sub read_url
 #
 # The URL to be deleted are:
 #   - URL stored at profile.url
-#   - URL stored at context.url
 #   - all URLs stored in eid2data.db recods of type 'fetch'
 #
 sub save_active_urls
@@ -254,16 +253,11 @@ sub save_active_urls
     my ($url, $md5, %hash, $key, $ukey);
 
     # remove from NonactiveURL hash those URLs contained
-    # in files profile.url and context.url
+    # in files profile.url
 
     $url = read_url("${CacheDir}/${profile}/profile.url");
     $md5 = md5_hex($url);
     delete($NonactiveURL{$md5});
-
-    # TODO: What happens with context?
-    # $url = read_url("${CacheDir}/${profile}/context.url");
-    # $md5 = md5_hex($url);
-    # delete($NonactiveURL{$md5});
 
     # search URLs in fetch porperties
     my $readErr = read_db(\%hash,

@@ -242,7 +242,6 @@ sub previous
     $ret{url} = CAF::FileReader->new("$dir/profile.url");
     chomp($ret{url}); # this actually works
 
-    $ret{context_url} = CAF::FileReader->new("$dir/context.url");
     $ret{profile}     = CAF::FileReader->new("$dir/profile.xml");
 
     return %ret;
@@ -291,7 +290,6 @@ sub _cleanup
     my ($self, $current, $previous, $cancel) = @_;
 
     # Previous only has cid as an Editor, but cancelling / closing a FileReader is harmless
-    # Previous also has a context_url FileReader, which does not exist for current (what is it?)
     foreach my $prof ($current, $previous) {
         foreach my $attr (qw(cid profile url)) {
             my $fh = $prof->{$attr};

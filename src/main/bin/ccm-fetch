@@ -51,12 +51,6 @@ sub app_options {
           { NAME    => 'profile-time=s',
             HELP    => 'Unix timestamp as modification time of profile' },
 
-          { NAME    => 'context|c=s',
-            HELP    => 'URL of context to fetch' },
-
-          { NAME    => 'context_time=s',
-            HELP    => 'Unix timestamp as modification time of context' },
-
           { NAME    => 'foreign',
             HELP    => 'whether a foreign profile or local profile' },
 
@@ -271,14 +265,6 @@ $fetch->setWorldReadable($this_app->option("world_readable"))
 # since we always want to get something later than what we
 # have on disk
 
-# set context notification time
-$fetch->setContextnTime($this_app->option("context_time"))
-    if defined $this_app->option("context_time");
-
-# set context URL
-$fetch->setContext($this_app->option("context"))
-    if defined $this_app->option("context");
-
 # set principal
 $fetch->setPrincipal($this_app->option("principal"))
     if defined $this_app->option("principal");
@@ -311,7 +297,7 @@ ccm-fetch - fetch profiles and store in local cache
 
 =head1 DESCRIPTION
 
-This program retrieves profiles and contexts from specified URLs,
+This program retrieves profiles from specified URLs,
 subject to modification time constraints, validates them, and stores the
 contents in the local configuration cache.
 
@@ -329,7 +315,7 @@ Turn on debugging messages.
 
 =item B<-f>, B<--force>
 
-Force fetch to retrieve profiles/contexts, regardless of their
+Force fetch to retrieve profiles, regardless of their
 modification times.
 
 =item B<--force-quattor>
@@ -363,16 +349,6 @@ UNIX timestamp to expect as the modification time of the new profile.
 This will normally be provided by the notification service. This
 argument is supported for compatability reasons, but has no effect.
 
-
-=item B<--context>=I<URL>
-
-URL of context to fetch.
-
-=item B<--context-time>=I<time>
-
-UNIX timestamp to expect as the modification time of the new context.
-This will normally be provided by the notification service.
-
 =item B<--foreign>=I<1/0>
 
 The profile being fetched is a foreign profile and will be stored at
@@ -394,8 +370,6 @@ is the same.
 
 =item profile
 
-=item context
-
 =item cache_root
 
 Location of the root of the cache directory hierarchy.  Defaults to
@@ -403,8 +377,7 @@ Location of the root of the cache directory hierarchy.  Defaults to
 
 =item get_timeout
 
-Timeout in seconds for the HTTP GET operation, when retrieving profiles
-or contexts.
+Timeout in seconds for the HTTP GET operation, when retrieving profiles.
 
 =item lock_retries
 
@@ -417,7 +390,7 @@ Number of seconds that fetch will wait between lock attempts.
 
 =item retrieve_retries
 
-Number of times fetch will attempt to retrieve a profile or context, when
+Number of times fetch will attempt to retrieve a profile, when
 it has been given a valid accompanying notification time.
 
 =item retrieve_wait

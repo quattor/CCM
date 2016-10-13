@@ -52,10 +52,6 @@ Readonly::Array our @CONFIG_OPTIONS => (
       suffix => '=s',
       HELP => 'URL of profile to fetch when --profile is not available, can be comma separated' },
 
-    { option => 'context',
-      suffix => '|c=s',
-      HELP    => 'URL of context to fetch' },
-
     { option => 'cache_root',
       suffix => '=s',
       DEFAULT => '/var/lib/ccm',
@@ -229,8 +225,7 @@ sub _readConfigFile
                     # Force the values
                     $cfg->{$var} = $force_cfg->{$var};
                 } elsif (   $var eq 'profile'
-                    or $var eq 'profile_failover'
-                    or $var eq 'context')
+                    or $var eq 'profile_failover')
                 {
                     my $s = _resolveTags($val);
                     unless ($s) {
