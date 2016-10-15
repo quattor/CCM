@@ -158,7 +158,7 @@ ccm-initialise [I<OPTIONS>]
 
 Turn on debugging messages.
 
-=item B<--config>=I<file>
+=item B<--cfgfile>=I<file>
 
 The I<file> is the WP4 local cache configuration file, also used by the
 B<fetch> program; cache-initialise uses it to establish the location of
