@@ -76,7 +76,7 @@ Readonly::Array our @CONFIG_OPTIONS => (
 
     { option => 'dbformat',
       suffix => '=s',
-      DEFAULT => 'GDBM_File',
+      DEFAULT => 'CDB_File',
       HELP    => 'Format to use for storing profile' },
 
     { option => 'retrieve_retries',

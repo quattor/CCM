@@ -276,11 +276,13 @@
         <name>${project.artifactId}</name>
         <url>https://github.com/quattor/CCM/tree/master</url>
         <requires>
+          <require>perl(CDB_File)</require>
           <require>perl(Crypt::SSLeay)</require>
           <require>perl(LWP::Protocol::https)</require>
           <!-- perl-JSON-XS rpm dependency set explicitly; EL5 metadata doesn't play nicely with 'perl(JSON::XS) >= 2.3.0'
                set by 'use perl-JSON-XS 2.3.0' and version requirement is missing if 'use perl-JSON-XS v2.3.0' is used -->
-          <require>perl-JSON-XS &gt;= 2.3.0</require>        </requires>
+          <require>perl-JSON-XS &gt;= 2.3.0</require>
+        </requires>
         <mappings>
           <mapping>
             <directory>/usr/lib/perl/EDG/WP4/CCM</directory>
