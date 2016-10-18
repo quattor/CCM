@@ -416,9 +416,9 @@ symlinks are needed.
 
 =item group_readable
 
-Group readable profiles (value is the groupname).
-If set with valid groupname, profiles will be
-stored on local disk with in directory with 750 permissions and the
+Group readable cache root/profiles (value is the groupname).
+If set with valid groupname, the configured cache root
+will have its permissions set to 750 and the
 the groupname as group (still owned by root).
 
 Following standard UNIX ACL semantics, the C<group_readable> configuration
@@ -426,13 +426,16 @@ option is not very useful if C<world_readable> is also true.
 
 =item world_readable
 
-World readable profiles flag (1/0). If true profiles will be
-stored on local disk in directory with 755 permissions, if false with 700.
+World readable cache root/profiles flag (1/0). If true, the configured cache root
+will have its permissions set to 755. If false the permissions will be 700.
+
+These permissions will be set each time C<ccm-fetch> is run.
 
 Following standard UNIX ACL semantics, the C<group_readable> configuration
 option is not very useful if C<world_readable> is also true.
 
-The use of C<world_readable> is not recommended.
+The use of C<world_readable> is not recommended
+if profiles contain sensitive or private information.
 
 =back
 
