@@ -282,10 +282,22 @@ if (!defined($errno)) {
 } elsif ($errno == $ERROR) {
     $this_app->error("Unable to fetch profile");
     exit(1);
-} elsif ($errno == CHANGED) {
-    $this_app->info("Profile updated");
 } else {
-    $this_app->verbose("Fetched profile was not new");
+    # Init cachemanager
+    my $cmgr = EDG::WP4::CCM::CacheManager->new($fetch->{CACHE_ROOT}, $fetch->{_CCFG});
+    # get Configuration instance (anonymous, latest CID)
+    my $cfg = $cmgr->getConfiguration();
+    # get name and CID
+    my $msg = "latest CID ".$cfg->getConfigurationId();
+
+    my $name = $cfg->getName();
+    $msg .= " name $name" if defined($name);
+
+    if ($errno == CHANGED) {
+        $this_app->info("Profile updated, new $msg");
+    } else {
+        $this_app->info("Fetched profile unchanged, $msg");
+    }
 }
 
 exit (0);

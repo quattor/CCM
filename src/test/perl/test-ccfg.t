@@ -178,6 +178,7 @@ Readonly::Hash my %DEFAULT_CFG => {
     "keytab" => undef,
     "lock_retries" => 3,
     "lock_wait" => 30,
+    "name_template" => 'basic',
     "principal" => undef,
     "profile" => undef,
     "profile_failover" => undef,
@@ -203,8 +204,9 @@ is($CONFIG_FN, "/etc/ccm.conf", "Expected default ccm config file");
 # Hard test for possible values (sorted)
 is_deeply(\@CFG_KEYS, [qw(base_url ca_dir ca_file cache_root cert_file
 dbformat debug force get_timeout group_readable json_typed keep_old
-key_file keytab lock_retries lock_wait principal profile profile_failover
-purge_time retrieve_retries retrieve_wait tabcompletion trust world_readable
+key_file keytab lock_retries lock_wait name_template principal
+profile profile_failover purge_time retrieve_retries retrieve_wait
+tabcompletion trust world_readable
 )], "CFG_KEYS exports all possible configuration keys");
 
 

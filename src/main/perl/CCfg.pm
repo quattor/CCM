@@ -152,6 +152,11 @@ Readonly::Array our @CONFIG_OPTIONS => (
     { option => 'keytab',
       suffix => '=s',
       HELP => 'Keytab to use for Kerberos setup' },
+
+    { option => 'name_template',
+      suffix => '=s',
+      DEFAULT => 'basic',
+      HELP => 'Set the name template for the Configuration name' },
 );
 
 Readonly::Array our @CFG_KEYS => sort map {$_->{option}} @CONFIG_OPTIONS;

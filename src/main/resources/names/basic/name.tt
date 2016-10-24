@@ -1,0 +1,8 @@
+[%- branch = CCM.contents.template.branch -%]
+[%-# mandatory
+     branch.name %]-[%- branch.type -%]
+[%-# optional
+     attrs = ['author', 'commit-id', 'timestamp'] -%]
+[%- FOREACH attr IN attrs -%]
+[%-     branch.defined(attr) ? '-' _ branch.$attr : '' -%]
+[%- END -%]
