@@ -1,8 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-
-package EDG::WP4::CCM::Fetch::ProfileCache;
+#${PMpre} EDG::WP4::CCM::Fetch::ProfileCache${PMpost}
 
 =head1 NAME
 
@@ -17,9 +13,6 @@ Module provides methods to handle the creation of the profile cache.
 =over
 
 =cut
-
-use strict;
-use warnings;
 
 use EDG::WP4::CCM::DB;
 
@@ -202,6 +195,7 @@ sub createGlobalLock
     } else {
         $self->debug(1, "Writing global lock $fn");
         my $global = CAF::FileWriter->new($fn, %{$self->{permission}->{file}});
+        # newline at end is important (see _read_syncfile in CacheManager)
         print $global "no\n";
         $global->close();
     };
@@ -232,6 +226,7 @@ sub previous
     $ret{cid} = CAF::FileEditor->new("$self->{CACHE_ROOT}/$LATEST_CID_FN", %{$self->{permission}->{file}});
 
     if ("$ret{cid}" eq '') {
+        # newline at end is important (see _read_syncfile in CacheManager)
         $ret{cid}->print("0\n");
     }
     $ret{cid} =~ m{^(\d+)\n?$} or die "Invalid CID: $ret{cid}";
@@ -239,10 +234,10 @@ sub previous
     $dir = "$self->{CACHE_ROOT}/$PROFILE_DIR_N$1";
     $ret{dir} = $dir;
 
-    $ret{url} = CAF::FileReader->new("$dir/profile.url");
+    $ret{url} = CAF::FileReader->new("$dir/profile.url", log => $self);
     chomp($ret{url}); # this actually works
 
-    $ret{profile}     = CAF::FileReader->new("$dir/profile.xml");
+    $ret{profile} = CAF::FileReader->new("$dir/profile.xml", log => $self);
 
     return %ret;
 }
@@ -274,6 +269,7 @@ sub current
     );
 
     # Prepare new profile/CID to become current one
+    # newline at end is important (see _read_syncfile in CacheManager)
     $current{cid}->print("$cid\n");
 
     $current{url}->print("$self->{PROFILE_URL}\n");
