@@ -1,6 +1,4 @@
-#
-# test-element	Test class Element
-#
+# Test class Element
 
 use strict;
 use warnings;
@@ -11,7 +9,7 @@ use Digest::MD5 qw(md5_hex);
 use Test::More;
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
-                                      $CURRENT_CID_FN $LATEST_CID_FN);
+                                    $CURRENT_CID_FN $LATEST_CID_FN);
 use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Element;
 use EDG::WP4::CCM::Path;
@@ -138,11 +136,13 @@ $element = EDG::WP4::CCM::Element->createElement($config, $path);
 isa_ok($element, "EDG::WP4::CCM::Resource",
        "Element->createElement(config, Path_to_resource) is a EDG::WP4::CCM::Resource instance");
 
-# create property with createElement()
+# create property Element with createElement()
 $path = EDG::WP4::CCM::Path->new("/path/to/property");
 $element = EDG::WP4::CCM::Element->createElement($config, $path);
-isa_ok($element, "EDG::WP4::CCM::Property",
-       "Element->createElement(config, Path_to_property) is a EDG::WP4::CCM::Property instance");
+isa_ok($element, "EDG::WP4::CCM::Element",
+       "Element->createElement(config, Path_to_property) is a EDG::WP4::CCM::Element instance");
+ok(!UNIVERSAL::isa($element, "EDG::WP4::CCM::Resource"),
+   "Element->createElement(config, Path_to_property) is not a EDG::WP4::CCM::Resource instance");
 
 # test getEID()
 $eid = $element->getEID();

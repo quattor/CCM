@@ -1,6 +1,4 @@
-#
-# test-property.pl	Test class Property
-#
+# Test class Element default Property behaviour
 
 use strict;
 use warnings;
@@ -8,7 +6,7 @@ use warnings;
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::Simple tests => 21;
+use Test::More;
 use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
@@ -22,17 +20,13 @@ use CCMTest qw (eok make_file);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
-# TODO: Use Test::More and t::Test
-
 use Cwd;
-my $cdtmp = getcwd()."/target/tmp";
+my $cdtmp = getcwd()."/target/property";
 mkdir($cdtmp) if (! -d $cdtmp);
 
-#
 # Generate an example of DBM file
-#
-sub gen_dbm ($$) {
-
+sub gen_dbm
+{
     my ($cache_dir, $profile) = @_;
     my (%hash);
     my ($key, $val, $active);
@@ -78,105 +72,69 @@ sub gen_dbm ($$) {
     untie(%hash);
 
     return (SUCCESS);
-
 }
 
-my ($property, $path, $string, $type);
-my ($derivation, $checksum, $description, $value);
-
-my ($cm, $config, $cache_dir, $profile, %hash, $key);
-
-#
 # Perform tests
-#
-$cache_dir = "$cdtmp/property-test";
-$profile = "profile.1";
+my $cache_dir = "$cdtmp/property-test";
+my $profile = "profile.1";
 ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 
 # create profile
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
 
-$cm = EDG::WP4::CCM::CacheManager->new($cache_dir);
-$config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
+my $cm = EDG::WP4::CCM::CacheManager->new($cache_dir);
+my $config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
 
 # create property
+my $path = EDG::WP4::CCM::Path->new("/path/to/element");
+my $property = EDG::WP4::CCM::Element->new($config, $path);
+isa_ok($property, "EDG::WP4::CCM::Element",
+       "property is an Element->new(config, Path)");
 
-$path = EDG::WP4::CCM::Path->new("/path/to/element");
-$property = EDG::WP4::CCM::Property->new($config, $path);
-ok(defined($property) && UNIVERSAL::isa($property,
-                         "EDG::WP4::CCM::Property"),
-                         "Property->new(config, Path)");
+ok(!UNIVERSAL::isa($property, "EDG::WP4::CCM::Resource"),
+   "property is not a Resource");
 
-#
 # validate inheritance of Element methods
-#
 
 # test getPath()
-$path = $property->getPath();
-$string = $path->toString();
-ok($string eq "/path/to/element", "Property->getPath()");
+my $getpath = $property->getPath();
+is($getpath->toString(), "/path/to/element", "property Element->getPath()");
 
 # test getType()
-$type = $property->getType();
-ok($type == EDG::WP4::CCM::Property->STRING, "Property->getType()");
+is($property->getType(), EDG::WP4::CCM::Element->STRING, "property Element->getType() is STRING");
 
 # test getDerivation()
-$derivation = $property->getDerivation();
-ok($derivation eq "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
-   "Property->getDerivation()");
+my $derivation = $property->getDerivation();
+is($derivation, "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
+   "property Element->getDerivation()");
 
 # test getChecksum()
-$checksum = $property->getChecksum();
-ok($checksum eq md5_hex($derivation), "Property->getChecksum()");
+is($property->getChecksum(), md5_hex($derivation), "property Element->getChecksum()");
 
 # test getDescription()
-$description = $property->getDescription();
-ok($description eq "an example of string", "Property->getDescription()");
+is($property->getDescription(), "an example of string", "property Element->getDescription()");
 
 # test getValue()
-$value = $property->getValue();
-ok($value eq "a string", "Propety->getValue()");
+ok($property->getValue(), "property Element->getValue()");
 
 # test isType()
-ok($property->isType(EDG::WP4::CCM::Property->STRING),
-    "Property->isType(STRING)");
-ok(!$property->isType(EDG::WP4::CCM::Property->LONG),
-    "!Property->isType(LONG)");
-ok(!$property->isType(EDG::WP4::CCM::Property->DOUBLE),
-    "!Property->isType(DOUBLE)");
-ok(!$property->isType(EDG::WP4::CCM::Property->BOOLEAN),
-    "!Property->isType(BOOLEAN)");
-ok(!$property->isType(EDG::WP4::CCM::Property->LIST),
-    "!Property->isType(LIST)");
-ok(!$property->isType(EDG::WP4::CCM::Property->NLIST),
-    "!Property->isType(NLIST)");
+ok($property->isType(EDG::WP4::CCM::Element->STRING),
+    "property Element->isType(STRING)");
+ok(!$property->isType(EDG::WP4::CCM::Element->LONG),
+    "!property Element->isType(LONG)");
+ok(!$property->isType(EDG::WP4::CCM::Element->DOUBLE),
+    "!property Element->isType(DOUBLE)");
+ok(!$property->isType(EDG::WP4::CCM::Element->BOOLEAN),
+    "!property Element->isType(BOOLEAN)");
+ok(!$property->isType(EDG::WP4::CCM::Element->LIST),
+    "!property Element->isType(LIST)");
+ok(!$property->isType(EDG::WP4::CCM::Element->NLIST),
+    "!property Element->isType(NLIST)");
 
 # test isResource()
-ok(!$property->isResource(),   "!Property->isResource()");
+ok(!$property->isResource(), "!property Element->isResource()");
 
 # test isProperty()
-ok($property->isProperty(),   "Property->isProperty()");
+ok($property->isProperty(), "property Element->isProperty()");
 
-#
-# test Property specific methods
-#
-
-# test getStringValue()
-$value = $property->getStringValue();
-ok( $value eq "a string", "Property->getStringValue()");
-
-# test getDoubleValue()
-
-eok($ec, $value = $property->getDoubleValue(),
-    "EDG::WP4::CCM::Property->getDoubleValue()");
-
-# test getLongValue()
-
-eok($ec, $value = $property->getLongValue(),
-    "EDG::WP4::CCM::Property->getLongValue()");
-
-# test getBooleanValue()
-
-eok($ec, $value = $property->getBooleanValue(),
-    "EDG::WP4::CCM::Property->getBooleanValue()");
-
+done_testing();
