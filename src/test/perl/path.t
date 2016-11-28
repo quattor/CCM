@@ -1,8 +1,4 @@
-#!/usr/bin/perl -w
-
-#
 # cache Path.pm test script
-#
 
 use strict;
 use warnings;
@@ -15,6 +11,7 @@ use EDG::WP4::CCM::Path qw (escape unescape set_safe_unescape reset_safe_unescap
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 is_deeply(\@EDG::WP4::CCM::Path::SAFE_UNESCAPE, [
+    '/software/components/download/files/',
     '/software/components/filecopy/services/',
     '/software/components/metaconfig/services/',
     '/software/packages/',
