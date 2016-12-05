@@ -94,11 +94,13 @@ Readonly::Hash our %ELEMENT_CONVERT => {
     },
     'cast_long' => sub {
         my $value = shift;
+        use warnings FATAL => qw(numeric);
         # the 0+ operator of value is used
         return 0 + $value;
     },
     'cast_double' => sub {
         my $value = shift;
+        use warnings FATAL => qw(numeric);
         # the 0+ operator of value is used
         return 0.0 + $value;
     },

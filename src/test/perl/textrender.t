@@ -143,6 +143,11 @@ ok(B::svref_2object(\$long)->isa("B::IV"), 'cast long of string is an integer');
 # Run this lasts, who knows what the test framework does with it
 # that could change the internal representation
 is($long, 100, 'cast long returns correct value');
+eval {
+    $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_long}->("long");
+};
+like("$@", qr{Argument "long" isn't numeric}, "cast string to long is fatal");
+
 
 my $double = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_double}->("10.0");
 ok(! B::svref_2object(\$double)->isa("B::PV"), 'cast double of string is no string anymore');
@@ -150,6 +155,10 @@ ok(B::svref_2object(\$double)->isa("B::NV"), 'cast double of string is a double'
 # Run this lasts, who knows what the test framework does with it
 # that could change the internal representation
 is($double, 10.0, 'cast double returns correct value');
+eval {
+    $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_double}->("double");
+};
+like("$@", qr{Argument "double" isn't numeric}, "cast string to double is fatal");
 
 my $boolean = $EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{cast_boolean}->(0);
 # can't really test if it it an integer anymore via isa('B::IV'); but an integer is no PVNV

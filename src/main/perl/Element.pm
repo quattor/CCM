@@ -575,6 +575,10 @@ SWITCH:
             while ($self->hasNextElement) {
                 $el = $self->getNextElement();
                 push(@$ret, $el->getTree($nextdepth, %opts));
+                if ($ec->error) {
+                    $ec->rethrow_error;
+                    return;
+                };
             }
             $convm = $opts{convert_list};
             last SWITCH;
@@ -589,6 +593,10 @@ SWITCH:
                 # and this cannot be the root element
                 # we have to use LAST here, as we want the key to be a valid subpath
                 $$ret{$el->{LAST}} = $el->getTree($nextdepth, %opts);
+                if ($ec->error) {
+                    $ec->rethrow_error;
+                    return;
+                };
             }
             $convm = $opts{convert_nlist};
             last SWITCH;
@@ -626,9 +634,15 @@ SWITCH:
 
     foreach my $method (@$convm) {
         if(ref($method) eq 'CODE') {
-            $ret = $method->($ret);
+            local $@;
+            eval {
+                $ret = $method->($ret);
+            };
+            if ($@) {
+                throw_error("convert_method failed: $@");
+            }
         } else {
-            throw_error("wrong type ".ref($method)." for convert_method");
+            throw_error("wrong type ". (ref($method) || 'SCALAR')." for convert_method, must be CODE");
         }
     }
 

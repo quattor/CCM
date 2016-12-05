@@ -9,6 +9,9 @@ use Test::More;
 
 use EDG::WP4::CCM::CCfg;
 
+use LC::Exception;
+my $ec = LC::Exception::Context->new->will_store_errors;
+
 BEGIN {
     # Force typed json for improved testing
     # Use BEGIN to make sure it is executed before the import from Test::Quattor
@@ -204,6 +207,23 @@ close FILE;
 
 # panc produces pretty and key-sorted json, but 2 space indentation
 is(JSON::XS->new->pretty(0)->canonical(1)->encode($jsontree), $profiletxt, "Reproduced JSON compliant");
+
+
+# Test failures
+ok(!$ec->error(), "No error before failure testing");
+
+$el = $cfg->getElement("/");
+my $fail = $el->getTree(undef, convert_boolean => ["test"]);
+
+ok($ec->error(), "error thrown when no code is passed");
+is($ec->error()->text(), "wrong type SCALAR for convert_method, must be CODE", "error message when no code is passed");
+$ec->ignore_error();
+
+$fail = $el->getTree(undef, convert_boolean => [sub {die "custom boolean conversion failed";}]);
+
+ok($ec->error(), "error thrown when convert method dies");
+like($ec->error()->text(), qr{convert_method failed: custom boolean conversion failed at }, "error message when no code is passed");
+$ec->ignore_error();
 
 
 done_testing();
