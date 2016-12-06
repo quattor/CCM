@@ -225,7 +225,7 @@ sub setPrincipal
 {
     my ($self, $val) = @_;
     throw_error("Invalid characters in principal: $val")
-        unless ($val =~ m/^[\w.-\/@]+$/);
+        unless ($val =~ m/^[\w.\-\/@]+$/);
     $self->{PRINCIPAL} = $val;
     return SUCCESS;
 }
