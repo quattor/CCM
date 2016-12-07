@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::Element;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::Element${PMpost}
 
 use DB_File;
 use File::Spec;
@@ -14,17 +6,15 @@ use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Path qw(escape unescape);
-use EDG::WP4::CCM::Property;
 use EDG::WP4::CCM::Resource;
 use Exporter;
+use EDG::WP4::CCM::DB qw(read_db);
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
 our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
     LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
     escape);
-our $VERSION = '${project.version}';
-use EDG::WP4::CCM::DB qw(read_db);
 
 # builtin types with magic constants
 
@@ -65,9 +55,10 @@ EDG::WP4::CCM::Element - Element class
 
 =head1 DESCRIPTION
 
-The class Element is a base class for classes Property
-and Resource. The class Element implement those methods
-that are common to all elments.
+The class C<EDG::WP4::CCM::Element> implements those methods
+that are common to all elements and represents a C<Property>.
+The class <EDG::WP4::CCM::Element> is a base class for
+C<EDG::WP4::CCM::Resource>, which has additional methods.
 
 Type constants:
 
@@ -262,7 +253,7 @@ sub elementExists
 
 =item createElement($config, $ele_path)
 
-Create a new Resource or Property object, depending on the type of
+Create a new Resource or Element object, depending on the type of
 the element given by $ele_path. The $config parameter is a Configuration
 object with the profile. The $ele_path parameter is the element's
 configuration path (it can be either a Path object or a string).
@@ -297,9 +288,9 @@ sub createElement
     }
 
     if ($ele_type & PROPERTY) {
-        $element = EDG::WP4::CCM::Property->new($config, $ele_path);
+        $element = EDG::WP4::CCM::Element->new($config, $ele_path);
         unless ($element) {
-            throw_error("Property->new($config, $ele_path)", $ec->error);
+            throw_error("Element->new($config, $ele_path)", $ec->error);
             return ();
         }
     } elsif ($ele_type & RESOURCE) {
