@@ -13,6 +13,7 @@ use overload '""' => '_stringify', 'bool' => '_boolean';
 
 # Default safe_unescape list
 Readonly::Array our @SAFE_UNESCAPE => (
+    '/software/components/download/files/',
     '/software/components/filecopy/services/',
     '/software/components/metaconfig/services/',
     '/software/packages/',
