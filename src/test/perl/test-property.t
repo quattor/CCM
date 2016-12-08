@@ -13,7 +13,6 @@ use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
                                       $CURRENT_CID_FN $LATEST_CID_FN);
 use EDG::WP4::CCM::Configuration;
 use EDG::WP4::CCM::Element;
-use EDG::WP4::CCM::Property;
 use EDG::WP4::CCM::Path;
 
 use CCMTest qw (eok make_file);

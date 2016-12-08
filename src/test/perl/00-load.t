@@ -4,9 +4,9 @@ use strict;
 use warnings;
 use Test::More;
 
-use constant MODULES => qw(Fetch CCfg Configuration Path SyncFile
+use constant MODULES => qw(Fetch CCfg Configuration Path
 			   CacheManager Resource Element
-			   Property DB XMLPanProfile JSONProfileSimple JSONProfileTyped);
+			   DB XMLPanProfile JSONProfileSimple JSONProfileTyped);
 
 plan tests => scalar(MODULES);
 
