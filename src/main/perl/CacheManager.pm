@@ -1,18 +1,10 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
+#${PMpre} EDG::WP4::CCM::CacheManager${PMpost}
 
-package      EDG::WP4::CCM::CacheManager;
-
-use strict;
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::SyncFile qw();
 use EDG::WP4::CCM::Configuration qw();
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
 use MIME::Base64 qw(encode_base64);
-use LWP::UserAgent;
-use HTTP::Status;
+
 use parent qw(Exporter);
 use Readonly;
 use File::Temp;
@@ -21,7 +13,6 @@ our @EXPORT    = qw();
 our @EXPORT_OK = qw($GLOBAL_LOCK_FN
     $CURRENT_CID_FN $LATEST_CID_FN
     $DATA_DN $PROFILE_DIR_N);
-our $VERSION   = '${project.version}';
 
 =head1 NAME
 
@@ -87,19 +78,18 @@ sub new
     my $lc = "$cache_path/$LATEST_CID_FN";
 
     my $self = {
-        "cache_path" => $cache_path,
-        "data_path"  => "$cache_path/$DATA_DN",
-
-        "lock_wait"        => getCfgValue("lock_wait"),
-        "lock_retries"     => getCfgValue("lock_retries"),
-        "get_timeout"      => getCfgValue("get_timeout"),
-        "retrieve_retries" => getCfgValue("retrieve_retries"),
-        "retrieve_wait"    => getCfgValue("retrieve_wait"),
-        "name_template"    => getCfgValue("name_template"),
+        cache_path => $cache_path,
+        data_path  => "$cache_path/$DATA_DN",
+        lock_wait => getCfgValue("lock_wait"),
+        lock_retries => getCfgValue("lock_retries"),
+        get_timeout => getCfgValue("get_timeout"),
+        retrieve_retries => getCfgValue("retrieve_retries"),
+        retrieve_wait => getCfgValue("retrieve_wait"),
+        name_template => getCfgValue("name_template"),
+        global_lock_file => "$cache_path/$GLOBAL_LOCK_FN",
+        current_cid_file => "$cache_path/$CURRENT_CID_FN",
+        latest_cid_file => "$cache_path/$LATEST_CID_FN",
     };
-    $self->{"global_lock_file"} = EDG::WP4::CCM::SyncFile->new($gl);
-    $self->{"current_cid_file"} = EDG::WP4::CCM::SyncFile->new($cc);
-    $self->{"latest_cid_file"}  = EDG::WP4::CCM::SyncFile->new($lc);
 
     unless (_check_type("directory", $self->{"data_path"}, "data")
         && _check_type("file", $gl, "global.lock")
@@ -433,6 +423,18 @@ sub _getConfig
     return $cfg;
 }
 
+
+# Old SyncFile read() code
+# FileReader throws error e.g. if file is missing
+sub _read_syncfile
+{
+    my ($self, $name) = @_;
+
+    my $fh = CAF::FileReader->new($self->{$name});
+    chop($fh);
+    return "$fh";
+}
+
 =item isLocked ()
 
 Returns true if the cache is globally locked, otherwise false.
@@ -442,16 +444,15 @@ Returns true if the cache is globally locked, otherwise false.
 sub isLocked
 {
     my ($self) = @_;
-    my $locked = $self->{"global_lock_file"}->read();
-    unless (defined($locked)) {
-        throw_error("read (" . $self->{"global_lock_file"}->get_file_name . ")", $ec->error);
-        return ();
-    }
-    if    ($locked eq $LOCKED)   {return 1;}
-    elsif ($locked eq $UNLOCKED) {return 0;}
-    else {
-        throw_error(
-            "bad contents of " . $self->{"global_lock_file"}->get_file_name() . " ($locked)");
+
+    my $locked = $self->_read_syncfile('global_lock_file');
+
+    if ($locked eq $LOCKED) {
+        return 1;
+    } elsif ($locked eq $UNLOCKED) {
+        return 0;
+    } else {
+        throw_error("bad contents of $self->{global_lock_file} ($locked)");
         return ();
     }
 }
@@ -479,12 +480,8 @@ returns current cid (from cid file)
 sub getCurrentCid
 {
     my ($self) = @_;
-    my $cid = $self->{"current_cid_file"}->read();
-    unless (defined($cid)) {
-        throw_error('$self->{"current_cid_file"}}->read()', $ec);
-        return ();
-    }
-    return $cid;
+
+    return $self->_read_syncfile('current_cid_file');
 }
 
 =item getLatestCid
@@ -496,12 +493,8 @@ returns latest cid (from cid file)
 sub getLatestCid
 {
     my ($self) = @_;
-    my $cid = $self->{"latest_cid_file"}->read();
-    unless (defined($cid)) {
-        throw_error('$self->{"latest_cid_file"}}->read()', $ec);
-        return ();
-    }
-    return $cid;
+
+    return $self->_read_syncfile('latest_cid_file');
 }
 
 =pod

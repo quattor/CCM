@@ -15,10 +15,10 @@ use Test::More;
 use CCMTest qw (eok make_file);
 use LC::Exception qw(SUCCESS);
 use LC::File qw (differ);
+use CAF::FileWriter;
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
 				      $CURRENT_CID_FN $LATEST_CID_FN
                       $PROFILE_DIR_N);
-use EDG::WP4::CCM::SyncFile qw ();
 use Test::MockModule;
 
 use Cwd;
@@ -99,15 +99,13 @@ make_file("$cp/$GLOBAL_LOCK_FN", "no\n");
 make_file("$cp/test_yes", "yes\n");
 make_file("$cp/test_no", "no\n");
 
-my $ccidf;
-ok ($ccidf = EDG::WP4::CCM::SyncFile->new("$ccidfn"),
-    "SyncFile->new($ccidf)");
-my $lcidf;
-ok ($lcidf = EDG::WP4::CCM::SyncFile->new("$lcidfn"),
-    "SyncFile->new($cp/$lcidfn)");
+my $ccidfh = CAF::FileWriter->new($ccidfn);
+print $ccidfh "1\n";
+$ccidfh->close();
 
-$ccidf->write ("1");
-$lcidf->write ("2");
+my $lcidfh = CAF::FileWriter->new($lcidfn);
+print $lcidfh "2\n";
+$lcidfh->close();
 
 is ($cm->getCurrentCid(), 1, '$cm->getCurrentCid() == 2');
 is ($cm->getLatestCid(), 2, '$cm->getLatestCid() == 2');
@@ -115,7 +113,12 @@ is ($cm->getLatestCid(), 2, '$cm->getLatestCid() == 2');
 #old unlock test
 #  implied set_ccid_to_lcid
 make_file("$cp/$GLOBAL_LOCK_FN", "no\n");
-$ccidf->write ($lcidf->read());
+
+$lcidfh = CAF::FileReader->new($lcidfn);
+chop($lcidfh);
+$ccidfh = CAF::FileWriter->new($ccidfn);
+print $ccidfh "$lcidfh\n";
+$ccidfh->close();
 
 is ($cm->isLocked(), 0, '$cm->isLocked() false');
 is ($cm->getCurrentCid(), 2, '$cm->getCurrentCid() == 2');
@@ -168,8 +171,13 @@ is ($cm->getCurrentCid(), 2, '$cm->getCurrentCid() == 2 (unmodified)');
 is ($cm->getLatestCid(), 2, '$cm->getLatestCid() == 2 (unmodified)');
 
 # current = 3; latest = 4
-$ccidf->write ("3");
-$lcidf->write ("4");
+$ccidfh = CAF::FileWriter->new($ccidfn);
+print $ccidfh "3\n";
+$ccidfh->close();
+
+$lcidfh = CAF::FileWriter->new($lcidfn);
+print $lcidfh "4\n";
+$lcidfh->close();
 
 my $ccid = $cm->getCurrentCid();
 my $lcid = $cm->getLatestCid();
@@ -213,11 +221,20 @@ is ($cfg->getConfigurationId(), 3, '$cfg->getConfigurationId() == 3');
 #$cm->unlock();
 # also sets current.cid to latest.cid
 make_file("$cp/$GLOBAL_LOCK_FN", "no\n");
-$ccidf->write ($lcidf->read());
+$lcidfh = CAF::FileReader->new($lcidfn);
+chop($lcidfh);
+$ccidfh = CAF::FileWriter->new($ccidfn);
+print $ccidfh "$lcidfh\n";
+$ccidfh->close();
 
 ok ($cfg = $cm->_getConfig (0, 0), '$cfg->_getConfig (0, 0)');
 is ($cfg->getConfigurationId(), 4, '$cfg->getConfigurationId() == 4');
-ok ($lcidf->read() == 4 && $ccidf->read() == 4,
+
+$ccidfh = CAF::FileReader->new($ccidfn);
+chop($ccidfh);
+$lcidfh = CAF::FileReader->new($lcidfn);
+chop($lcidfh);
+ok ("$lcidfh" == 4 && "$ccidfh" == 4,
     "current.cid == 4 && latest.cid == 4");
 
 make_file("$cp/td.txt", "1\n");
@@ -226,7 +243,9 @@ my $url = "file:///$cp/td.txt";
 # Test the getConfiguration method by checking the arguments
 mkdir("$cp/profile.5");
 ok(-d "$cp/profile.5", "cache manager profile.5 dir exists.");
-$lcidf->write ("5");
+$lcidfh = CAF::FileWriter->new($lcidfn);
+print $lcidfh "5\n";
+$lcidfh->close();
 
 # passed to _getConfig
 my $args_getConfig;
