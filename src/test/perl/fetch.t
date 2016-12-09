@@ -27,10 +27,18 @@ use Carp qw(croak);
 use CAF::Reporter;
 
 use Test::Quattor::TextRender::Base;
+use Test::Quattor::Object;
 use Test::MockModule;
+
+my $obj = Test::Quattor::Object->new();
 
 my $mock_hr = Test::MockModule->new('HTTP::Response');
 my $mock_d = Test::MockModule->new('EDG::WP4::CCM::Fetch::Download');
+
+my $mock_f = Test::MockModule->new('EDG::WP4::CCM::Fetch');
+foreach my $rep (qw(info debug verbose warn error)) {
+  $mock_f->mock($rep, sub {shift; $obj->$rep(@_);});
+}
 
 my $caf_trd = mock_textrender();
 
@@ -192,9 +200,16 @@ use Crypt::SSLeay;
 use LWP::Protocol::https;
 
 note("Testing profile retrieval");
+# mtime is 0, safe to assume that the google homepage is more recent than that
 my $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/http-output", 0);
-ok($pf, "Something got returned");
-$pf->cancel() if defined($pf);
+if (defined($pf)) {
+  isa_ok($pf, "CAF::FileReader", "FileReader returned on success and change");
+} else {
+  # only encoding errors are "ok" here. see https://github.com/quattor/CCM/issues/158
+  like($obj->{LOGLATEST}->{ERROR} || "no error logged",
+       qr{Failed to decode content .* does not map to Unicode},
+       "undef reply from google is only ok if it's some encoding issue");
+}
 
 my $specialchars = "http://securedserver?parameter1=foo&parameter=foo%20bar";
 $f->setProfileURL($specialchars);
