@@ -1,10 +1,4 @@
-# -*- mode: cperl -*-
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::JSONProfileTyped;
+#${PMpre} EDG::WP4::CCM::JSONProfileTyped${PMpost}
 
 =pod
 
@@ -46,10 +40,6 @@ Anything else will be mapped to string (including the combined classes C<PVNV> a
 TODO: The validity of this assumption is tested in the C<BEGIN{}> (and unittests).
 
 =cut
-
-
-use strict;
-use warnings;
 
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use JSON::XS v2.3.0;

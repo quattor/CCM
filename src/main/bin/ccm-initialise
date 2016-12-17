@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 # ${license-info}
 # ${developer-info}
 # ${author-info}
@@ -12,7 +12,6 @@ package ccm_initialise;
 use strict;
 use warnings;
 
-# required for CAF (Common Application Framework)
 BEGIN {
     unshift(@INC, '/usr/lib/perl');
 }
@@ -67,7 +66,7 @@ sub _initialize {
 
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
-        return undef;
+        return;
     }
 
     $self->set_report_logfile($self->{'LOG'});
@@ -82,9 +81,9 @@ sub _initialize {
 
 package main;
 
-
 use strict;
 use warnings;
+
 use Getopt::Long;
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
@@ -128,9 +127,9 @@ MakeCacheRoot($this_app, $cache_root, $dopts);
 
 # make global lock file (mask and GID take care of the permissions)
 $this_app->verbose("Creating lockfile");
-open TMP, ">$cache_root/global.lock";
-print TMP "no\n";
-close TMP;
+open (my $TMP, '>', "$cache_root/global.lock");
+print $TMP "no\n";
+close $TMP;
 
 $this_app->verbose("ccm-initialise complete");
 exit(0);

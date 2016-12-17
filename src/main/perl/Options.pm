@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::Options;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::Options${PMpost}
 
 use CAF::Application qw($OPTION_CFGFILE);
 use CAF::Reporter;
@@ -16,7 +8,7 @@ use EDG::WP4::CCM::Path qw(escape);
 use EDG::WP4::CCM::CacheManager;
 use Readonly;
 
-our @ISA = qw(CAF::Application CAF::Reporter);
+use parent qw(CAF::Application CAF::Reporter);
 
 Readonly::Hash my %PATH_SELECTION_METHODS => {
     profpath => {
@@ -61,8 +53,8 @@ Available convenience methods:
 
 
 # initialize
-sub _initialize {
-
+sub _initialize
+{
     my $self = shift;
 
     # version and usage
@@ -71,7 +63,7 @@ sub _initialize {
 
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
-        return undef;
+        return;
     }
 
     return SUCCESS;
@@ -84,7 +76,8 @@ commandline options for all CCM config options
 
 =cut
 
-sub app_options {
+sub app_options
+{
 
     my @options = (
         {

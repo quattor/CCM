@@ -85,7 +85,7 @@ sub new
     # Interpret the config file.
     unless ($self->_config($param->{"CONFIG"}, $param)) {
         $ec->rethrow_error();
-        return undef;
+        return;
     }
 
     $param->{PROFILE_FORMAT} ||= 'xml';

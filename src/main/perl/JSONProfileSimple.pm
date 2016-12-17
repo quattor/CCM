@@ -1,10 +1,4 @@
-# -*- mode: cperl -*-
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::JSONProfileSimple;
+#${PMpre} EDG::WP4::CCM::JSONProfileSimple${PMpost}
 
 =pod
 
@@ -26,9 +20,6 @@ Should be used by C<EDG::WP4::CCM::Fetch> only.
 This module has only one method for the outside world:
 
 =cut
-
-use strict;
-use warnings;
 
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use JSON::XS v2.3.0;

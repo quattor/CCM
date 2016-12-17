@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 # ${license-info}
 # ${developer-info}
 # ${author-info}
@@ -150,7 +150,7 @@ sub _initialize {
 
     # initialise
     unless ($self->SUPER::_initialize(@_)) {
-        return undef;
+        return;
     }
 
     $self->set_report_logfile($self->{'LOG'});

@@ -34,6 +34,7 @@ use XML::Parser;
 use JSON::XS v2.3.0 qw(decode_json encode_json);
 use File::Path qw(mkpath);
 use Encode qw(encode_utf8);
+use Module::Load;
 
 use constant MAXPROFILECOUNTER => 9999;
 
@@ -74,12 +75,12 @@ sub GetPermissions
 
     my $gid;
     my $dopts = {
-        mode => 0700,
+        mode => oct(700),
     };
     my $fopts = {
-        mode => 0600,
+        mode => oct(600),
     };
-    my $mask = 077;
+    my $mask = oct(77);
 
     if ($group_readable) {
         $gid = getgrnam($group_readable);
@@ -87,13 +88,13 @@ sub GetPermissions
         if(defined($gid)) {
             $reporter->verbose("Valid $msg");
 
-            $dopts->{mode} = 0750;
+            $dopts->{mode} = oct(750);
             $dopts->{group} = $gid;
 
-            $fopts->{mode} = 0640;
+            $fopts->{mode} = oct(640);
             $fopts->{group} = $gid;
 
-            $mask = 027;
+            $mask = oct(27);
         } else {
             $reporter->error("Invalid $msg");
         };
@@ -106,8 +107,8 @@ sub GetPermissions
             $reporter->verbose("world_readable set")
         }
         $mask = undef;
-        $dopts->{mode} = 0755;
-        $fopts->{mode} = 0644;
+        $dopts->{mode} = oct(755);
+        $fopts->{mode} = oct(644);
     };
 
     return $dopts, $fopts, $mask;
@@ -328,7 +329,7 @@ sub process_profile
 
     my ($class, $t) = $self->choose_interpreter($profile);
     local $@;
-    eval "require $class";
+    load $class;
     die "Couldn't load interpreter $class: $@" if $@;
 
     $t = $class->interpret_node(@$t);
