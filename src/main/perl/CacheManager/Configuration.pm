@@ -1,9 +1,9 @@
-#${PMpre} EDG::WP4::CCM::Configuration${PMpost}
+#${PMpre} EDG::WP4::CCM::CacheManager::Configuration${PMpost}
 
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CacheManager;
-use EDG::WP4::CCM::Element;
+use EDG::WP4::CCM::CacheManager::Element;
 use CAF::FileWriter;
 
 use EDG::WP4::CCM::Path;
@@ -17,7 +17,7 @@ Readonly our $DEFAULT_NAME_TEMPLATE_TYPE => 'name';
 
 =head1 NAME
 
-EDG::WP4::CCM::Configuration - Configuration class
+EDG::WP4::CCM::CacheManager::Configuration - Configuration class
 
 =head1 SYNOPSIS
 
@@ -58,7 +58,7 @@ When the C<locked> flag is set (or when the C<lock> method is called to set it),
 the Configuration instance is bound to the specific CID, even if this is not
 the CacheManager's current one (e.g. when a new profile is fetched during the lifetime
 of the process, the CacheManager current CID is updated to the latest one).
-The locking is relevant when a C<CCM::Element> is accessed via
+The locking is relevant when a C<CCM::CacheManager::Element> is accessed via
 a C<CCM::Configuration> instance (in particular, when a call to C<_prepareElement>
 is made).
 As a consequence, an unlocked Configuration instance will always use the
@@ -357,7 +357,7 @@ sub isLocked
 }
 
 # _prepareElement prepares for accessing the actual
-# profile data via the EDG::WP4::CCM::Element class.
+# profile data via the EDG::WP4::CCM::CacheManager::Element class.
 # It converts the C<path> argument to a CCM::Path instance
 # (if needed) and updates the CID to the latest available
 # if the configuration is not locked.
@@ -470,9 +470,9 @@ sub getElement
     }
 
     # Actual access to the data happens here
-    my $el = EDG::WP4::CCM::Element->createElement($self, $path);
+    my $el = EDG::WP4::CCM::CacheManager::Element->createElement($self, $path);
     unless ($el) {
-        throw_error("EDG::WP4::CCM::Element->createElement ($self, $path)", $ec->error);
+        throw_error("EDG::WP4::CCM::CacheManager::Element->createElement ($self, $path)", $ec->error);
         return ();
     }
     return $el;
@@ -517,9 +517,9 @@ sub elementExists
     }
 
     # Actual access to the data happens here
-    my $ex = EDG::WP4::CCM::Element->elementExists($self, $path);
+    my $ex = EDG::WP4::CCM::CacheManager::Element->elementExists($self, $path);
     unless (defined($ex)) {
-        throw_error("EDG::WP4::CCM::Element->elementExists ($self, $path)", $ec->error);
+        throw_error("EDG::WP4::CCM::CacheManager::Element->elementExists ($self, $path)", $ec->error);
         return ();
     }
     return $ex;

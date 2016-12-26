@@ -78,7 +78,7 @@ my $cfg = get_config_for_profile("element_test");
 
 my $el = $cfg->getElement("/");
 
-isa_ok($el, "EDG::WP4::CCM::Element", "Got element");
+isa_ok($el, "EDG::WP4::CCM::CacheManager::Element", "Got element");
 is($el->getPath()->toString(), "/", "Element path is /");
 
 # TODO replace stringified values with actual data
@@ -89,18 +89,18 @@ is_deeply($rt, \%TREE, "getTree /");
 # need to "rewind"
 $el = $cfg->getElement("/");
 my $lvl0 = $el->getTree(0);
-isa_ok($lvl0, "EDG::WP4::CCM::Element", "Got element for level 0");
+isa_ok($lvl0, "EDG::WP4::CCM::CacheManager::Element", "Got element for level 0");
 is_deeply($lvl0->getTree, $rt, "lvl0->getTree return same as roottree");
 
 my $g = $cfg->getElement("/g");
-isa_ok($g, "EDG::WP4::CCM::Element", "Got element path=g");
+isa_ok($g, "EDG::WP4::CCM::CacheManager::Element", "Got element path=g");
 
 # rewind
 $el = $cfg->getElement("/");
 my $lvl1 = $el->getTree(1);
 my @lvl1_keys = sort keys %$lvl1;
 is_deeply(\@rt_keys, \@lvl1_keys, "Same keys depth=1 as root");
-isa_ok($lvl1->{g}, "EDG::WP4::CCM::Element", "Got element for path=g on level 1");
+isa_ok($lvl1->{g}, "EDG::WP4::CCM::CacheManager::Element", "Got element for path=g on level 1");
 is_deeply($lvl1->{g}, $g, "element for path=g on level 1 is element path=g");
 
 is_deeply($lvl1->{g}->getTree, $rt->{g}, "getTree of lvl1 key=g returns same as roottree key=g ");

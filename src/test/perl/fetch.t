@@ -19,7 +19,7 @@ use EDG::WP4::CCM::Fetch qw($GLOBAL_LOCK_FN $FETCH_LOCK_FN
     $TABCOMPLETION_FN
     NOQUATTOR NOQUATTOR_EXITCODE NOQUATTOR_FORCE);
 
-use EDG::WP4::CCM::Configuration;
+use EDG::WP4::CCM::CacheManager::Configuration;
 use Cwd qw(getcwd);
 use File::Path qw(mkpath rmtree);
 use CAF::Object qw(SUCCESS CHANGED);
@@ -456,7 +456,7 @@ $f->{PROFILE_URL} = $url;
 $pf = $f->download("profile");
 my ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "XML Pan profile correctly parsed");
-is($class, 'EDG::WP4::CCM::XMLPanProfile', "Pan XML profile correctly diagnosed");
+is($class, 'EDG::WP4::CCM::Fetch::XMLPanProfile', "Pan XML profile correctly diagnosed");
 is(ref($t), "ARRAY", "XML Pan profile is not empty");
 is($t->[0], 'nlist', "XML Pan profile looks correct");
 is ($f->process_profile("$pf", %r), 1,
@@ -468,7 +468,7 @@ $f->{PROFILE_URL} =~ s{xml}{json}g;
 $pf = $f->download("profile");
 ($class, $t) = $f->choose_interpreter("$pf");
 ok($t, "JSON profile correctly parsed");
-is($class, 'EDG::WP4::CCM::JSONProfileTyped', "JSON profile correctly diagnosed");
+is($class, 'EDG::WP4::CCM::Fetch::JSONProfileTyped', "JSON profile correctly diagnosed");
 is ($f->process_profile("$pf", %r), 1,
     "Cache from a Pan profile correctly created");
 

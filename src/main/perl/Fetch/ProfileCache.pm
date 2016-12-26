@@ -14,7 +14,7 @@ Module provides methods to handle the creation of the profile cache.
 
 =cut
 
-use EDG::WP4::CCM::DB;
+use EDG::WP4::CCM::CacheManager::DB;
 
 use POSIX;
 
@@ -365,7 +365,7 @@ sub choose_interpreter
 
     my $tree;
     if ($self->{PROFILE_URL} =~ m{json(?:\.gz)?$}) {
-        my $module = "EDG::WP4::CCM::JSONProfile" . ($self->{JSON_TYPED} ? 'Typed' : 'Simple' );
+        my $module = "EDG::WP4::CCM::Fetch::JSONProfile" . ($self->{JSON_TYPED} ? 'Typed' : 'Simple' );
         $tree = _decode_json($profile, $self->{JSON_TYPED});
         return ($module, ['profile', $tree]);
     }
@@ -376,7 +376,7 @@ sub choose_interpreter
     die("XML parse of profile failed: $@") if ($@);
 
     if ($tree->[1]->[0]->{format} eq 'pan') {
-        return ('EDG::WP4::CCM::XMLPanProfile', $tree);
+        return ('EDG::WP4::CCM::Fetch::XMLPanProfile', $tree);
     } else {
         die "Invalid profile format.  Did you supply an unsupported XMLDB profile?";
     }
@@ -487,7 +487,7 @@ sub MakeDatabase
 
     foreach my $db ([$path2eid_db, \%path2eid],
                     [$eid2data_db, \%eid2data]) {
-        my $ccmdb = EDG::WP4::CCM::DB->new($db->[0], log => $self);
+        my $ccmdb = EDG::WP4::CCM::CacheManager::DB->new($db->[0], log => $self);
         my $err = $ccmdb->write($db->[1], $dbformat, $self->{permission}->{file});
         if ($err) {
             $self->error($err);

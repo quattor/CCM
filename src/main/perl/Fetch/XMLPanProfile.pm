@@ -1,10 +1,10 @@
-#${PMpre} EDG::WP4::CCM::XMLPanProfile${PMpost}
+#${PMpre} EDG::WP4::CCM::Fetch::XMLPanProfile${PMpost}
 
 =pod
 
 =head1 SYNOPSIS
 
-    EDG::WP4::CCM::XMLPanProfile->interpret_node($tag, $xmltree);
+    EDG::WP4::CCM::Fetch::XMLPanProfile->interpret_node($tag, $xmltree);
 
 =head1 DESCRIPTION
 

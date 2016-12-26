@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 
 # Old API, actual code in Path
-use EDG::WP4::CCM::Element qw(escape unescape);
+use EDG::WP4::CCM::CacheManager::Element qw(escape unescape);
 
 =pod
 

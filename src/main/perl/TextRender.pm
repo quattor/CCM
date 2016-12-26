@@ -2,7 +2,7 @@
 
 use CAF::TextRender qw($YAML_BOOL_PREFIX);
 use Readonly;
-use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
+use EDG::WP4::CCM::TextRender::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Path qw(escape unescape);
 use XML::Parser;
 use parent qw(CAF::TextRender Exporter);
@@ -144,7 +144,7 @@ Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
 =head1 DESCRIPTION
 
 This class is an extension of the C<CAF::TextRender> class; with the main
-difference the support of a C<EDG::WP4::CCM:Element> instance as contents.
+difference the support of a C<EDG::WP4::CCM::CacheManager::Element> instance as contents.
 
 =head2 Private methods
 
@@ -214,7 +214,7 @@ generates series of blocks
 =item contents
 
 C<contents> is either a hash reference holding the contents to pass to the rendering module;
-or a C<EDG::WP4::CCM:Element> instance, on which C<getTree> is called with any C<element>
+or a C<EDG::WP4::CCM::CacheManager::Element> instance, on which C<getTree> is called with any C<element>
 options.
 
 =back
@@ -428,7 +428,7 @@ sub _make_predefined_options
 }
 
 # Return the validated contents. Either the contents are a hashref
-# (in that case they are left untouched) or a C<EDG::WP4::CCM::Element> instance
+# (in that case they are left untouched) or a C<EDG::WP4::CCM::CacheManager::Element> instance
 # in which case C<getTree> is called together with the relevant C<elementopts>
 sub make_contents
 {
@@ -441,7 +441,7 @@ sub make_contents
     # Additional variables available to both regular hashref and element
     my $extra_vars = {
         ref => sub { return ref($_[0]) },
-        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TT::Scalar');  },
+        is_scalar => sub { my $r = ref($_[0]); return (! $r || $r eq 'EDG::WP4::CCM::TextRender::Scalar');  },
         is_list => sub { my $r = ref($_[0]); return ($r && ($r eq 'ARRAY'));  },
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
         escape => \&escape,
@@ -452,7 +452,7 @@ sub make_contents
     if($ref && ($ref eq "HASH")) {
         $contents = $self->{contents};
     } elsif ($ref && UNIVERSAL::can($self->{contents}, 'can') &&
-             $self->{contents}->isa('EDG::WP4::CCM::Element')) {
+             $self->{contents}->isa('EDG::WP4::CCM::CacheManager::Element')) {
         # Test for a blessed reference with UNIVERSAL::can
         # UNIVERSAL::can also return true for scalars, so also test
         # if it's a reference to start with
@@ -479,13 +479,13 @@ sub make_contents
             }
         }
 
-        # Last step: add convert methods for scalar types to CCM::TT::Scalar
+        # Last step: add convert methods for scalar types to CCM::TextRender::Scalar
         # if the render method is TT
         if ($self->{method_is_tt}) {
             foreach my $type (qw(boolean string long double)) {
                 push(@{$opts{"convert_$type"}}, sub {
                     my $scalartype = $ELEMENT_TYPES{(uc $type)};
-                    return EDG::WP4::CCM::TT::Scalar->new($_[0], $scalartype);
+                    return EDG::WP4::CCM::TextRender::Scalar->new($_[0], $scalartype);
                      });
             }
         }
@@ -499,7 +499,7 @@ sub make_contents
 
     } else {
         return $self->fail("Contents passed is neither a hashref or ",
-                           "a EDG::WP4::CCM::Element instance ",
+                           "a EDG::WP4::CCM::CacheManager::Element instance ",
                            "(ref ", ref($self->{contents}), ")");
     }
 

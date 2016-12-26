@@ -2,7 +2,7 @@ BEGIN {
     our $TQU = <<'EOF';
 [load]
 prefix=EDG::WP4::CCM::
-modules=CacheManager,CCfg,CLI,Configuration,DB,Element,Fetch,JSONProfileSimple,JSONProfileTyped,Options,Path,Resource,TextRender,TT::Scalar,XMLPanProfile
+modules=CacheManager,CCfg,CLI,CacheManager::Configuration,CacheManager::DB,CacheManager::Element,Fetch,Fetch::JSONProfileSimple,Fetch::JSONProfileTyped,Options,Path,CacheManager::Resource,TextRender,TextRender::Scalar,Fetch::XMLPanProfile
 [tt]
 component=CCM
 skippan=1

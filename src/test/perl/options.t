@@ -5,7 +5,7 @@ use Test::More;
 use Test::Quattor::ProfileCache qw(prepare_profile_cache);
 use EDG::WP4::CCM::Options;
 use EDG::WP4::CCM::CCfg qw(@CONFIG_OPTIONS $CONFIG_FN);
-use EDG::WP4::CCM::Element qw(escape);
+use EDG::WP4::CCM::CacheManager::Element qw(escape);
 use Test::MockModule;
 
 my $optmock = Test::MockModule->new('EDG::WP4::CCM::Options');
@@ -72,12 +72,12 @@ ok($newopts->setCCMConfig(), "Created the CCM config (no cid passed)");
 
 isa_ok($newopts->{CACHEMGR}, "EDG::WP4::CCM::CacheManager",
        "CACHEMGR attribute returns EDG::WP4::CCM::CacheManager instance");
-isa_ok($newopts->{CCM_CONFIG}, "EDG::WP4::CCM::Configuration",
-       "CCM_CONFIG attribute returns EDG::WP4::CCM::Configuration instance");
+isa_ok($newopts->{CCM_CONFIG}, "EDG::WP4::CCM::CacheManager::Configuration",
+       "CCM_CONFIG attribute returns EDG::WP4::CCM::CacheManager::Configuration instance");
 
 my $cfg = $newopts->getCCMConfig();
-isa_ok($cfg, "EDG::WP4::CCM::Configuration",
-       "getCCMConfig returns EDG::WP4::CCM::Configuration instance");
+isa_ok($cfg, "EDG::WP4::CCM::CacheManager::Configuration",
+       "getCCMConfig returns EDG::WP4::CCM::CacheManager::Configuration instance");
 is($cfg, $newopts->{CCM_CONFIG}, "getCCMConfig returns expected instance");
 
 # Check data

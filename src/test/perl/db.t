@@ -1,5 +1,5 @@
 #
-# Test EDG::WP4::CCM::DB
+# Test EDG::WP4::CCM::CacheManager::DB
 #
 
 use strict;
@@ -8,15 +8,15 @@ use Test::More;
 use Cwd;
 
 use Test::Quattor::Object;
-use EDG::WP4::CCM::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::DB qw(read_db);
 
 # require the default DB_File and current used
 use DB_File;
 use CDB_File;
 use GDBM_File;
 
-is($EDG::WP4::CCM::DB::DEFAULT_FORMAT, 'DB_File', "DB_File is default format");
-is_deeply([sort keys %EDG::WP4::CCM::DB::FORMAT_DISPATCH],
+is($EDG::WP4::CCM::CacheManager::DB::DEFAULT_FORMAT, 'DB_File', "DB_File is default format");
+is_deeply([sort keys %EDG::WP4::CCM::CacheManager::DB::FORMAT_DISPATCH],
           [qw(CDB_File DB_File GDBM_File)],
           "Supported formats");
 
@@ -24,7 +24,7 @@ is_deeply([sort keys %EDG::WP4::CCM::DB::FORMAT_DISPATCH],
 
 =HEAD1 DESCRIPTION
 
-Test EDG::WP4::CCM::DB
+Test EDG::WP4::CCM::CacheManager::DB
 
 =HEAD2 Generic tests
 
@@ -42,9 +42,9 @@ mkdir($dbd);
 ok(-d $dbd, "DB dir $dbd exists.");
 
 my $prefix = "$dbd/init_test";
-my $db = EDG::WP4::CCM::DB->new($prefix, log => $obj);
+my $db = EDG::WP4::CCM::CacheManager::DB->new($prefix, log => $obj);
 
-isa_ok($db, 'EDG::WP4::CCM::DB', 'new returns a EDG::WP4::CCM::DB instance');
+isa_ok($db, 'EDG::WP4::CCM::CacheManager::DB', 'new returns a EDG::WP4::CCM::DB instance');
 is($db->{prefix}, $prefix, "prefix attribute is set");
 
 ok(! defined($db->test_supported_format("unsupported format 1")),
@@ -83,7 +83,7 @@ sub test_fmt {
     };
 
     my $pref = "$dbd/".lc($name);
-    my $db = EDG::WP4::CCM::DB->new($pref, log => $obj);
+    my $db = EDG::WP4::CCM::CacheManager::DB->new($pref, log => $obj);
     my $err= $db->write($DATA, $fmt, {mode => 0604}); # very non-standard mode
 
     ok(! defined($err), "No error while writing $name");
@@ -99,7 +99,7 @@ sub test_fmt {
 
     # Test legacy read
     my $datal = {};
-    $err = EDG::WP4::CCM::DB::read($datal, $pref);
+    $err = EDG::WP4::CCM::CacheManager::DB::read($datal, $pref);
     ok(! defined($err), "No error while reading $name legacy read");
     is_deeply($datal, $DATA, "Read correct data structure for $name legacy read");
 }

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 1;
-use EDG::WP4::CCM::XMLPanProfile;
+use EDG::WP4::CCM::Fetch::XMLPanProfile;
 use EDG::WP4::CCM::Fetch qw(ComputeChecksum);
 use CAF::FileEditor;
 use Test::Deep;
@@ -119,7 +119,7 @@ my $fh = CAF::FileEditor->new("target/test/pan/profile.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
 
 my $reference_result = InterpretNode(@$t);
-my $our_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
+my $our_result = EDG::WP4::CCM::Fetch::XMLPanProfile->interpret_node(@$t);
 cmp_deeply($our_result, $reference_result, "Our result matches the old implementation");
 
 done_testing();

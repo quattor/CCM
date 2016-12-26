@@ -5,7 +5,7 @@ Test extravars with scalar string
 ^CCM.contents a$
 ^TYPE STRING$
 ^VALUE a$
-^ref EDG::WP4::CCM::TT::Scalar$
+^ref EDG::WP4::CCM::TextRender::Scalar$
 ^is_scalar YES$
 ^is_list NO$
 ^is_hash NO$

@@ -19,13 +19,13 @@ Test extravars
 ^alist is_scalar NO$
 ^alist is_list YES$
 ^alist is_hash NO$
-^ascalar ref EDG::WP4::CCM::TT::Scalar$
+^ascalar ref EDG::WP4::CCM::TextRender::Scalar$
 ^ascalar is_scalar YES$
 ^ascalar is_list NO$
 ^ascalar is_hash NO$
 ^escape with_20whitespsace_20and_20_2f$
 ^unescape with whitespsace and /$
-^aboolean ref EDG::WP4::CCM::TT::Scalar$
+^aboolean ref EDG::WP4::CCM::TextRender::Scalar$
 ^aboolean is_scalar YES$
 ^aboolean is_list NO$
 ^aboolean is_hash NO$
@@ -34,7 +34,7 @@ Test extravars
 ^aboolean is_string NO$
 ^aboolean is_double NO$
 ^aboolean is_long NO$
-^adouble ref EDG::WP4::CCM::TT::Scalar$
+^adouble ref EDG::WP4::CCM::TextRender::Scalar$
 ^adouble is_scalar YES$
 ^adouble is_list NO$
 ^adouble is_hash NO$
@@ -43,7 +43,7 @@ Test extravars
 ^adouble is_string NO$
 ^adouble is_double YES$
 ^adouble is_long NO$
-^along ref EDG::WP4::CCM::TT::Scalar$
+^along ref EDG::WP4::CCM::TextRender::Scalar$
 ^along is_scalar YES$
 ^along is_list NO$
 ^along is_hash NO$
@@ -52,7 +52,7 @@ Test extravars
 ^along is_string NO$
 ^along is_double NO$
 ^along is_long YES$
-^astring ref EDG::WP4::CCM::TT::Scalar$
+^astring ref EDG::WP4::CCM::TextRender::Scalar$
 ^astring is_scalar YES$
 ^astring is_list NO$
 ^astring is_hash NO$

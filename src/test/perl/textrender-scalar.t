@@ -14,7 +14,7 @@ BEGIN {
 use Readonly;
 use Test::Quattor qw(tt-scalar);
 use EDG::WP4::CCM::TextRender;
-use EDG::WP4::CCM::TT::Scalar qw(%ELEMENT_TYPES);
+use EDG::WP4::CCM::TextRender::Scalar qw(%ELEMENT_TYPES);
 use Test::Quattor::RegexpTest;
 use Cwd;
 
@@ -34,9 +34,9 @@ is($ELEMENT_TYPES{LONG}, 'LONG', 'ELEMENT_TYPES LONG exported');
 
 my $arb = 'arbitrarytext';
 my $arbt = 'ARBITRARY';
-my $sc_arb = EDG::WP4::CCM::TT::Scalar->new($arb, $arbt);
-isa_ok($sc_arb, "EDG::WP4::CCM::TT::Scalar",
-       "EDG::WP4::CCM::TT::Scalar instance created");
+my $sc_arb = EDG::WP4::CCM::TextRender::Scalar->new($arb, $arbt);
+isa_ok($sc_arb, "EDG::WP4::CCM::TextRender::Scalar",
+       "EDG::WP4::CCM::TextRender::Scalar instance created");
 is($sc_arb->{VALUE}, $arb, "VALUE attribute found");
 is($sc_arb->{TYPE}, $arbt, "TYPE attribute found");
 is("$sc_arb", "$arb", "Stringification returns VALUE in string context");
@@ -64,7 +64,7 @@ $sc_arb->{TYPE} = 'ARBITRARY';
 # Test the ones from TT with EL5
 my @vmethods = qw(item list hash length size defined match search repeat replace remove split chunk substr);
 foreach my $vm (@vmethods) {
-    ok($sc_arb->can($vm), "VMethod $vm available in CCM::TT::Scalar instance");
+    ok($sc_arb->can($vm), "VMethod $vm available in CCM::TextRender::Scalar instance");
 }
 
 =pod
@@ -73,15 +73,15 @@ foreach my $vm (@vmethods) {
 
 =cut
 
-my $true = EDG::WP4::CCM::TT::Scalar->new(1, $ELEMENT_TYPES{BOOLEAN});
+my $true = EDG::WP4::CCM::TextRender::Scalar->new(1, $ELEMENT_TYPES{BOOLEAN});
 ok($true->is_boolean(), "is a boolean");
 ok($true, "is a boolean and is true");
 
-my $false = EDG::WP4::CCM::TT::Scalar->new(0, $ELEMENT_TYPES{BOOLEAN});
+my $false = EDG::WP4::CCM::TextRender::Scalar->new(0, $ELEMENT_TYPES{BOOLEAN});
 ok($true->is_boolean(), "is a boolean");
 ok(! $false, "is a boolean and is false");
 
-my $double = EDG::WP4::CCM::TT::Scalar->new(1.5, $ELEMENT_TYPES{DOUBLE});
+my $double = EDG::WP4::CCM::TextRender::Scalar->new(1.5, $ELEMENT_TYPES{DOUBLE});
 ok($double->is_double(), "is a double");
 is($double, 1.5, "is a double and has correct value");
 is(1 + $double, 2.5, "is a double and has correct left addition (numify/0+)");
@@ -93,7 +93,7 @@ is($double * 3, 4.5, "is a double and has correct right multiply");
 is(4.5 / $double, 3 , "is a double and has correct left division");
 is($double / 3, 0.5, "is a double and has correct right division");
 
-my $long = EDG::WP4::CCM::TT::Scalar->new(2, $ELEMENT_TYPES{LONG});
+my $long = EDG::WP4::CCM::TextRender::Scalar->new(2, $ELEMENT_TYPES{LONG});
 ok($long->is_long(), "is a long");
 is($long, 2, "is a long and has correct value");
 is(1 + $long, 3, "is a long and has correct left addition (numify/0+)");

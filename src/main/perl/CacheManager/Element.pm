@@ -1,14 +1,14 @@
-#${PMpre} EDG::WP4::CCM::Element${PMpost}
+#${PMpre} EDG::WP4::CCM::CacheManager::Element${PMpost}
 
 use DB_File;
 use File::Spec;
 use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::Configuration;
+use EDG::WP4::CCM::CacheManager::Configuration;
 use EDG::WP4::CCM::Path qw(escape unescape);
-use EDG::WP4::CCM::Resource;
+use EDG::WP4::CCM::CacheManager::Resource;
 use Exporter;
-use EDG::WP4::CCM::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::DB qw(read_db);
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(unescape);
@@ -36,7 +36,7 @@ my $ec = LC::Exception::Context->new->will_store_errors;
 
 =head1 NAME
 
-EDG::WP4::CCM::Element - Element class
+EDG::WP4::CCM::CacheManager::Element - Element class
 
 =head1 SYNOPSIS
 
@@ -55,10 +55,10 @@ EDG::WP4::CCM::Element - Element class
 
 =head1 DESCRIPTION
 
-The class C<EDG::WP4::CCM::Element> implements those methods
+The class C<EDG::WP4::CCM::CacheManager::Element> implements those methods
 that are common to all elements and represents a C<Property>.
-The class <EDG::WP4::CCM::Element> is a base class for
-C<EDG::WP4::CCM::Resource>, which has additional methods.
+The class <EDG::WP4::CCM::CacheManager::Element> is a base class for
+C<EDG::WP4::CCM::CacheManager::Resource>, which has additional methods.
 
 Type constants:
 
@@ -103,7 +103,7 @@ sub new
 
     $config = shift;    # profile's directory path
 
-    if (!UNIVERSAL::isa($config, "EDG::WP4::CCM::Configuration")) {
+    if (!UNIVERSAL::isa($config, "EDG::WP4::CCM::CacheManager::Configuration")) {
         throw_error("usage: Element->new(config, ele_path)");
         return ();
     }
@@ -288,13 +288,13 @@ sub createElement
     }
 
     if ($ele_type & PROPERTY) {
-        $element = EDG::WP4::CCM::Element->new($config, $ele_path);
+        $element = EDG::WP4::CCM::CacheManager::Element->new($config, $ele_path);
         unless ($element) {
             throw_error("Element->new($config, $ele_path)", $ec->error);
             return ();
         }
     } elsif ($ele_type & RESOURCE) {
-        $element = EDG::WP4::CCM::Resource->new($config, $ele_path);
+        $element = EDG::WP4::CCM::CacheManager::Resource->new($config, $ele_path);
         unless ($element) {
             throw_error("Resource->new($config, $ele_path)", $ec->error);
             return ();

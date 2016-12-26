@@ -4,8 +4,8 @@ use strict;
 use warnings;
 
 use Test::More;
-use EDG::WP4::CCM::XMLPanProfile;
-use EDG::WP4::CCM::JSONProfileTyped;
+use EDG::WP4::CCM::Fetch::XMLPanProfile;
+use EDG::WP4::CCM::Fetch::JSONProfileTyped;
 use CAF::FileReader;
 use Test::Deep;
 use XML::Parser;
@@ -73,7 +73,7 @@ my $json = $jxs->decode($jsonstring1);
 
 # test expected TYPES with json decoded instance
 foreach my $k (keys %$json) {
-    is(EDG::WP4::CCM::JSONProfileTyped::get_scalar_type(B::svref_2object(\$json->{$k})), 
+    is(EDG::WP4::CCM::Fetch::JSONProfileTyped::get_scalar_type(B::svref_2object(\$json->{$k})), 
         $TYPES{$k}, 
         "get_scalar_type mapping key $k");
 }
@@ -106,14 +106,14 @@ compile_profile("json", $simple);
 
 my $fh = CAF::FileReader->new("target/test/pan/${simple}.xml");
 my $t = XML::Parser->new(Style => 'Tree')->parse("$fh");
-my $reference_result = EDG::WP4::CCM::XMLPanProfile->interpret_node(@$t);
+my $reference_result = EDG::WP4::CCM::Fetch::XMLPanProfile->interpret_node(@$t);
 
 $fh = CAF::FileReader->new("target/test/json/${simple}.json");
 note("Profile contents: $fh");
 # This is what Fetch choose_interpreter does
 $t = EDG::WP4::CCM::Fetch::ProfileCache::_decode_json("$fh", 1);
 
-my $our_result = EDG::WP4::CCM::JSONProfileTyped->interpret_node(profile => $t);
+my $our_result = EDG::WP4::CCM::Fetch::JSONProfileTyped->interpret_node(profile => $t);
 
 # Do not explain before creating result. It might do some auto-stringification
 note("Tree=", explain($t));
