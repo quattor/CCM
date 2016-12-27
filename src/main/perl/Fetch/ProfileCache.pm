@@ -14,8 +14,6 @@ Module provides methods to handle the creation of the profile cache.
 
 =cut
 
-use EDG::WP4::CCM::CacheManager::DB;
-
 use POSIX;
 
 use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
@@ -23,6 +21,8 @@ use EDG::WP4::CCM::CacheManager qw($GLOBAL_LOCK_FN
     $DATA_DN $PROFILE_DIR_N);
 use EDG::WP4::CCM::TextRender qw(ccm_format);
 use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);
+use EDG::WP4::CCM::CacheManager::Encode qw(encode_eids $PATH2EID $EID2DATA);
+use EDG::WP4::CCM::CacheManager::DB;
 
 use CAF::FileWriter;
 use CAF::FileReader;
@@ -265,8 +265,8 @@ sub current
         cid => CAF::FileWriter->new("$self->{CACHE_ROOT}/$CURRENT_CID_FN",
                                     %{$self->{permission}->{file}}),
         profile => CAF::FileWriter->new("$dir/profile.xml", %{$self->{permission}->{file}}),
-        eiddata => "$dir/eid2data",
-        eidpath => "$dir/path2eid"
+        eiddata => "$dir/$EID2DATA",
+        eidpath => "$dir/$PATH2EID"
     );
 
     # Prepare new profile/CID to become current one
@@ -422,7 +422,10 @@ sub AddPath
     my $path =
         ($prefix eq '/' ? '/' : $prefix . '/') . (defined $listnum ? $listnum : $tree->{NAME});
     my $eid = $$refeid++;
-    $path2eid->{$path} = pack('L', $eid);
+
+    my $eids = encode_eids($eid);
+
+    $path2eid->{$path} = $eids->{VALUE};
 
     # store value
     my $value = $tree->{VALUE};
@@ -431,7 +434,7 @@ sub AddPath
 
         # store NULL-separated list of children's names
         my @children = sort keys %$value;
-        $eid2data->{pack('L', $eid)} = join(chr(0), @children);
+        $eid2data->{$eids->{VALUE}} = join(chr(0), @children);
         $self->debug(5, "AddPath: $path => $eid => " . join('|', @children));
 
         # recurse
@@ -442,7 +445,7 @@ sub AddPath
 
         # names are integers
         my @children = 0 .. (scalar @$value) - 1;
-        $eid2data->{pack('L', $eid)} = join(chr(0), @children);
+        $eid2data->{$eids->{VALUE}} = join(chr(0), @children);
         $self->debug(5, "AddPath: $path => $eid => " . join('|', @children));
 
         # recurse
@@ -453,7 +456,7 @@ sub AddPath
 
         # Do this because empty string values arrive here as undefined
         my $v = (defined $value) ? $value : '';
-        $eid2data->{pack('L', $eid)} = encode_utf8($v);
+        $eid2data->{$eids->{VALUE}} = encode_utf8($v);
         if (defined $value) {
             $self->debug(5, "AddPath: $path => $eid => $value");
         } else {
@@ -463,13 +466,10 @@ sub AddPath
 
     # store attributes
     my $t = defined $tree->{USERTYPE} ? $tree->{USERTYPE} : $type;
-    $eid2data->{pack('L', 1 << 28 | $eid)} = $t;
-    $eid2data->{pack('L', 2 << 28 | $eid)} = $tree->{DERIVATION}
-        if (defined $tree->{DERIVATION});
-    $eid2data->{pack('L', 3 << 28 | $eid)} = $tree->{CHECKSUM}
-        if (defined $tree->{CHECKSUM});
-    $eid2data->{pack('L', 4 << 28 | $eid)} = $tree->{DESCRIPTION}
-        if (defined $tree->{DESCRIPTION});
+    $eid2data->{$eids->{TYPE}} = $t;
+    foreach my $md (qw(DERIVATION CHECKSUM DECRIPTION)) {
+        $eid2data->{$eids->{$md}} = $tree->{$md} if (defined $tree->{$md});
+    }
 }
 
 sub MakeDatabase
@@ -478,8 +478,7 @@ sub MakeDatabase
     # Create the cache databases.
     my ($self, $profile, $path2eid_db, $eid2data_db, $dbformat) = @_;
 
-    my %path2eid;
-    my %eid2data;
+    my (%path2eid, %eid2data);
 
     # walk profile
     my $eid = 0;
@@ -506,7 +505,7 @@ sub enableForeignProfile
 
     $self->debug(5, "Enabling foreign profile.");
 
-    my $tmp_dir = $self->{"TMP_DIR"};
+    my $tmp_dir = $self->{TMP_DIR};
 
     return ($ERROR, "temporary directory $tmp_dir does not exist")
         unless (-d "$tmp_dir");

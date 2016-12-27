@@ -6,7 +6,7 @@ use Test::More;
 use Test::Quattor::ProfileCache qw(prepare_profile_cache);
 use EDG::WP4::CCM::CLI;
 use EDG::WP4::CCM::CCfg qw(@CONFIG_OPTIONS $CONFIG_FN);
-use EDG::WP4::CCM::CacheManager::Element qw(escape);
+use EDG::WP4::CCM::Path qw(escape);
 use Test::MockModule;
 use Test::Quattor::TextRender::Base;
 

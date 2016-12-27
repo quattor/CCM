@@ -2,7 +2,6 @@
 
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::CacheManager;
 use EDG::WP4::CCM::CacheManager::Element;
 use CAF::FileWriter;
 

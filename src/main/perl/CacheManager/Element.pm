@@ -4,33 +4,20 @@ use DB_File;
 use File::Spec;
 use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::CacheManager::Configuration;
-use EDG::WP4::CCM::Path qw(escape unescape);
 use EDG::WP4::CCM::CacheManager::Resource;
-use Exporter;
 use EDG::WP4::CCM::CacheManager::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::Encode qw(
+    PROPERTY RESOURCE
+    STRING LONG DOUBLE BOOLEAN
+    LIST NLIST
+    type_from_name decode_eid encode_eids
+    $PATH2EID $EID2DATA
+    );
 
-our @ISA       = qw(Exporter);
-our @EXPORT    = qw(unescape);
-our @EXPORT_OK = qw(UNDEFINED ELEMENT PROPERTY RESOURCE STRING
-    LONG DOUBLE BOOLEAN LIST NLIST LINK TABLE RECORD
-    escape);
+use parent qw(Exporter);
 
-# builtin types with magic constants
-
-use constant UNDEFINED => -1;
-use constant ELEMENT   => 0;
-use constant PROPERTY  => (1 << 0);
-use constant RESOURCE  => (1 << 1);
-use constant STRING    => ((1 << 2) | PROPERTY);
-use constant LONG      => ((1 << 3) | PROPERTY);
-use constant DOUBLE    => ((1 << 4) | PROPERTY);
-use constant BOOLEAN   => ((1 << 5) | PROPERTY);
-use constant LIST      => ((1 << 2) | RESOURCE);
-use constant NLIST     => ((1 << 3) | RESOURCE);
-use constant LINK      => ((1 << 9) | STRING);
-use constant TABLE     => NLIST;
-use constant RECORD    => NLIST;
+our @EXPORT    = qw();
+our @EXPORT_OK = qw();
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
@@ -40,18 +27,18 @@ EDG::WP4::CCM::CacheManager::Element - Element class
 
 =head1 SYNOPSIS
 
- $eid = $element->getEID();
- $name = $element->getName();
- $path = $element->getPath()
- $type = $element->getType();
- $derivation = $element->getDerivation();
- $checksum = $element->getChecksum();
- $description = $element->getDescription();
- $value = $element->getValue();
- $boolean = $element->isType($type);
- $boolean = $element->isResource();
- $boolean = $element->isProperty();
- $hashref = $element->getRecHash();
+    $eid = $element->getEID();
+    $name = $element->getName();
+    $path = $element->getPath()
+    $type = $element->getType();
+    $derivation = $element->getDerivation();
+    $checksum = $element->getChecksum();
+    $description = $element->getDescription();
+    $value = $element->getValue();
+    $boolean = $element->isType($type);
+    $boolean = $element->isResource();
+    $boolean = $element->isProperty();
+    $hashref = $element->getRecHash();
 
 =head1 DESCRIPTION
 
@@ -60,24 +47,7 @@ that are common to all elements and represents a C<Property>.
 The class <EDG::WP4::CCM::CacheManager::Element> is a base class for
 C<EDG::WP4::CCM::CacheManager::Resource>, which has additional methods.
 
-Type constants:
-
-  ELEMENT
-    PROPERTY
-      STRING
-      LONG
-      DOUBLE
-      BOOLEAN
-      LINK
-   RESOURCE
-      NLIST
-        TABLE
-        RECORD
-      LIST
-
 =over
-
-=cut
 
 =item new($config, $ele_path)
 
@@ -90,26 +60,23 @@ configuration path (it can be either a Path object or a string).
 sub new
 {
 
-    my $proto = shift;
+    my ($proto, $config, $ele_path) = @_;
+
     my $class = ref($proto) || $proto;
 
-    my ($config, $ele_path, $prof_dir);
     my $self = {};
 
-    if (@_ != 2) {
+    if (@_ != 3) {
         throw_error("usage: Element->new(config, ele_path)");
-        return ();
+        return;
     }
-
-    $config = shift;    # profile's directory path
 
     if (!UNIVERSAL::isa($config, "EDG::WP4::CCM::CacheManager::Configuration")) {
         throw_error("usage: Element->new(config, ele_path)");
-        return ();
+        return;
     }
 
-    $ele_path = shift;                      # element's configuration path
-    $prof_dir = $config->getConfigPath();
+    my $prof_dir = $config->getConfigPath();
 
     # element objects have the following structure
 
@@ -132,7 +99,7 @@ sub new
         $self->{PATH} = EDG::WP4::CCM::Path->new($ele_path);
         if (!$self->{PATH}) {
             throw_error("Path->new ($ele_path)", $ec->error);
-            return ();
+            return;
         }
     }
 
@@ -152,25 +119,28 @@ sub new
     # so safe_unescape should not generate the leading/trailing {}
     $self->{NAME} = $self->{PATH}->depth(1) ? $self->{PATH}->get_last() : '/';
 
-    $self->{EID} = _resolve_eid($prof_dir, $self->{PATH}->toString());
+    $self->{ENC_EID} = _resolve_enc_eid($prof_dir, $self->{PATH}->toString());
 
-    if (!defined($self->{EID})) {
-        throw_error("failed to resolve element's ID", $ec->error);
-        return ();
-    }
-    if (not _read_metadata($self)) {
-        throw_error("failed to read element's metadata", $ec->error);
-        return ();
+    if (!defined($self->{ENC_EID})) {
+        throw_error("failed to resolve element's encoded ID", $ec->error);
+        return;
     }
 
-    if (not _read_value($self)) {
-        throw_error("failed to read element's value", $ec->error);
-        return ();
-    }
+    $self->{EID} = decode_eid($self->{ENC_EID});
 
     bless($self, $class);
-    return ($self);
 
+    if (!$self->_read_metadata()) {
+        throw_error("failed to read element's metadata", $ec->error);
+        return;
+    }
+
+    if (!$self->_read_value()) {
+        throw_error("failed to read element's value", $ec->error);
+        return;
+    }
+
+    return $self;
 }
 
 =item _get_tied_db
@@ -194,7 +164,7 @@ profile data goes into a whole new path.)
     {
         my ($returnref, $path) = @_;
         my ($base) = $path =~ /(\w+)$/;
-        if (   $CACHE->{$base}->{err}
+        if ($CACHE->{$base}->{err}
             or not $CACHE->{$base}->{path}
             or $CACHE->{$base}->{path} ne $path)
         {
@@ -220,30 +190,25 @@ otherwise false is returned
 sub elementExists
 {
 
-    my $proto = shift;
+    my ($proto, $config, $ele_path) = @_;
 
-    my ($config, $ele_path, $prof_dir);
-
-    if (@_ != 2) {
+    if (@_ != 3) {
         throw_error("usage: Element->elementExists(config, ele_path)");
-        return ();
+        return;
     }
-
-    $config   = shift;    # profile's directory path
-    $ele_path = shift;    # element's configuration path
 
     if (! UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $ele_path = EDG::WP4::CCM::Path->new("$ele_path");
     }
     $ele_path = $ele_path->toString();
 
-    $prof_dir = $config->getConfigPath();
-    my ($hashref, $eid);
+    my $prof_dir = $config->getConfigPath();
 
-    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
+    my $hashref;
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/$PATH2EID");
     if ($err) {
         throw_error($err);
-        return ();
+        return;
     }
 
     return (exists($hashref->{$ele_path}));
@@ -263,49 +228,43 @@ configuration path (it can be either a Path object or a string).
 sub createElement
 {
 
-    my $proto = shift;
+    my ($proto, $config, $ele_path) = @_;
 
-    my ($config, $ele_path, $prof_dir);
-    my ($element, $ele_type);
-
-    if (@_ != 2) {
+    if (@_ != 3) {
         throw_error("usage: Element->createElement(config, ele_path)");
-        return ();
+        return;
     }
-
-    $config   = shift;    # profile's directory path
-    $ele_path = shift;    # element's configuration path
 
     if (! UNIVERSAL::isa($ele_path, "EDG::WP4::CCM::Path")) {
         $ele_path = EDG::WP4::CCM::Path->new("$ele_path");
     }
     $ele_path = $ele_path->toString();
 
-    $ele_type = _read_type($config, $ele_path);
+    my $ele_type = _read_type($config, $ele_path);
     if (!$ele_type) {
         throw_error("Failed to read type of $ele_path", $ec->error);
-        return ();
+        return;
     }
 
+    my $element;
     if ($ele_type & PROPERTY) {
         $element = EDG::WP4::CCM::CacheManager::Element->new($config, $ele_path);
         unless ($element) {
             throw_error("Element->new($config, $ele_path)", $ec->error);
-            return ();
+            return;
         }
     } elsif ($ele_type & RESOURCE) {
         $element = EDG::WP4::CCM::CacheManager::Resource->new($config, $ele_path);
         unless ($element) {
             throw_error("Resource->new($config, $ele_path)", $ec->error);
-            return ();
+            return;
         }
     } else {
         throw_error("wrong element type $ele_path");
-        return ();
+        return;
     }
 
     return ($element);
-
 }
 
 =item getConfiguration()
@@ -317,10 +276,8 @@ Returns the element's Configuration object
 
 sub getConfiguration
 {
-
-    my ($self) = shift;
+    my $self = shift;
     return $self->{CONFIG};
-
 }
 
 =item getEID()
@@ -334,10 +291,8 @@ to change.
 
 sub getEID
 {
-
     my $self = shift;
-    return ($self->{EID});
-
+    return $self->{EID};
 }
 
 =item getName()
@@ -348,10 +303,8 @@ Returns the name of the object
 
 sub getName
 {
-
     my $self = shift;
-    return ($self->{NAME});
-
+    return $self->{NAME};
 }
 
 =item getPath()
@@ -362,14 +315,8 @@ Returns a Path object with the element's path
 
 sub getPath
 {
-
     my $self = shift;
-    my $path;
-
-    $path = EDG::WP4::CCM::Path->new($self->{PATH}->toString());
-
-    return ($path);
-
+    return EDG::WP4::CCM::Path->new($self->{PATH}->toString());
 }
 
 =item getType()
@@ -380,10 +327,8 @@ Returns the element's type, that is, one of the TYPE_* constans
 
 sub getType
 {
-
     my $self = shift;
-    return ($self->{TYPE});
-
+    return $self->{TYPE};
 }
 
 =item getDerivation()
@@ -394,10 +339,8 @@ Returns the element's derivation
 
 sub getDerivation
 {
-
     my $self = shift;
-    return ($self->{DERIVATION});
-
+    return $self->{DERIVATION};
 }
 
 =item getChecksum()
@@ -408,10 +351,8 @@ Returns the element's checksum (that is, MD5 digest)
 
 sub getChecksum
 {
-
     my $self = shift;
-    return ($self->{CHECKSUM});
-
+    return $self->{CHECKSUM};
 }
 
 =item getDescription()
@@ -422,10 +363,8 @@ Returns the element's description
 
 sub getDescription
 {
-
     my $self = shift;
-    return ($self->{DESCRIPTION});
-
+    return $self->{DESCRIPTION};
 }
 
 =item getValue()
@@ -439,10 +378,8 @@ to change.
 
 sub getValue
 {
-
     my $self = shift;
-    return ($self->{VALUE});
-
+    return $self->{VALUE};
 }
 
 =item isType($type)
@@ -453,10 +390,13 @@ Returns true if the element's type match type contained in argument $type
 
 sub isType
 {
-
     my ($self, $type) = @_;
-    return (($type & $self->{TYPE}) == $type);
 
+    if ($type !~ m/^\d+$/) {
+        $type = type_from_name($type);
+    }
+
+    return (($type & $self->{TYPE}) == $type);
 }
 
 =item isResource()
@@ -468,7 +408,7 @@ Return true if the element's type is RESOURCE
 sub isResource
 {
 
-    my ($self, $type) = @_;
+    my $self  = shift;
     return (RESOURCE & $self->{TYPE});
 
 }
@@ -482,7 +422,7 @@ Return true if the element's type is PROPERTY
 sub isProperty
 {
 
-    my ($self, $type) = @_;
+    my $self = shift;
     return (PROPERTY & $self->{TYPE});
 
 }
@@ -640,61 +580,34 @@ SWITCH:
     return $ret;
 }
 
+
 #
 # _resolve_eid($prof_dir, $ele_path)
 #
-# Private function that resolve element's id number. $prof_dir is the profile
+# Private function that resolve element's encoded id number. $prof_dir is the profile
 # full directory path, and $ele_path is the element path (as string)
 #
-sub _resolve_eid
+sub _resolve_enc_eid
 {
-
     my ($prof_dir, $ele_path) = @_;
-    my ($hashref, $eid);
 
-    my $err = _get_tied_db(\$hashref, "${prof_dir}/path2eid");
+    my $hashref;
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/$PATH2EID");
     if ($err) {
         throw_error($err);
-        return ();
+        return;
     }
 
-    $eid = $hashref->{$ele_path};
+    my $enc_eid = $hashref->{$ele_path};
 
-    unless ($eid) {
+    if (defined($enc_eid)) {
+        return $enc_eid;
+    } else {
         throw_error("cannot resolve element $ele_path");
-        return ();
+        return;
     }
-
-    return (unpack("L", $eid));
-
 }
 
-#
-# _type_converter($string)
-#
-# Private function to convert a type in string format
-# into a Type constant
-# $string type in string format
-#
-sub _type_converter
-{
-
-    my $type = shift;
-
-    # type conversion
-    # TODO: there must be a better way to do this ...
-    return (STRING)  if ($type eq "string");
-    return (DOUBLE)  if ($type eq "double");
-    return (LONG)    if ($type eq "long");
-    return (BOOLEAN) if ($type eq "boolean");
-    return (LIST)    if ($type eq "list");
-    return (NLIST)   if ($type eq "nlist");
-    return (LINK)    if ($type eq "link");
-    return (TABLE)   if ($type eq "table");
-    return (RECORD)  if ($type eq "record");
-
-    return (UNDEFINED);
-}
 
 #
 # _read_metadata($self)
@@ -706,53 +619,38 @@ sub _read_metadata
 {
 
     my $self = shift;
-    my ($prof_dir, $eid);
-    my ($key,      $hashref);
 
-    $prof_dir = $self->{PROF_DIR};
-    $eid      = $self->{EID};
+    my ($key, $hashref);
 
-    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    my $keys = encode_eids($self->{EID});
+
+    my $err = _get_tied_db(\$hashref, "$self->{PROF_DIR}/$EID2DATA");
     if ($err) {
         throw_error($err);
-        return ();
+        return;
     }
 
-    $key = pack("L", $eid | 0x10000000);
-    $self->{TYPE} = $hashref->{$key};
+    foreach my $md (qw(TYPE DERIVATION CHECKSUM DESCRIPTION)) {
+        my $val = $hashref->{$keys->{$md}};
+        if (defined($val)) {
+            $self->{$md} = $val;
+        } elsif ($md eq 'DESCRIPTION' || $md eq 'DERIVATION') {
+            # metadata attribute "description" is optional
+            # TODO: metadata attribute "derivation" should not be optional
+            #       but eg none of the JSONProfile have it
+            $self->{$md} = "";
+        } else {
+            throw_error("failed to read element's $md eid $self->{EID}");
+            return;
+        }
+    };
 
-    if (!defined($self->{TYPE})) {
-        throw_error("failed to read element's type");
-        return ();
-    }
-    $self->{TYPE} = _type_converter($self->{TYPE});
+    # convert TYPE to constant
+    $self->{TYPE} = type_from_name($self->{TYPE});
 
-    $key = pack("L", $eid | 0x20000000);
-    $self->{DERIVATION} = $hashref->{$key};
-
-    # TODO: metadata atribute "derivation" should not be optional
-    if (!defined($self->{DERIVATION})) {
-        $self->{DERIVATION} = "";
-    }
-
-    $key = pack("L", $eid | 0x30000000);
-    $self->{CHECKSUM} = $hashref->{$key};
-    if (!defined($self->{CHECKSUM})) {
-        throw_error("failed to read element's checksum");
-        return ();
-    }
-
-    $key = pack("L", $eid | 0x40000000);
-    $self->{DESCRIPTION} = $hashref->{$key};
-
-    # metadata atribute "description" is optional
-    if (!defined($self->{DESCRIPTION})) {
-        $self->{DESCRIPTION} = "";
-    }
-
-    return (SUCCESS);
-
+    return SUCCESS;
 }
+
 
 #
 # _read_type($config, $ele_path)
@@ -764,39 +662,32 @@ sub _read_metadata
 #
 sub _read_type
 {
+    my ($config, $ele_path) = @_;
 
-    my ($config,   $ele_path);
-    my ($prof_dir, $eid);
-    my ($key,      $hashref, $type);
+    my $prof_dir = $config->getConfigPath();
 
-    ($config, $ele_path) = @_;
-
-    $prof_dir = $config->getConfigPath();
-
-    $eid = _resolve_eid($prof_dir, $ele_path);
-    if (!defined($eid)) {
-        throw_error("failed to resolve element's ID", $ec->error);
-        return ();
+    my $enc_eid = _resolve_enc_eid($prof_dir, $ele_path);
+    if (!defined($enc_eid)) {
+        throw_error("failed to resolve element's encoded ID with path $ele_path", $ec->error);
+        return;
     }
 
-    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    my $hashref;
+    my $err = _get_tied_db(\$hashref, "${prof_dir}/$EID2DATA");
     if ($err) {
         throw_error($err);
-        return ();
+        return;
     }
 
-    $key = pack("L", $eid | 0x10000000);
-    $type = $hashref->{$key};
+    my $eid = decode_eid($enc_eid);
+    my $typename = $hashref->{encode_eids($eid)->{TYPE}};
 
-    if (!defined($type)) {
-        throw_error("failed to read element's type");
-        return ();
+    if (!defined($typename)) {
+        throw_error("failed to read element's type with path $ele_path / eid $eid");
+        return;
     }
 
-    $type = _type_converter($type);
-
-    return ($type);
-
+    return type_from_name($typename);
 }
 
 #
@@ -809,27 +700,21 @@ sub _read_value
 {
 
     my $self = shift;
-    my ($prof_dir, $eid);
-    my ($key,      $hashref);
 
-    $prof_dir = $self->{PROF_DIR};
-    $eid      = $self->{EID};
-
-    my $err = _get_tied_db(\$hashref, "${prof_dir}/eid2data");
+    my $hashref;
+    my $err = _get_tied_db(\$hashref, "$self->{PROF_DIR}/$EID2DATA");
     if ($err) {
         throw_error($err);
-        return ();
+        return;
     }
 
-    $key = pack("L", $eid);
-    $self->{VALUE} = decode_utf8($hashref->{$key});
+    $self->{VALUE} = decode_utf8($hashref->{$self->{ENC_EID}});
     if (!defined($self->{VALUE})) {
-        throw_error("failed to read element's value");
-        return ();
+        throw_error("failed to read element's value eid $self->{EID}");
+        return;
     }
 
-    return (SUCCESS);
-
+    return SUCCESS;
 }
 
 =pod
