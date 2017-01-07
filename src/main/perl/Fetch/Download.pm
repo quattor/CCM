@@ -1,8 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-
-package EDG::WP4::CCM::Fetch::Download;
+#${PMpre} EDG::WP4::CCM::Fetch::Download${PMpost}
 
 =head1 NAME
 
@@ -18,9 +14,7 @@ Module provides methods to handle the retrieval of the profiles.
 
 =cut
 
-use strict;
-use warnings;
-
+use CAF::Download::LWP 16.10.1;
 use CAF::FileWriter;
 use CAF::FileReader;
 
@@ -32,29 +26,8 @@ use Compress::Zlib;
 use LC::Stat qw(:ST);
 
 use GSSAPI;
-use CAF::Kerberos 16.2.1;
+use CAF::Kerberos;
 
-use LWP::UserAgent;
-use LWP::Authen::Negotiate;
-use HTTP::Request;
-
-
-# LWP should use Net::SSL (provided with Crypt::SSLeay)
-# and Net::SSL doesn't support hostname verify
-$ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = 'Net::SSL';
-$ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
-
-sub setupHttps
-{
-    my ($self) = @_;
-
-    $ENV{'HTTPS_CERT_FILE'} = $self->{CERT_FILE}
-        if (defined($self->{CERT_FILE}));
-    $ENV{'HTTPS_KEY_FILE'} = $self->{KEY_FILE}
-        if (defined($self->{KEY_FILE}));
-    $ENV{'HTTPS_CA_FILE'} = $self->{CA_FILE} if (defined($self->{CA_FILE}));
-    $ENV{'HTTPS_CA_DIR'}  = $self->{CA_DIR}  if (defined($self->{CA_DIR}));
-}
 
 =item retrieve
 
@@ -74,6 +47,8 @@ sub retrieve
 {
     my ($self, $url, $cache, $time) = @_;
 
+    local %ENV = %ENV;
+
     my ($cnt, $krb);
     if ($self->{PRINCIPAL}) {
         $self->verbose("PRINCIPAL $self->{PRINCIPAL} configured, setting up Kerberos environment");
@@ -91,8 +66,8 @@ sub retrieve
         $krb->update_env(\%ENV);
     };
 
-    my $ua = LWP::UserAgent->new();
     my $rq = HTTP::Request->new(GET => $url);
+    $rq->header("Accept-Encoding" => join(" ", qw(gzip x-gzip x-bzip2 deflate)));
 
     # If human readable time ($ht) is not defined, then treat a 304 repsonse as an error
     my $ht;
@@ -106,9 +81,17 @@ sub retrieve
         $rq->if_modified_since($time);
     }
 
-    $ua->timeout($self->{GET_TIMEOUT});
-    $rq->header("Accept-Encoding" => join(" ", qw(gzip x-gzip x-bzip2 deflate)));
-    my $rs = $ua->request($rq);
+    my $lwp = CAF::Download::LWP->new(log => $self);
+    my %lwp_opts_map = (
+        CERT_FILE => 'cert',
+        KEY_FILE => 'key',
+        CA_FILE => 'cacert',
+        CA_DIR => 'cadir'
+        );
+    my %lwp_opts = map {$lwp_opts_map{$_} => $self->{$_}} grep {defined($self->{$_})} keys %lwp_opts_map;
+    $lwp_opts{timeout} = $self->{GET_TIMEOUT};
+
+    my $rs = $lwp->_do_ua('request', [$rq], %lwp_opts);
     if ($rs->code() == 304) {
         if (defined($ht)) {
             $self->verbose("No changes on $url since $ht");

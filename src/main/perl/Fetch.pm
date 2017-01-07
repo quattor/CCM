@@ -142,8 +142,6 @@ sub fetchProfile
     my ($self) = @_;
     my (%current, %previous);
 
-    $self->setupHttps();
-
     if ($self->{FOREIGN_PROFILE} && $self->enableForeignProfile() == $ERROR) {
         $self->error("Unable to enable foreign profiles");
         return $ERROR;

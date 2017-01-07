@@ -4,7 +4,6 @@ use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::Configuration qw();
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
 use MIME::Base64 qw(encode_base64);
-
 use parent qw(Exporter);
 use Readonly;
 use File::Temp;
