@@ -54,8 +54,10 @@ BEGIN {
     my @to_try = sort keys %FORMAT_DISPATCH;
     foreach my $db (@to_try) {
         local $@;
-        load $db;
-        $db->import;
+        eval {
+            load $db;
+            $db->import;
+        };
         push(@db_backends, $db) unless $@;
     }
     if (!scalar @db_backends) {

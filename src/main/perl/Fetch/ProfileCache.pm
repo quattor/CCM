@@ -329,7 +329,9 @@ sub process_profile
 
     my ($class, $t) = $self->choose_interpreter($profile);
     local $@;
-    load $class;
+    eval {
+        load $class;
+    };
     die "Couldn't load interpreter $class: $@" if $@;
 
     $t = $class->interpret_node(@$t);
