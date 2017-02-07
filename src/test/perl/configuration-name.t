@@ -78,7 +78,7 @@ my $cfg4 = $cfg->{cache_manager}->getConfiguration(undef, $cfg->{cid}, name_temp
 is_deeply($cfg4->{name}, {template => 'basic'},
           "name template basic passed, name attribute set");
 $cfg4->{fail} = undef;
-is($cfg4->getName(), "mybranch-production-user123-3b91b01-1476014841", "correct name with template name basic");
+is($cfg4->getName(), "mybranch-sandbox-user123-3b91b01-1476014841", "correct name with template name basic");
 ok(! defined($cfg4->{fail}), "getName does not set fail attr with correct rendered name");
 
 # unknown type
