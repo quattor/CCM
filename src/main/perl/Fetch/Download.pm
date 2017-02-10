@@ -207,7 +207,7 @@ sub download
             sleep($self->{RETRIEVE_WAIT});
         }
     }
-    return undef;
+    return;
 }
 
 sub Base64Encode
@@ -233,7 +233,7 @@ sub Base64Decode
         $msg =~ s/ at.*line [0-9]*.$//;
         chomp($msg);
         $self->warn('base64 decode failed on "' . substr($data, 0, 10) . "\"...: $msg");
-        return undef;
+        return;
     } else {
         return $plain;
     }
@@ -248,7 +248,7 @@ sub Gunzip
     my $plain = Compress::Zlib::memGunzip($data);
     if (not defined $plain) {
         $self->warn('gunzip failed on "' . substr($data, 0, 10) . '"...');
-        return undef;
+        return;
     } else {
         return $plain;
     }

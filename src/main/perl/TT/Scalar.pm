@@ -1,17 +1,9 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::TT::Scalar;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::TT::Scalar${PMpost}
 
 use Readonly;
 use Template::VMethods;
 
-use base qw(Exporter);
+use parent qw(Exporter);
 
 # Overload the stringification
 # Following the 'perldoc overload' section on

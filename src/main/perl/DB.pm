@@ -31,6 +31,7 @@ use parent qw(CAF::Object CAF::Path Exporter);
 use CAF::Object qw(SUCCESS);
 use CAF::FileWriter;
 use CAF::FileReader;
+use Module::Load;
 
 use Readonly;
 
@@ -53,7 +54,8 @@ BEGIN {
     my @to_try = sort keys %FORMAT_DISPATCH;
     foreach my $db (@to_try) {
         local $@;
-        eval " require $db; $db->import ";
+        load $db;
+        $db->import;
         push(@db_backends, $db) unless $@;
     }
     if (!scalar @db_backends) {
@@ -118,7 +120,7 @@ sub _DB_GDBM_File
     $to_tie = \%out if ($mode eq "write");
 
     # mode as restricted as possible
-    my $tie = tie(%$to_tie, $dbformat, $file, $flags, 0600, @extras);
+    my $tie = tie(%$to_tie, $dbformat, $file, $flags, oct(600), @extras);
 
     if ($tie) {
         if ($mode eq 'write') {

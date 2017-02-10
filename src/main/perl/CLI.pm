@@ -1,14 +1,6 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
+#${PMpre} EDG::WP4::CCM::CLI${PMpost}
 
-package EDG::WP4::CCM::CLI;
-
-use strict;
-use warnings;
-
-use base qw(EDG::WP4::CCM::Options);
+use parent qw(EDG::WP4::CCM::Options);
 use CAF::Object qw(SUCCESS);
 use EDG::WP4::CCM::TextRender qw(ccm_format @CCM_FORMATS);
 use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);

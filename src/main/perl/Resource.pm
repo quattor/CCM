@@ -1,12 +1,4 @@
-# ${license-info}
-# ${developer-info}
-# ${author-info}
-# ${build-info}
-
-package EDG::WP4::CCM::Resource;
-
-use strict;
-use warnings;
+#${PMpre} EDG::WP4::CCM::Resource${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
 use parent qw(EDG::WP4::CCM::Element);

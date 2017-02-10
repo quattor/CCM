@@ -1,18 +1,16 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 # ${license-info}
 # ${developer-info}
 # ${author-info}
 # ${build-info}
 
-# Beginning sequence for EDG initialization
+use strict;
+use warnings;
+
 BEGIN {
-    # use perl libs in /usr/lib/perl
     unshift(@INC, '/usr/lib/perl');
 }
 
-
-use strict;
-use warnings;
 use Getopt::Long;
 use Digest::MD5 qw(md5_hex);
 use Errno qw(ESRCH EPERM);
@@ -78,11 +76,11 @@ sub read_cid
     my ($filename) = @_;
     my ($id);
 
-    open(FILE , "$filename") or die("$filename open failed: $!");
-    $id = join("", <FILE>);
+    open(my $FILE , '<', $filename) or die("$filename open failed: $!");
+    $id = join("", <$FILE>);
     $id =~ /^(\d+)\n$/ or die("$filename unknown CID format");
     $id = $1;
-    close(FILE);
+    close($FILE);
 
     return($id);
 }
@@ -138,16 +136,17 @@ sub init
 
     # Get list of configuration profiles
 
-    opendir(DIR , $CacheDir) or die("$CacheDir open failed: $!");
-    @Profile = grep (/profile\.\d+/, readdir(DIR));
-    close(DIR);
+    my $DIR;
+    opendir($DIR , $CacheDir) or die("$CacheDir open failed: $!");
+    @Profile = grep (/profile\.\d+/, readdir($DIR));
+    close($DIR);
 
     # Get list of cached URLs in data directory
 
-    opendir(DIR , $DataDir) or die("$DataDir open failed: $!");
-    @url_list = grep { $_ ne '.' and $_ ne '..' } readdir(DIR);
+    opendir($DIR , $DataDir) or die("$DataDir open failed: $!");
+    @url_list = grep { $_ ne '.' and $_ ne '..' } readdir($DIR);
     @NonactiveURL{@url_list} = ("") x @url_list;
-    close(DIR);
+    close($DIR);
 
     return;
 }
@@ -163,17 +162,16 @@ sub init
 sub clean_profile
 {
     my ($profile) = @_;
-    my ($active_pid, $file);
 
-    if( !opendir(DIR , "${CacheDir}/$profile") ) {
+    if( !opendir(my $DIR , "${CacheDir}/$profile") ) {
         Warn("${CacheDir}/$profile open failed: $!");
         return;
     }
 
-    while ($file = readdir(DIR)) {
+    while (my $file = readdir($DIR)) {
 
         next unless ($file =~ /ccm-active-$profile-(\d+)/);
-        $active_pid = $1;
+        my $active_pid = $1;
 
         if( kill (0 => $active_pid) ) {
             # the process is alive
@@ -195,7 +193,7 @@ sub clean_profile
 
     }
 
-    close(DIR);
+    close($DIR);
 
     return;
 }
@@ -210,11 +208,11 @@ sub num_active_pids
     my ($profile) = @_;
     my (@files, $n_files);
 
-    opendir(DIR , "${CacheDir}/$profile")
+    opendir(my $DIR , "${CacheDir}/$profile")
                   or die("${CacheDir}/$profile open failed $!");
-    @files = grep (/ccm-active-profile/, readdir(DIR));
+    @files = grep (/ccm-active-profile/, readdir($DIR));
     $n_files = @files;
-    close(DIR);
+    close($DIR);
 
     return($n_files);
 }
@@ -229,10 +227,10 @@ sub read_url
     my ($filename) = @_;
     my $url;
 
-    open(FILE, "$filename") or die("$filename failed to open $!");
-    $url = <FILE>;
+    open(my $FILE, '<', $filename) or die("$filename failed to open $!");
+    $url = <$FILE>;
     chomp($url) if ($url);
-    close(FILE);
+    close($FILE);
 
     return($url);
 }
@@ -250,22 +248,20 @@ sub save_active_urls
 {
     my ($profile) = @_;
 
-    my ($url, $md5, %hash, $key, $ukey);
-
     # remove from NonactiveURL hash those URLs contained
     # in files profile.url
 
-    $url = read_url("${CacheDir}/${profile}/profile.url");
-    $md5 = md5_hex($url);
+    my $url = read_url("${CacheDir}/${profile}/profile.url");
+    my $md5 = md5_hex($url);
     delete($NonactiveURL{$md5});
 
     # search URLs in fetch porperties
-    my $readErr = read_db(\%hash,
-                          "${CacheDir}/${profile}/eid2data");
+    my %hash;
+    my $readErr = read_db(\%hash, "${CacheDir}/${profile}/eid2data");
     die("Failed to read eid2data: $readErr") if defined($readErr);
 
-    foreach $key ( keys(%hash) ) {
-        $ukey = unpack("L", $key);
+    foreach my $key ( keys(%hash) ) {
+        my $ukey = unpack("L", $key);
         next unless ($ukey & 0x10000000);
         next unless ($hash{$key} eq 'fetch');
         $ukey = $ukey & 0xEFFFFFFF;
@@ -286,14 +282,13 @@ sub save_active_urls
 #
 sub clean_temp_dir
 {
-    my ($dir);
     my ($mod_time, $curr_time);
 
     $curr_time = time();
 
-    opendir(DIR , "$TmpDir") or die("$TmpDir open failed $!");
+    opendir(my $DIR , "$TmpDir") or die("$TmpDir open failed $!");
 
-    while ($dir = readdir(DIR)) {
+    while (my $dir = readdir($DIR)) {
         next if ($dir eq "." or $dir eq "..");
         $mod_time = (stat("$TmpDir/$dir"))[ST_MTIME];
         if ($mod_time + $TimeAging >= $curr_time ) {
@@ -304,7 +299,7 @@ sub clean_temp_dir
         }
     }
 
-    close(DIR);
+    close($DIR);
     return;
 }
 
@@ -321,20 +316,16 @@ sub clean_temp_dir
 #
 sub main
 {
-    my ($profile, $prof_cid);
-    my ($mod_time, $curr_time);
-    my ($url);
-
-    foreach $profile (@Profile) {
+    foreach my $profile (@Profile) {
 
         $profile =~ /profile\.(\d+)/;
-        $prof_cid = $1;
+        my $prof_cid = $1;
 
-        $mod_time = (stat("$CacheDir/$profile"))[ST_MTIME];
+        my $mod_time = (stat("$CacheDir/$profile"))[ST_MTIME];
 
         clean_profile($profile);
 
-        $curr_time = time();
+        my $curr_time = time();
 
         if (($prof_cid eq $CurrentCID)
                 or ($prof_cid eq $LatestCID)
@@ -351,7 +342,7 @@ sub main
 
     }
 
-    foreach $url (keys(%NonactiveURL)) {
+    foreach my $url (keys(%NonactiveURL)) {
         unlink( "$DataDir/$url" )
             or Warn("error unlinking file $DataDir/$url: $!");
     }
