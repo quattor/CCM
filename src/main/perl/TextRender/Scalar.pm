@@ -1,4 +1,4 @@
-#${PMpre} EDG::WP4::CCM::TT::Scalar${PMpost}
+#${PMpre} EDG::WP4::CCM::TextRender::Scalar${PMpost}
 
 use Readonly;
 use Template::VMethods;
@@ -28,7 +28,7 @@ Readonly::Hash our %ELEMENT_TYPES => {
 
 =head1 NAME
 
-    CCM::TT::Scalar - Class to access scalar/property Element attributes within TT.
+    CCM::TextRender::Scalar - Class to access scalar/property Element attributes within TT.
 
 =head1 DESCRIPTION
 

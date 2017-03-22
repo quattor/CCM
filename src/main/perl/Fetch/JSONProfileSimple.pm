@@ -1,10 +1,10 @@
-#${PMpre} EDG::WP4::CCM::JSONProfileSimple${PMpost}
+#${PMpre} EDG::WP4::CCM::Fetch::JSONProfileSimple${PMpost}
 
 =pod
 
 =head1 SYNOPSIS
 
-    EDG::WP4::CCM::JSONProfileSimple->interpret_node($tag, $jsondoc);
+    EDG::WP4::CCM::Fetch::JSONProfileSimple->interpret_node($tag, $jsondoc);
 
 =head1 DESCRIPTION
 

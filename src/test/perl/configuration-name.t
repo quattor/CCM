@@ -5,7 +5,7 @@ use Test::More;
 use Test::Quattor::ProfileCache;
 use Test::Quattor::TextRender::Base;
 
-use EDG::WP4::CCM::Configuration;
+use EDG::WP4::CCM::CacheManager::Configuration;
 use Cwd qw(getcwd);
 
 my $caf_trd = mock_textrender();
@@ -17,9 +17,9 @@ my $cfg_no_metadata = prepare_profile_cache('names_no_metadata');
 
 =cut
 
-is($EDG::WP4::CCM::Configuration::DEFAULT_NAME_TEMPLATE_TYPE, 'name',
+is($EDG::WP4::CCM::CacheManager::Configuration::DEFAULT_NAME_TEMPLATE_TYPE, 'name',
    'Default name template type is name');
-is_deeply(\@EDG::WP4::CCM::Configuration::NAME_TEMPLATE_TYPES,
+is_deeply(\@EDG::WP4::CCM::CacheManager::Configuration::NAME_TEMPLATE_TYPES,
           [qw(name)],
           'Allowed name template types');
 
@@ -31,7 +31,7 @@ Test that each shipped name template has all required type TT files
 
 my $ttdir = getcwd().'/target/share/templates/quattor/CCM/names/';
 foreach my $name_template (glob("$ttdir/*")) {
-    foreach my $type (@EDG::WP4::CCM::Configuration::NAME_TEMPLATE_TYPES) {
+    foreach my $type (@EDG::WP4::CCM::CacheManager::Configuration::NAME_TEMPLATE_TYPES) {
         my $ttfn = "$name_template/$type.tt";
         ok(-f $ttfn, "Found TT $ttfn for name template $name_template type $type");
     }

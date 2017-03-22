@@ -1,7 +1,7 @@
 #${PMpre} EDG::WP4::CCM::CacheManager${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
-use EDG::WP4::CCM::Configuration qw();
+use EDG::WP4::CCM::CacheManager::Configuration qw();
 use EDG::WP4::CCM::CCfg qw(initCfg getCfgValue);
 use MIME::Base64 qw(encode_base64);
 use parent qw(Exporter);
@@ -315,7 +315,7 @@ This method is deprecated in favour of C<getConfiguration>.
 Returns unlocked Configuration object.
 
 Unless the object is locked explicitly later by calling the C<lock> method,
-C<CCM::Element>s will always be fetched from the current CID,
+C<CCM::CacheManager::Element>s will always be fetched from the current CID,
 not the CID passed via C<$cid>. (If the $cid parameter is omitted,
 the most recently downloaded configuration (when the cache
 was not globally locked) is returned.)
@@ -365,7 +365,7 @@ This method is deprecated in favour of C<getConfiguration>.
 Returns unlocked anonymous Configuration object.
 
 Unless the object is locked explicitly later by calling the C<lock> method,
-C<CCM::Element>s will always be fetched from the current CID,
+C<CCM::CacheManager::Element>s will always be fetched from the current CID,
 not the CID passed via C<$cid>. (If the $cid parameter is omitted,
 the most recently downloaded configuration (when the cache
 was not globally locked) is returned.)
@@ -414,7 +414,7 @@ sub _getConfig
 
     my $name_template = exists($opts{name_template}) ? $opts{name_template} : $self->{name_template};
 
-    my $cfg = EDG::WP4::CCM::Configuration->new($self, $cid, $lc, $anonymous, $name_template);
+    my $cfg = EDG::WP4::CCM::CacheManager::Configuration->new($self, $cid, $lc, $anonymous, $name_template);
     unless (defined($cfg)) {
         $ec->rethrow_error();
         return ();

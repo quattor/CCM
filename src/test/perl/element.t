@@ -10,8 +10,8 @@ use Test::More;
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
                                     $CURRENT_CID_FN $LATEST_CID_FN);
-use EDG::WP4::CCM::Configuration;
-use EDG::WP4::CCM::Element;
+use EDG::WP4::CCM::CacheManager::Configuration;
+use EDG::WP4::CCM::CacheManager::Element;
 use EDG::WP4::CCM::Path;
 use LC::Exception;
 
@@ -19,7 +19,7 @@ use Cwd;
 
 use CCMTest qw(make_file);
 
-my $ec_cfg = $EDG::WP4::CCM::Configuration::ec;
+my $ec_cfg = $EDG::WP4::CCM::CacheManager::Configuration::ec;
 
 my $cdtmp = getcwd()."/target/tmp";
 mkdir($cdtmp) if (! -d $cdtmp);
@@ -116,33 +116,33 @@ ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
 
 $cm = EDG::WP4::CCM::CacheManager->new($cache_dir);
-$config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
+$config = EDG::WP4::CCM::CacheManager::Configuration->new($cm, 1, 1);
 
 # create element with string path
 $path = "/path/to/property";
-$element = EDG::WP4::CCM::Element->new($config, $path);
-isa_ok($element, "EDG::WP4::CCM::Element",
-       "Element->new(config, string) is a EDG::WP4::CCM::Element instance");
+$element = EDG::WP4::CCM::CacheManager::Element->new($config, $path);
+isa_ok($element, "EDG::WP4::CCM::CacheManager::Element",
+       "Element->new(config, string) is a EDG::WP4::CCM::CacheManager::Element instance");
 
 # create element with Path object
 $path = EDG::WP4::CCM::Path->new("/path/to/property");
-$element = EDG::WP4::CCM::Element->new($config, $path);
-isa_ok($element, "EDG::WP4::CCM::Element",
-       "Element->new(config, Path) is a EDG::WP4::CCM::Element instance");
+$element = EDG::WP4::CCM::CacheManager::Element->new($config, $path);
+isa_ok($element, "EDG::WP4::CCM::CacheManager::Element",
+       "Element->new(config, Path) is a EDG::WP4::CCM::CacheManager::Element instance");
 
 # create resource with createElement()
 $path = EDG::WP4::CCM::Path->new("/path/to/resource");
-$element = EDG::WP4::CCM::Element->createElement($config, $path);
-isa_ok($element, "EDG::WP4::CCM::Resource",
-       "Element->createElement(config, Path_to_resource) is a EDG::WP4::CCM::Resource instance");
+$element = EDG::WP4::CCM::CacheManager::Element->createElement($config, $path);
+isa_ok($element, "EDG::WP4::CCM::CacheManager::Resource",
+       "Element->createElement(config, Path_to_resource) is a EDG::WP4::CCM::CacheManager::Resource instance");
 
 # create property Element with createElement()
 $path = EDG::WP4::CCM::Path->new("/path/to/property");
-$element = EDG::WP4::CCM::Element->createElement($config, $path);
-isa_ok($element, "EDG::WP4::CCM::Element",
-       "Element->createElement(config, Path_to_property) is a EDG::WP4::CCM::Element instance");
-ok(!UNIVERSAL::isa($element, "EDG::WP4::CCM::Resource"),
-   "Element->createElement(config, Path_to_property) is not a EDG::WP4::CCM::Resource instance");
+$element = EDG::WP4::CCM::CacheManager::Element->createElement($config, $path);
+isa_ok($element, "EDG::WP4::CCM::CacheManager::Element",
+       "Element->createElement(config, Path_to_property) is a EDG::WP4::CCM::CacheManager::Element instance");
+ok(!UNIVERSAL::isa($element, "EDG::WP4::CCM::CacheManager::Resource"),
+   "Element->createElement(config, Path_to_property) is not a EDG::WP4::CCM::CacheManager::Resource instance");
 
 # test getEID()
 $eid = $element->getEID();
@@ -159,7 +159,7 @@ is($string, "/path/to/property", "Element->getPath()");
 
 # test getType()
 $type = $element->getType();
-is($type, EDG::WP4::CCM::Element->STRING, "Element->getType()" );
+is($type, EDG::WP4::CCM::CacheManager::Element->STRING, "Element->getType()" );
 
 # test getDerivation()
 $derivation = $element->getDerivation();
@@ -179,17 +179,17 @@ $value = $element->getValue();
 is($value, "a string", "Element->getValue()");
 
 # test isType()
-ok($element->isType(EDG::WP4::CCM::Element->STRING),
+ok($element->isType(EDG::WP4::CCM::CacheManager::Element->STRING),
     "Element->isType(STRING)");
-ok(!$element->isType(EDG::WP4::CCM::Element->LONG),
+ok(!$element->isType(EDG::WP4::CCM::CacheManager::Element->LONG),
     "!Element->isType(LONG)");
-ok(!$element->isType(EDG::WP4::CCM::Element->DOUBLE),
+ok(!$element->isType(EDG::WP4::CCM::CacheManager::Element->DOUBLE),
     "!Element->isType(DOUBLE)");
-ok(!$element->isType(EDG::WP4::CCM::Element->BOOLEAN),
+ok(!$element->isType(EDG::WP4::CCM::CacheManager::Element->BOOLEAN),
     "!Element->isType(BOOLEAN)");
-ok(!$element->isType(EDG::WP4::CCM::Element->LIST),
+ok(!$element->isType(EDG::WP4::CCM::CacheManager::Element->LIST),
     "!Element->isType(LIST)");
-ok(!$element->isType(EDG::WP4::CCM::Element->NLIST),
+ok(!$element->isType(EDG::WP4::CCM::CacheManager::Element->NLIST),
     "!Element->isType(NLIST)");
 
 # test isResource()
@@ -220,8 +220,8 @@ ok(! $config->elementExists("/fake$path"), "config->elementExists false for path
 my $cfg_el = $config->getElement("$path");
 my $pathdata = 'a string';
 
-isa_ok($cfg_el, "EDG::WP4::CCM::Element",
-       "config->getElement returns EDG::WP4::CCM::Element instance");
+isa_ok($cfg_el, "EDG::WP4::CCM::CacheManager::Element",
+       "config->getElement returns EDG::WP4::CCM::CacheManager::Element instance");
 # is a property, not a hash or list
 is($cfg_el->getValue(), $pathdata, "getVale from element instance as expected");
 is_deeply($cfg_el->getTree(), $pathdata, "getTree from element instance as expected");

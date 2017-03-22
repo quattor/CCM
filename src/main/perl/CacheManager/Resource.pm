@@ -1,13 +1,13 @@
-#${PMpre} EDG::WP4::CCM::Resource${PMpost}
+#${PMpre} EDG::WP4::CCM::CacheManager::Resource${PMpost}
 
 use LC::Exception qw(SUCCESS throw_error);
-use parent qw(EDG::WP4::CCM::Element);
+use parent qw(EDG::WP4::CCM::CacheManager::Element);
 
 my $ec = LC::Exception::Context->new->will_store_errors;
 
 =head1 NAME
 
-EDG::WP4::CCM::Resource - Resource class
+EDG::WP4::CCM::CacheManager::Resource - Resource class
 
 =head1 SYNOPSIS
 
@@ -93,7 +93,7 @@ sub getHash
         } else {
             $el_path = $path . "/" . $name;
         }
-        $ele = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
+        $ele = EDG::WP4::CCM::CacheManager::Element->createElement($self->{CONFIG}, $el_path);
         unless ($ele) {
             throw_error("failed to create element $el_path)", $ec->error);
             return ();
@@ -137,7 +137,7 @@ sub getList
         } else {
             $el_path = $path . "/" . $i;
         }
-        $ele = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
+        $ele = EDG::WP4::CCM::CacheManager::Element->createElement($self->{CONFIG}, $el_path);
         unless ($ele) {
             throw_error("failed to create element $el_path", $ec->error);
             return ();
@@ -217,7 +217,7 @@ sub getCurrentElement
         $el_path = $path . "/" . $self->{ELEMENTS}[$self->{CURRENT}];
     }
 
-    $element = EDG::WP4::CCM::Element->createElement($self->{CONFIG}, $el_path);
+    $element = EDG::WP4::CCM::CacheManager::Element->createElement($self->{CONFIG}, $el_path);
     unless ($element) {
         throw_error("failed to create element $el_path", $ec->error);
         return ();

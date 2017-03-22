@@ -13,9 +13,9 @@ use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
                                       $CURRENT_CID_FN $LATEST_CID_FN);
-use EDG::WP4::CCM::Configuration;
-use EDG::WP4::CCM::Element;
-use EDG::WP4::CCM::Resource;
+use EDG::WP4::CCM::CacheManager::Configuration;
+use EDG::WP4::CCM::CacheManager::Element;
+use EDG::WP4::CCM::CacheManager::Resource;
 use EDG::WP4::CCM::Path;
 
 use CCMTest qw (eok make_file);
@@ -209,14 +209,14 @@ ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
 
 $cm = EDG::WP4::CCM::CacheManager->new($cache_dir);
-$config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
+$config = EDG::WP4::CCM::CacheManager::Configuration->new($cm, 1, 1);
 
 # create resource type list
 
 $path = EDG::WP4::CCM::Path->new("/path/to/list");
-$resource = EDG::WP4::CCM::Resource->new($config, $path);
+$resource = EDG::WP4::CCM::CacheManager::Resource->new($config, $path);
 ok(defined($resource) && UNIVERSAL::isa($resource,
-                         "EDG::WP4::CCM::Resource"),
+                         "EDG::WP4::CCM::CacheManager::Resource"),
                          "Resource->new(config, Path)");
 
 #
@@ -230,7 +230,7 @@ ok($string eq "/path/to/list", "Resource->getPath()");
 
 # test getType()
 $type = $resource->getType();
-ok($type == EDG::WP4::CCM::Resource->LIST, "Resource->getType()");
+ok($type == EDG::WP4::CCM::CacheManager::Resource->LIST, "Resource->getType()");
 
 # test getDerivation()
 $derivation = $resource->getDerivation();
@@ -250,17 +250,17 @@ $value = $resource->getValue();
 ok($value eq chr(48).chr(0).chr(49), "Resource->getValue()");
 
 # test isType()
-ok(!$resource->isType(EDG::WP4::CCM::Resource->STRING),
+ok(!$resource->isType(EDG::WP4::CCM::CacheManager::Resource->STRING),
     "Resource->isType(STRING)");
-ok(!$resource->isType(EDG::WP4::CCM::Resource->LONG),
+ok(!$resource->isType(EDG::WP4::CCM::CacheManager::Resource->LONG),
     "!Resource->isType(LONG)");
-ok(!$resource->isType(EDG::WP4::CCM::Resource->DOUBLE),
+ok(!$resource->isType(EDG::WP4::CCM::CacheManager::Resource->DOUBLE),
     "!Resource->isType(DOUBLE)");
-ok(!$resource->isType(EDG::WP4::CCM::Resource->BOOLEAN),
+ok(!$resource->isType(EDG::WP4::CCM::CacheManager::Resource->BOOLEAN),
     "!Resource->isType(BOOLEAN)");
-ok($resource->isType(EDG::WP4::CCM::Resource->LIST),
+ok($resource->isType(EDG::WP4::CCM::CacheManager::Resource->LIST),
     "Resource->isType(LIST)");
-ok(!$resource->isType(EDG::WP4::CCM::Resource->NLIST),
+ok(!$resource->isType(EDG::WP4::CCM::CacheManager::Resource->NLIST),
     "!Resource->isType(NLIST)");
 
 # test isResource()
@@ -312,9 +312,9 @@ ok($resource->getNextElement()->getValue() eq "element 0",
 # create resource type nlist
 
 $path = EDG::WP4::CCM::Path->new("/path/to/nlist");
-$resource = EDG::WP4::CCM::Resource->new($config, $path);
+$resource = EDG::WP4::CCM::CacheManager::Resource->new($config, $path);
 ok(defined($resource) && UNIVERSAL::isa($resource,
-                         "EDG::WP4::CCM::Resource"),
+                         "EDG::WP4::CCM::CacheManager::Resource"),
                          "Resource->new(config, Path)");
 
 # test getHash()

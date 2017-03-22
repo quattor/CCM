@@ -35,7 +35,7 @@ isa_ok ($brokencont, "EDG::WP4::CCM::TextRender", "Correct class after new metho
 ok(! defined($brokencont->get_text()), "get_text returns undef, contents failed");
 is("$brokencont", "", "render failed, stringification returns empty string");
 like($brokencont->{fail},
-     qr{Contents passed is neither a hashref or a EDG::WP4::CCM::Element instance \(ref ARRAY\)},
+     qr{Contents passed is neither a hashref or a EDG::WP4::CCM::CacheManager::Element instance \(ref ARRAY\)},
      "Error is reported");
 
 # not cached
@@ -308,8 +308,8 @@ my $trd_s = EDG::WP4::CCM::TextRender->new(
     );
 is($trd_s->{fail}, undef, "Fail is undefined with new variables (scalar string) ".($trd->{fail} || "<undef>"));
 is_deeply($trd_s->{contents}, {}, "empty hashref as contents for scalar string/non-hashref contents");
-is(ref($trd_s->{ttoptions}->{VARIABLES}->{CCM}->{contents}), 'EDG::WP4::CCM::TT::Scalar',
-   "scalar contents via CCM.contents is EDG::WP4::CCM::TT::Scalar");
+is(ref($trd_s->{ttoptions}->{VARIABLES}->{CCM}->{contents}), 'EDG::WP4::CCM::TextRender::Scalar',
+   "scalar contents via CCM.contents is EDG::WP4::CCM::TextRender::Scalar");
 
 $rt = Test::Quattor::RegexpTest->new(
     regexp => 'src/test/resources/rendertest/regexptest-extravars-scalar_string',

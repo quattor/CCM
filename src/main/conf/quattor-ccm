@@ -136,7 +136,7 @@ _quattor_ccm_Options_options=(cfgfile cid component metaconfig profpath showcids
 
 # sorted list of options for CCM::CLI based tools
 # (except those already in _quattor_ccm_CCfg_options and _quattor_ccm_Options_options)
-_quattor_ccm_CLI_options=(format show)
+_quattor_ccm_CLI_options=(dumpdb format show)
 
 # generate the longoptions
 _quattor_ccm_CCfg_longoptions=`_quattor_ccm_make_long_options ${_quattor_ccm_CCfg_options[@]}`

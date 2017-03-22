@@ -11,8 +11,8 @@ use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
                                       $CURRENT_CID_FN $LATEST_CID_FN);
-use EDG::WP4::CCM::Configuration;
-use EDG::WP4::CCM::Element;
+use EDG::WP4::CCM::CacheManager::Configuration;
+use EDG::WP4::CCM::CacheManager::Element;
 use EDG::WP4::CCM::Path;
 
 use CCMTest qw (eok make_file);
@@ -82,15 +82,15 @@ ok(! -d $cache_dir, "Cachedir $cache_dir doesn't exist");
 ok(gen_dbm($cache_dir, $profile), "creating an example profile for tests");
 
 my $cm = EDG::WP4::CCM::CacheManager->new($cache_dir);
-my $config = EDG::WP4::CCM::Configuration->new($cm, 1, 1);
+my $config = EDG::WP4::CCM::CacheManager::Configuration->new($cm, 1, 1);
 
 # create property
 my $path = EDG::WP4::CCM::Path->new("/path/to/element");
-my $property = EDG::WP4::CCM::Element->new($config, $path);
-isa_ok($property, "EDG::WP4::CCM::Element",
+my $property = EDG::WP4::CCM::CacheManager::Element->new($config, $path);
+isa_ok($property, "EDG::WP4::CCM::CacheManager::Element",
        "property is an Element->new(config, Path)");
 
-ok(!UNIVERSAL::isa($property, "EDG::WP4::CCM::Resource"),
+ok(!UNIVERSAL::isa($property, "EDG::WP4::CCM::CacheManager::Resource"),
    "property is not a Resource");
 
 # validate inheritance of Element methods
@@ -100,7 +100,7 @@ my $getpath = $property->getPath();
 is($getpath->toString(), "/path/to/element", "property Element->getPath()");
 
 # test getType()
-is($property->getType(), EDG::WP4::CCM::Element->STRING, "property Element->getType() is STRING");
+is($property->getType(), EDG::WP4::CCM::CacheManager::Element->STRING, "property Element->getType() is STRING");
 
 # test getDerivation()
 my $derivation = $property->getDerivation();
@@ -117,17 +117,17 @@ is($property->getDescription(), "an example of string", "property Element->getDe
 ok($property->getValue(), "property Element->getValue()");
 
 # test isType()
-ok($property->isType(EDG::WP4::CCM::Element->STRING),
+ok($property->isType(EDG::WP4::CCM::CacheManager::Element->STRING),
     "property Element->isType(STRING)");
-ok(!$property->isType(EDG::WP4::CCM::Element->LONG),
+ok(!$property->isType(EDG::WP4::CCM::CacheManager::Element->LONG),
     "!property Element->isType(LONG)");
-ok(!$property->isType(EDG::WP4::CCM::Element->DOUBLE),
+ok(!$property->isType(EDG::WP4::CCM::CacheManager::Element->DOUBLE),
     "!property Element->isType(DOUBLE)");
-ok(!$property->isType(EDG::WP4::CCM::Element->BOOLEAN),
+ok(!$property->isType(EDG::WP4::CCM::CacheManager::Element->BOOLEAN),
     "!property Element->isType(BOOLEAN)");
-ok(!$property->isType(EDG::WP4::CCM::Element->LIST),
+ok(!$property->isType(EDG::WP4::CCM::CacheManager::Element->LIST),
     "!property Element->isType(LIST)");
-ok(!$property->isType(EDG::WP4::CCM::Element->NLIST),
+ok(!$property->isType(EDG::WP4::CCM::CacheManager::Element->NLIST),
     "!property Element->isType(NLIST)");
 
 # test isResource()
