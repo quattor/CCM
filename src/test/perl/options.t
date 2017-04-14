@@ -154,7 +154,7 @@ isa_ok($showcids, "EDG::WP4::CCM::Options",
 
 # hmm, there's only one (so no comma-join is tested)
 ok($showcids->action(), "action with showcids returns success");
-is_deeply(\@print, [2, "\n"], "showcids gives correct result");
+is_deeply(\@print, [1, "\n"], "showcids gives correct result");
 
 $optmock->unmock('_print');
 

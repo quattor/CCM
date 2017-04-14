@@ -37,13 +37,13 @@ print $fh "$fmt";
 $fh->close();
 
 # this is the order as listed by ls
-my @cids = qw(1 10 100 11 110 111 112 2 3);
+my @cids = qw(0 1 10 100 11 110 111 112 2 3);
 foreach my $cid (@cids) {
     mkpath("$cfg->{cache_path}/profile.$cid");
 }
 my $cidsreg = '^' . join(" ", @cids) . '$';
 
-$fh = CAF::FileWriter->new("$cfg->{cache_path}/profile.1/tabcompletion");
+$fh = CAF::FileWriter->new("$cfg->{cache_path}/profile.0/tabcompletion");
 print $fh "/\n/system/\n/system/nothing\n";
 $fh->close();
 
@@ -175,8 +175,8 @@ test_comp(qr{^$}, # one match, found the scalar
           'COMP_WORDS=(SCRIPTNAME /system/network/default_gateway)', 'COMP_CWORD=1', '&&', '_quattor_ccm_tabcomp_pan_path');
 
 test_comp(qr{^/system/nothing$},
-          "Tabcomplete '/sys' with CID 1",
-          '_quattor_ccm_tabcomp_active_cid=1', 'COMP_WORDS=(SCRIPTNAME /sys)', 'COMP_CWORD=1', '&&', '_quattor_ccm_tabcomp_pan_path');
+          "Tabcomplete '/sys' with CID 0",
+          '_quattor_ccm_tabcomp_active_cid=0', 'COMP_WORDS=(SCRIPTNAME /sys)', 'COMP_CWORD=1', '&&', '_quattor_ccm_tabcomp_pan_path');
 
 # Test options tabcompletions lists
 sub bash_split_opts
