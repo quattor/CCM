@@ -163,7 +163,8 @@ sub clean_profile
 {
     my ($profile) = @_;
 
-    if( !opendir(my $DIR , "${CacheDir}/$profile") ) {
+    my $DIR;
+    if( !opendir($DIR , "${CacheDir}/$profile") ) {
         Warn("${CacheDir}/$profile open failed: $!");
         return;
     }
