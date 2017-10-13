@@ -16,7 +16,7 @@ use Digest::MD5 qw(md5_hex);
 use Errno qw(ESRCH EPERM);
 use File::Path;
 use EDG::WP4::CCM::CCfg qw(initCfg);
-use EDG::WP4::CCM::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::DB qw(read_db);
 use LC::Stat qw(:ST);
 
 #
