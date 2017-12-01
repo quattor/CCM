@@ -3,7 +3,7 @@ object template textrender;
 # a basic tree with all datatypes
 
 "/a" = "a";
-"/b" = "1"; 
+"/b" = "1";
 "/c" = 1;
 "/d" = true;
 "/e" = false;
