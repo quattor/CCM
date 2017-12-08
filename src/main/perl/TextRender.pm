@@ -120,6 +120,9 @@ Readonly::Hash our %ELEMENT_CONVERT => {
     'arrayref_join_space' => sub {
         return &$_arrayref_join(shift, ' ');
     },
+    'unescape' => sub {
+        return unescape(shift);
+    },
 };
 
 # Update the ccm_format pod with new formats
@@ -314,6 +317,18 @@ non-scalar is not converted (but any of the nested list could).
 
 Caveat: is preceded by C<joincomma> option.
 
+=item unescapekey
+
+Unescape all dict keys.
+
+=item lowerkey
+
+Convert all dict keys to lowercase.
+
+=item upperkey
+
+Convert all dict keys to uppercase.
+
 =back
 
 Other C<getTree> options
@@ -423,6 +438,16 @@ sub _make_predefined_options
     } elsif ($elopts->{singlequote}) {
         push(@{$opts{convert_string}}, $ELEMENT_CONVERT{singlequote_string});
     }
+
+    if ($elopts->{unescapekey}) {
+        push(@{$opts{convert_key}}, $ELEMENT_CONVERT{unescape});
+    }
+
+    if ($elopts->{lowerkey}) {
+        push(@{$opts{convert_key}}, $ELEMENT_CONVERT{lower});
+    } elsif ($elopts->{upperkey}) {
+        push(@{$opts{convert_key}}, $ELEMENT_CONVERT{upper});
+    };
 
     return %opts;
 }

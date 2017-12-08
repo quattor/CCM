@@ -62,19 +62,20 @@ Readonly::Hash my %CONVTREE => {
     ]
 };
 
-# Squashed tree by converting list/nlist
+# Squashed tree by converting list/nlist + uppercase keys
 Readonly::Hash my %CONVTREE_SQUASH => {
-    'a' => '"1","2","3"',
-    'b' => '"hello"',
-    'c' => 'DOUBLE(1.5)',
-    'd' => 'TRUE',
-    'e' => 'f=LONG(1);ff=FALSE',
-    'g' => '"1",LONG(2),"3",LONG(4)',
-    'h' => 'a=LONG(10);b="11",a=LONG(12)',
+    'A' => '"1","2","3"',
+    'B' => '"hello"',
+    'C' => 'DOUBLE(1.5)',
+    'D' => 'TRUE',
+    'E' => 'F=LONG(1);FF=FALSE',
+    'G' => '"1",LONG(2),"3",LONG(4)',
+    'H' => 'A=LONG(10);B="11",A=LONG(12)',
 };
 
 
 my $cfg = get_config_for_profile("element_test");
+my $cfgkeys = get_config_for_profile("element_test");
 
 my $el = $cfg->getElement("/");
 
@@ -161,8 +162,8 @@ $convs->{convert_nlist} = [
     sub {
         my $value = shift;
         # Only if 1st element is scalar
-        # and this is not the root tree (test via element d)
-        if ($value && %$value && ! $value->{d}) {
+        # and this is not the root tree (test via element d which is converted in D)
+        if ($value && %$value && ! $value->{D}) {
             if (! ref((values(%$value))[0])) {
                 return join(';', map { "$_=".$value->{$_} } sort keys %$value );
             };
@@ -170,10 +171,11 @@ $convs->{convert_nlist} = [
         return $value;
     },
 ];
+$convs->{convert_key} = [ sub { return uc($_[0]); }];
 
 $el = $cfg->getElement("/");
 $newtree = $el->getTree(undef, %$convs);
-is_deeply($newtree, \%CONVTREE_SQUASH, "getTree with scalars and list converted");
+is_deeply($newtree, \%CONVTREE_SQUASH, "getTree with scalars, list, dict and keys converted");
 
 
 # Test JSON formatted tree

@@ -17,6 +17,7 @@ use Test::Quattor qw(textrender textrender_adv);
 use EDG::WP4::CCM::TextRender;
 use Test::Quattor::RegexpTest;
 use Test::Quattor::TextRender::Base;
+use EDG::WP4::CCM::Path qw(escape);
 use Cwd;
 
 use Config::General;
@@ -206,6 +207,10 @@ is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{arrayref_join_space}->(["abc", un
    'abc  1',
    'space separated arrayref');
 
+is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{unescape}->(escape("a b")),
+   'a b',
+   'unescape');
+
 # Test with tiny, has to be single level hash
 $el = $cfg->getElement("/h");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el);
@@ -265,6 +270,10 @@ is("$trd", "a=x,y\n", "Correct Config::Tiny with joincomma rendered");
 $el = $cfg_adv->getElement("/b");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'joinspace' => 1});
 is("$trd", "b=k l m n\n", "Correct Config::Tiny with joinspace rendered");
+
+$el = $cfg_adv->getElement("/c");
+$trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'unescapekey' => 1, 'lowerkey' => 1});
+is("$trd", "[a b c]\ne f=1\n", "Correct Config::Tiny with unescapekey + lowerkey rendered");
 
 =pod
 

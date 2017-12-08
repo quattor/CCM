@@ -474,9 +474,16 @@ Each element is already processed before the conversion.
 =item convert_nlist
 
 Array ref of anonymous methods to convert the argument
-(nlist of elements) to another representation/format.
+(dict of elements) to another representation/format.
 
 Each element is already processed before the conversion.
+
+=item convert_key
+
+Array ref of anonymous methods to convert the key(s) of the dicts
+to another representation/format.
+
+At the end, a stringification of the result is used as key.
 
 =back
 
@@ -523,7 +530,26 @@ SWITCH:
                 # we can use LAST here, as only the root element returns an undef
                 # and this cannot be the root element
                 # we have to use LAST here, as we want the key to be a valid subpath
-                $$ret{$el->{LAST}} = $el->getTree($nextdepth, %opts);
+                my $key = $el->{LAST};
+                if (exists $opts{convert_key}) {
+                    # TODO: factor out this code in a ref or anon sub
+                    #   for some reason, this is not trivial
+                    foreach my $method (@{$opts{convert_key}}) {
+                        if (ref($method) eq 'CODE') {
+                            local $@;
+                            eval {
+                                $key = $method->($key);
+                            };
+                            if ($@) {
+                                throw_error("convert_method failed: $@");
+                            }
+                        } else {
+                            throw_error("wrong type ". (ref($method) || 'SCALAR')." for convert_method, must be CODE");
+                        }
+                    }
+                }
+                # stringify the resulting key
+                $ret->{"$key"} = $el->getTree($nextdepth, %opts);
                 if ($ec->error) {
                     $ec->rethrow_error;
                     return;
@@ -564,7 +590,9 @@ SWITCH:
     }
 
     foreach my $method (@$convm) {
-        if(ref($method) eq 'CODE') {
+        # TODO: factor out this code in a ref or anon sub
+        #   for some reason, this is not trivial
+        if (ref($method) eq 'CODE') {
             local $@;
             eval {
                 $ret = $method->($ret);
