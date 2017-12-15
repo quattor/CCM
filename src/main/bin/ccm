@@ -10,6 +10,7 @@ use warnings;
 # required for CAF
 BEGIN {
     unshift(@INC, '/usr/lib/perl');
+    pop @INC if $INC[-1] eq '.';
 }
 
 # minimal Path

@@ -12,6 +12,7 @@ use warnings;
 # required for CAF (Common Application Framework)
 BEGIN {
     unshift(@INC, '/usr/lib/perl');
+    pop @INC if $INC[-1] eq '.';
 }
 
 use CAF::Application;
