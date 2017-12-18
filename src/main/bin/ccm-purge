@@ -9,6 +9,7 @@ use warnings;
 
 BEGIN {
     unshift(@INC, '/usr/lib/perl');
+    pop @INC if $INC[-1] eq '.';
 }
 
 use Getopt::Long;
