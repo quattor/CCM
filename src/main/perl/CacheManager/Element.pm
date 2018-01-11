@@ -5,7 +5,7 @@ use File::Spec;
 use Encode qw(decode_utf8);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CacheManager::Resource;
-use EDG::WP4::CCM::CacheManager::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::DB qw(read_db close_db_all);
 use EDG::WP4::CCM::CacheManager::Encode qw(
     PROPERTY RESOURCE
     STRING LONG DOUBLE BOOLEAN
@@ -171,7 +171,9 @@ profile data goes into a whole new path.)
             my %newhash = ();
             $CACHE->{$base}->{path} = $path;
 
-            # Should any old references be untied here?
+            # Cleanup/untie any other references
+            close_db_all($base);
+
             $CACHE->{$base}->{db} = \%newhash;
             $CACHE->{$base}->{err} = read_db(\%newhash, $path);
         }

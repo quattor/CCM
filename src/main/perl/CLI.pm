@@ -2,7 +2,7 @@
 
 use parent qw(EDG::WP4::CCM::Options);
 use CAF::Object qw(SUCCESS);
-use EDG::WP4::CCM::CacheManager::DB qw(read_db);
+use EDG::WP4::CCM::CacheManager::DB qw(read_db close_db);
 use EDG::WP4::CCM::CacheManager::Encode qw(encode_eids decode_eid $PATH2EID $EID2DATA @EIDS_PACK);
 use EDG::WP4::CCM::TextRender qw(ccm_format @CCM_FORMATS);
 use EDG::WP4::CCM::Path qw(set_safe_unescape reset_safe_unescape);
@@ -144,8 +144,8 @@ sub action_dumpdb
         my $err = read_db($db->[1], "$prof_dir/$db->[0]");
         if ($err) {
             $self->error("could not read $prof_dir/$db->[0]: $err\n");
-            untie(%path2eid);
-            untie(%eid2data);
+            close_db("$prof_dir/$PATH2EID");
+            close_db("$prof_dir/$EID2DATA");
             return;
         }
     };
@@ -172,8 +172,8 @@ sub action_dumpdb
         };
     }
 
-    untie(%path2eid);
-    untie(%eid2data);
+    close_db("$prof_dir/$PATH2EID");
+    close_db("$prof_dir/$EID2DATA");
 
     return SUCCESS;
 }
