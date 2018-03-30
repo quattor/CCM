@@ -69,6 +69,14 @@ isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path},
 is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/',
    "Correct path /");
 
+ok(!defined($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{ccm_format}->('json', '/h')),
+   "ccm_format on absolute path returns undef");
+my $element_ccm_format = $trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{ccm_format}->('json', 'h');
+isa_ok($element_ccm_format, 'EDG::WP4::CCM::TextRender',
+       'extravars element ccm_format returns EDG::WP4::CCM::TextRender instance');
+is("$element_ccm_format", '{"a":"a","b":"1","c":1,"d":true,"e":false}', 'extravars element ccm_format ok');
+
+
 # extra_vars
 # calls are tested via TT tests
 my @extra_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}};
@@ -77,7 +85,7 @@ is_deeply(\@extra_vars,
           "Correct CCM VARIABLES keys");
 my @extra_el_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}};
 is_deeply(\@extra_el_vars,
-          ['path'],
+          ['ccm_format', 'path'],
           "Correct CCM VARIABLES element keys");
 
 # not quoted / true

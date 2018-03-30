@@ -63,3 +63,4 @@ Test extravars
 ^astring is_long NO$
 ^path /$
 ^newpath /x/y/z$
+^ccm_format json \{"a":"a","b":"1","c":1,"d":true,"e":false\}$
