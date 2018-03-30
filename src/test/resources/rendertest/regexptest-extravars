@@ -25,6 +25,8 @@ Test extravars
 ^ascalar is_hash NO$
 ^escape with_20whitespsace_20and_20_2f$
 ^unescape with whitespsace and /$
+^is_in_list YES$
+^is_in_list NO$
 ^aboolean ref EDG::WP4::CCM::TextRender::Scalar$
 ^aboolean is_scalar YES$
 ^aboolean is_list NO$

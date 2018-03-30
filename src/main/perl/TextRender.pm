@@ -471,6 +471,16 @@ sub make_contents
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
         escape => \&escape,
         unescape => \&unescape,
+        is_in_list => sub {
+            # return if 2nd arg (element) is in 1st arg (list)
+            # returns false if 1st arg is not a list
+            # returns false if 2nd arg is not a scalar
+            my $r = ref($_[0]);
+            return if !($r && ($r eq 'ARRAY'));
+            return if !defined($_[1]) || ref($_[1]) ne '';
+
+            return (grep {$_[1] eq $_} @{$_[0]}) ? 1 :0;
+        },
     };
 
 

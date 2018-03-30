@@ -5,7 +5,7 @@ CCM.contents [% CCM.contents %]
 [%      p.key %] [% p.value %]
 [%  END %]
 
-[%- # Test ref/is_scalar/is_list/is_hash method 
+[%- # Test ref/is_scalar/is_list/is_hash method
     tmphash = {
       ascalar = f
       alist = g
@@ -23,7 +23,10 @@ CCM.contents [% CCM.contents %]
 escape [% escaped %]
 unescape [% CCM.unescape(escaped) %]
 
-[%- # Test get_type/is_boolean/is_string/is_double/is_long method 
+is_in_list [% CCM.is_in_list(g, 'g1') ? "YES" : "NO" %]
+is_in_list [% CCM.is_in_list(g, 'g0') ? "YES" : "NO" %]
+
+[%- # Test get_type/is_boolean/is_string/is_double/is_long method
     tmphash = {
         aboolean = e
         astring = a
