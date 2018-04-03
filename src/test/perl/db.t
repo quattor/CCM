@@ -84,7 +84,7 @@ sub test_fmt {
 
     my $pref = "$dbd/".lc($name);
     my $db = EDG::WP4::CCM::CacheManager::DB->new($pref, log => $obj);
-    my $err= $db->write($DATA, $fmt, {mode => 0604}); # very non-standard mode
+    my $err = $db->write($DATA, $fmt, {mode => 0604}); # very non-standard mode
 
     ok(! defined($err), "No error while writing $name");
     ok(-f "$pref.db", "$name db file found");
@@ -94,12 +94,16 @@ sub test_fmt {
 
     my $data = {};
     $err = read_db($data, $pref);
+    diag "YY",$err if defined $err;
+    diag explain $data;
     ok(! defined($err), "No error while reading $name");
     is_deeply($data, $DATA, "Read correct data structure for $name");
 
     # Test legacy read
     my $datal = {};
     $err = EDG::WP4::CCM::CacheManager::DB::read($datal, $pref);
+    diag "XX",$err if defined $err;
+    diag explain $datal;
     ok(! defined($err), "No error while reading $name legacy read");
     is_deeply($datal, $DATA, "Read correct data structure for $name legacy read");
 }
