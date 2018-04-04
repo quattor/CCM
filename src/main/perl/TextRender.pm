@@ -471,6 +471,16 @@ sub make_contents
         is_hash => sub { my $r = ref($_[0]); return ($r && ($r eq 'HASH'));  },
         escape => \&escape,
         unescape => \&unescape,
+        is_in_list => sub {
+            # return if 2nd arg (element) is in 1st arg (list)
+            # returns false if 1st arg is not a list
+            # returns false if 2nd arg is not a scalar
+            my $r = ref($_[0]);
+            return if !($r && ($r eq 'ARRAY'));
+            return if !defined($_[1]) || ref($_[1]) ne '';
+
+            return (grep {$_[1] eq $_} @{$_[0]}) ? 1 :0;
+        },
     };
 
 
@@ -518,8 +528,27 @@ sub make_contents
         $contents = $self->{contents}->getTree($depth, %opts);
 
         # Add the path as an arrayref that can be joined to the correct path
+        # $self->{contents} gets replaced
+        my $orig_contents = $self->{contents};
         $extra_vars->{element} = {
-            path => $self->{contents}->getPath(),
+            path => $self->{contents}->getPath(), # data, not a function
+            ccm_format => sub {
+                # run ccm_format on element from relative path with eol=0
+                my ($format, $relpath) = @_;
+                return if $relpath =~ m/^\//;
+
+                # prepare full path relative to current path
+                my $path = $orig_contents->getPath();
+                $path =~ s/\/+$//;
+                $path .= "/$relpath";
+                $path =~ s/\/+$//;
+
+                my $config = $orig_contents->getConfiguration();
+                if ($config->elementExists($path)) {
+                    my $el = $config->getElement($path);
+                    return ccm_format($format, $el, eol => 0);
+                }
+            },
         }
 
     } else {
@@ -568,6 +597,7 @@ sub make_contents
 =item ccm_format
 
 Returns the CCM::TextRender instance for predefined C<format> and C<element>.
+All options are passed to CCM::TextRender initialisation.
 Returns undef incase the format is not defined. An array with valid formats is
 exported via C<@CCM_FORMATS>.
 
@@ -604,7 +634,7 @@ Usage example:
 
 sub ccm_format
 {
-    my ($format, $element) = @_;
+    my ($format, $element, %opts) = @_;
 
     my $trd_opts = $TEXTRENDER_FORMATS{$format};
     return if (! defined($trd_opts));
@@ -616,6 +646,7 @@ sub ccm_format
         # uppercase, no conflict with possible ncm-ccm?
         relpath => 'CCM',
         element => $trd_opts,
+        %opts
         );
 
     return $trd;

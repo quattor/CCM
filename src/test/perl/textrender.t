@@ -63,21 +63,38 @@ is("$trd",
    '{"a":"a","b":"1","c":1,"d":true,"e":false,"f":1.5,"g":["g1","g2"],"h":{"a":"a","b":"1","c":1,"d":true,"e":false}}'."\n",
    "Correct JSON rendered");
 
+
+my $is_in_list = $trd->{ttoptions}->{VARIABLES}->{CCM}->{is_in_list};
+ok(!defined($is_in_list->("el", ['list'])), "is_in_list returns undef when 1st arg is not a list");
+ok(!defined($is_in_list->(["el"], ['list'])), "is_in_list returns undef when 2nd arg is not a scalar");
+is($is_in_list->(["a", "b"], 'b'), 1, "is_in_list returns true/1");
+is($is_in_list->(["a", "bb"], 'b'), 0, "is_in_list returns false/0");
+
+
 isa_ok($trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path},
        "EDG::WP4::CCM::Path",
        "path is a CCM::Path instance");
 is("$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{path}", '/',
    "Correct path /");
 
+my $ccm_format = $trd->{ttoptions}->{VARIABLES}->{CCM}->{element}->{ccm_format};
+ok(!defined($ccm_format->('json', '/h')), "ccm_format on absolute path returns undef");
+
+my $element_ccm_format = $ccm_format->('json', 'h');
+isa_ok($element_ccm_format, 'EDG::WP4::CCM::TextRender',
+       'extravars element ccm_format returns EDG::WP4::CCM::TextRender instance');
+is("$element_ccm_format", '{"a":"a","b":"1","c":1,"d":true,"e":false}', 'extravars element ccm_format ok');
+
+
 # extra_vars
 # calls are tested via TT tests
 my @extra_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}};
 is_deeply(\@extra_vars,
-          ['contents', 'element', 'escape', 'is_hash', 'is_list', 'is_scalar', 'ref', 'unescape'],
+          ['contents', 'element', 'escape', 'is_hash', 'is_in_list', 'is_list', 'is_scalar', 'ref', 'unescape'],
           "Correct CCM VARIABLES keys");
 my @extra_el_vars = sort keys %{$trd->{ttoptions}->{VARIABLES}->{CCM}->{element}};
 is_deeply(\@extra_el_vars,
-          ['path'],
+          ['ccm_format', 'path'],
           "Correct CCM VARIABLES element keys");
 
 # not quoted / true
