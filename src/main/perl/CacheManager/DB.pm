@@ -108,15 +108,19 @@ sub close_db
 
     local $@;
 
-    eval {
-        untie %{$_dbs->{$path}->{ref}};
-    };
-    undef $_dbs->{$path}->{ref};
+    if (defined($_dbs->{$path}->{ref})) {
+        eval {
+            untie %{$_dbs->{$path}->{ref}};
+        };
+        undef $_dbs->{$path}->{ref};
+    }
 
-    eval {
-        close $_dbs->{$path}->{fh};
+    if (defined($_dbs->{$path}->{fh})) {
+        eval {
+            close $_dbs->{$path}->{fh};
+        };
+        undef $_dbs->{$path}->{fh};
     };
-    undef $_dbs->{$path}->{fh};
 
     delete $_dbs->{$path};
 }
