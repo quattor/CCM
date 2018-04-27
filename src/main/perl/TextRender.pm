@@ -1,6 +1,6 @@
 #${PMpre} EDG::WP4::CCM::TextRender${PMpost}
 
-use CAF::TextRender qw($YAML_BOOL_PREFIX);
+use CAF::TextRender 17.12.1 qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TextRender::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Path qw(escape unescape);
@@ -128,6 +128,7 @@ Readonly::Hash our %ELEMENT_CONVERT => {
 # Update the ccm_format pod with new formats
 Readonly::Hash my %TEXTRENDER_FORMATS => {
     json => {}, # No opts
+    jsonpretty => {}, # No opts (same as json)
     ncmquery => { truefalse => 1 },
     pan => { truefalse => 1, doublequote => 1},
     pancxml => { truefalse => 1, xml => 1 },
@@ -375,13 +376,14 @@ sub _modify_elementopts_module
     my ($self) = @_;
 
     my $elopts = $self->{elementopts};
-    if ($self->{module} && $self->{module} eq 'json' &&
-        ! defined( $elopts->{json})) {
-        $elopts->{json} = 1;
-    } elsif ($self->{module} && $self->{module} eq 'yaml' &&
-             ! defined( $elopts->{yaml})) {
-        $elopts->{yaml} = 1;
+    foreach my $module (qw(json jsonpretty yaml)) {
+        if ($self->{module} && $self->{module} eq $module &&
+            ! defined( $elopts->{$module})) {
+            $elopts->{$module} = 1;
+            last;
+        }
     }
+    $elopts->{json} = 1 if $elopts->{jsonpretty};
 }
 
 # Returns the hash with getTree options generated
@@ -606,6 +608,8 @@ Supported formats are:
 =over
 
 =item json
+
+=item jsonpretty
 
 =item pan
 
