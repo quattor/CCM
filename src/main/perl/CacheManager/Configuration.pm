@@ -1,7 +1,5 @@
 #${PMpre} EDG::WP4::CCM::CacheManager::Configuration${PMpost}
 
-use parent qw(EDG::WP4::CCM::Configuration);
-
 use POSIX qw (getpid);
 use LC::Exception qw(SUCCESS throw_error);
 use EDG::WP4::CCM::CacheManager::Element;
