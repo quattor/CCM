@@ -1,6 +1,6 @@
 #${PMpre} EDG::WP4::CCM::TextRender${PMpost}
 
-use CAF::TextRender 17.12.1 qw($YAML_BOOL_PREFIX);
+use CAF::TextRender 18.6.0 qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TextRender::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Path qw(escape unescape);
