@@ -33,7 +33,6 @@ use constant INTERPRETERS => {
 
 use constant VALID_ATTRIBUTES => {
     NAME        => 1,
-    DERIVATION  => 1,
     CHECKSUM    => 1,
     ACL         => 1,
     ENCODING    => 1,
