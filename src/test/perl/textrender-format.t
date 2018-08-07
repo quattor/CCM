@@ -20,7 +20,7 @@ use XML::Parser;
 ok(EDG::WP4::CCM::CCfg::getCfgValue('json_typed'), 'json_typed (still) enabled');
 
 is_deeply(\@CCM_FORMATS,
-          [qw(json ncmquery pan pancxml query tabcompletion yaml)],
+          [qw(json jsonpretty ncmquery pan pancxml query tabcompletion yaml)],
           "Expected supported CCM formats"
     );
 
