@@ -413,6 +413,10 @@
             </sources>
             <directoryIncluded>false</directoryIncluded>
           </mapping>
+          <mapping>
+            <directory>/var/lib/ccm</directory>
+            <filemode>755</filemode>
+          </mapping>
         </mappings>
         <postinstallScriptlet>
           <script>pgrep ncm-cdispd &gt;/dev/null &amp;&amp; service ncm-cdispd restart || true</script>
