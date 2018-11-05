@@ -323,7 +323,7 @@ sub getPath
 
 =item getType()
 
-Returns the element's type, that is, one of the TYPE_* constans
+Returns the element's type, that is, one of the C<TYPE_*> constans
 
 =cut
 
