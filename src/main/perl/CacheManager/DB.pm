@@ -5,6 +5,7 @@
 EDG::WP4::CCM::CacheManager::DB
 
 =head1 SYNOPSIS
+
     # Class style
     my $db = EDG::WP4::CCM::CacheManager::DB->new($prefix, %opts);
     # Write the hashref to the database file

@@ -143,7 +143,7 @@ Readonly::Array our @CCM_FORMATS => sort keys %TEXTRENDER_FORMATS;;
 
 =head1 NAME
 
-    CCM::TextRender - Class for rendering structured text using Element instances
+CCM::TextRender - Class for rendering structured text using Element instances
 
 =head1 DESCRIPTION
 
@@ -182,11 +182,13 @@ the basetype of the value as follows:
 =item scalar
 
 converted in a single line
+
     <key> <value>
 
 =item arrayref of scalars
 
 converted in multiple lines as follows
+
     <key> <scalar element0>
     <key> <scalar element1>
     ...
@@ -194,6 +196,7 @@ converted in multiple lines as follows
 =item hashref
 
 generates a block with format
+
     <"key">
         <recursive rendering of the value>
     </"key">
@@ -201,6 +204,7 @@ generates a block with format
 =item arrayref of hashref
 
 generates series of blocks
+
     <"key">
         <recursive rendering of the element0>
     </"key">
