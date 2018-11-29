@@ -70,7 +70,15 @@ Method called to stringification. Simply returns the data in string context
 sub _stringify
 {
     my ($self) = @_;
-    return "$self->{VALUE}";
+
+    my $str = "$self->{VALUE}";
+
+    if ($self->is_double()) {
+        # faster than regexp
+        $str .= ".0" if index($str, '.') == -1;
+    };
+
+    return $str;
 }
 
 =pod
