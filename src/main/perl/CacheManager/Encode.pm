@@ -76,7 +76,7 @@ with subpath as key and hashref with data and metadata as value.
 =item The hashref is walked building up the path and a counter (the C<eid>) is increased for each path
 
 =item The relation between the path and the counter is stored in the C<path2eid> DB with
-path as key and encoded eid (using C<db_keys($eid)->{VALUE}>) as value.
+path as key and encoded eid (using C<< db_keys($eid)->{VALUE} >>) as value.
 
 =item The data and metadata are stored in C<eid2data> DB using the encoded eid (which has offset
 for each type of data and metadata) as key and the data as value.
