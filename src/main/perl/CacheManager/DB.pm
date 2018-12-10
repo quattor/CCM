@@ -360,7 +360,7 @@ sub open
 
 Given C<hashref> and C<prefix>, create a new instance
 using C<prefix> (and any other options)
-and return the C<open>ed database with hashref.
+and return the opened database with hashref.
 
 C<read_db> function is exported
 
