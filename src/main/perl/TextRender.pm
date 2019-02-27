@@ -35,7 +35,9 @@ our $_arrayref_join = sub {
 
     my $res = '';
     if ($value && @$value) {
-        $res = ref($value->[0]) ? $value : join($sep, map {defined($_) ? "$_" : "" } @$value );
+        my $ref = ref($value->[0]);
+        my $scalar = $ref eq "" || $ref eq 'EDG::WP4::CCM::TextRender::Scalar';
+        $res = $scalar ? join($sep, map {defined($_) ? "$_" : "" } @$value ) : $value;
     };
     return $res;
 };
@@ -492,6 +494,7 @@ sub make_contents
 
     if($ref && ($ref eq "HASH")) {
         $contents = $self->{contents};
+        $self->debug(3, "Contents is a hashref, and is used as-is");
     } elsif ($ref && UNIVERSAL::can($self->{contents}, 'can') &&
              $self->{contents}->isa('EDG::WP4::CCM::CacheManager::Element')) {
         # Test for a blessed reference with UNIVERSAL::can

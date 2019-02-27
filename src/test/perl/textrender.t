@@ -293,6 +293,8 @@ $el = $cfg_adv->getElement("/a");
 $trd = EDG::WP4::CCM::TextRender->new('tiny', $el, element => {'joincomma' => 1});
 is("$trd", "a=x,y\n", "Correct Config::Tiny with joincomma rendered");
 
+# joincomma with TT is tested with general below (it needs some extra mocking)
+
 # deepest list is first squashed to string,
 # so the list of list becomes a list of strings,
 # and then a space-separated list of space-spearated list of strings
@@ -429,5 +431,12 @@ ok(! exists($trd->{fail}), "No errors logged anywhere");
 my %cg_cfg = Config::General->new(-String => "$trd")->getall();
 is_deeply(\%cg_cfg, $contents, "Correctly rendered valid Config::General");
 diag explain \%cg_cfg;
+
+# Test joincomma with TT scalar via general
+# re-fetch element
+$el = $cfg_adv->getElement("/a");
+$trd = EDG::WP4::CCM::TextRender->new('general', $el, element => {'joincomma' => 1});
+is("$trd", "a x,y\n", "Correct TT general with joincomma rendered");
+
 
 done_testing;
