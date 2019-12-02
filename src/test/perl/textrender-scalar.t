@@ -93,6 +93,13 @@ is($double * 3, 4.5, "is a double and has correct right multiply");
 is(4.5 / $double, 3 , "is a double and has correct left division");
 is($double / 3, 0.5, "is a double and has correct right division");
 
+my $doubleonezero = EDG::WP4::CCM::TextRender::Scalar->new(1, $ELEMENT_TYPES{DOUBLE});
+ok($doubleonezero == 1, "is a double and has correct value");
+ok($doubleonezero == 1.0, "is a double and has correct value with trailing .0 (perl does not care)");
+ok($doubleonezero eq "1.0", "is a double and has correct string value as string");
+# is uses left.compare(right), so eq instead of == here
+is("$doubleonezero", "1.0", "is a double and has correct string repr with trailing .0 ");
+
 my $long = EDG::WP4::CCM::TextRender::Scalar->new(2, $ELEMENT_TYPES{LONG});
 ok($long->is_long(), "is a long");
 is($long, 2, "is a long and has correct value");
