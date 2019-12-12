@@ -56,13 +56,6 @@ my $cfg_adv = get_config_for_profile("textrender_adv");
 my ($el, $trd);
 
 # json module
-
-$el = $cfg->getElement("/");
-$trd = EDG::WP4::CCM::TextRender->new('json', $el);
-is("$trd",
-   '{"a":"a","b":"1","c":1,"d":true,"e":false,"f":1.5,"g":["g1","g2"],"h":{"a":"a","b":"1","c":1,"d":true,"e":false}}'."\n",
-   "Correct JSON rendered");
-
 $el = $cfg->getElement("/");
 my $trdp = EDG::WP4::CCM::TextRender->new('jsonpretty', $el);
 my $prettytxt = "$trdp";
@@ -72,6 +65,16 @@ $prettytxt =~ s/ : /Z/g;
 is($prettytxt,
    '{XY"a"Z"a",XY"b"Z"1",XY"c"Z1,XY"d"Ztrue,XY"e"Zfalse,XY"f"Z1.5,XY"g"Z[XYY"g1",XYY"g2"XY],XY"h"Z{XYY"a"Z"a",XYY"b"Z"1",XYY"c"Z1,XYY"d"Ztrue,XYY"e"ZfalseXY}X}X',
    "Correct JSON pretty rendered");
+
+$el = $cfg->getElement("/g");
+$trd = EDG::WP4::CCM::TextRender->new('json', $el);
+is("$trd", '["g1","g2"]'."\n", "Correct rendered JSON list");
+
+$el = $cfg->getElement("/");
+$trd = EDG::WP4::CCM::TextRender->new('json', $el);
+is("$trd",
+   '{"a":"a","b":"1","c":1,"d":true,"e":false,"f":1.5,"g":["g1","g2"],"h":{"a":"a","b":"1","c":1,"d":true,"e":false}}'."\n",
+   "Correct JSON rendered");
 
 my $is_in_list = $trd->{ttoptions}->{VARIABLES}->{CCM}->{is_in_list};
 ok(!defined($is_in_list->("el", ['list'])), "is_in_list returns undef when 1st arg is not a list");
