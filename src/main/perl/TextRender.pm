@@ -1,6 +1,6 @@
 #${PMpre} EDG::WP4::CCM::TextRender${PMpost}
 
-use CAF::TextRender 18.6.0 qw($YAML_BOOL_PREFIX);
+use CAF::TextRender 20.12.1 qw($YAML_BOOL_PREFIX);
 use Readonly;
 use EDG::WP4::CCM::TextRender::Scalar qw(%ELEMENT_TYPES);
 use EDG::WP4::CCM::Path qw(escape unescape);
@@ -283,7 +283,7 @@ module is used (and not explicitly set).
 
 Enable YAML output, in particular YAML boolean (C<cast> is implied,
 so the other types should already be in proper format).
-This is automatically enabled when the yaml
+This is automatically enabled when the yaml or yamlmulti
 module is used (and not explicitly set).
 
 =item yesno
@@ -348,6 +348,8 @@ Only return the next C<depth> levels of nesting (and use the
 Element instances as values). A C<depth == 0> is the element itself,
 C<depth == 1> is the first level, ...
 
+The depth is shifted one level when the yamlmulti module is used.
+
 Default or depth C<undef> returns all levels.
 
 =back
@@ -389,6 +391,14 @@ sub _modify_elementopts_module
             last;
         }
     }
+
+    if ($self->{module} && $self->{module} eq 'yamlmulti') {
+        $elopts->{yaml} = 1;
+
+        # auto-shift the depth when dealing with yamlmulti
+        $elopts->{depth} += 1;
+    };
+
     $elopts->{json} = 1 if $elopts->{jsonpretty};
 }
 
@@ -412,7 +422,7 @@ sub _make_predefined_options
         my $bool_conv = $ELEMENT_CONVERT{cast_boolean};
         if ($elopts->{json}) {
             $bool_conv = $ELEMENT_CONVERT{json_boolean};
-        } elsif ($elopts->{yaml}) {
+        } elsif ($elopts->{yaml} || $elopts->{yamlmulti}) {
             $bool_conv = $ELEMENT_CONVERT{yaml_boolean};
         }
 
