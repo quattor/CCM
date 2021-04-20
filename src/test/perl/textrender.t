@@ -133,6 +133,14 @@ is($yamlout,
    "---a:ab:'1'c:1d:truee:falsef:1.5g:-g1-g2h:a:ab:'1'c:1d:truee:false",
    "Correct YAML rendered");
 
+$el = $cfg->getElement("/");
+$trd = EDG::WP4::CCM::TextRender->new('yamlmulti', $el);
+my $yamlmultiout = "$trd";
+$yamlmultiout =~ s/\s//g; # squash whitespace
+is($yamlmultiout,
+   "---a---'1'---1---true---false---1.5----g1-g2---a:ab:'1'c:1d:truee:false",
+   "Correct YAML multi rendered");
+
 # Other conversions
 is($EDG::WP4::CCM::TextRender::ELEMENT_CONVERT{yesno_boolean}->(1),
    'yes',
