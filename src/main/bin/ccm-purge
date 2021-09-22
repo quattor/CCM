@@ -61,7 +61,7 @@ sub Info
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $msg = sprintf("%04d/%02d/%02d-%02d:%02d:%02d [INFO] %s",
                    $year+1900, $mon+1, $mday, $hour, $min, $sec,$msg);
-    print $msg . "\n";
+    print "$msg\n";
 }
 
 
