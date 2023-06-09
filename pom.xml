@@ -282,6 +282,8 @@
           <!-- perl-JSON-XS rpm dependency set explicitly; EL5 metadata doesn't play nicely with 'perl(JSON::XS) >= 2.3.0'
                set by 'use perl-JSON-XS 2.3.0' and version requirement is missing if 'use perl-JSON-XS v2.3.0' is used -->
           <require>perl-JSON-XS &gt;= 2.3.0</require>
+          <require>crontabs</require>
+          <require>logrotate</require>
         </requires>
         <mappings>
           <mapping>
