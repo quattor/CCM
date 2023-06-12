@@ -197,6 +197,8 @@
               <arguments>
                   <argument>${project.build.directory}/sbin/ccm-fetch</argument>
                   <argument>${project.build.directory}/doc/man/man8/ccm-fetch</argument>
+                  <argument>${project.build.directory}/sbin/quattor-fetch.pod</argument>
+                  <argument>${project.build.directory}/doc/man/man8/quattor-fetch</argument>
                   <argument>${project.build.directory}/sbin/ccm-purge</argument>
                   <argument>${project.build.directory}/doc/man/man8/ccm-purge</argument>
                   <argument>${project.build.directory}/sbin/ccm-initialise</argument>
@@ -242,10 +244,12 @@
               <configuration>
                   <tasks name="compress">
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-fetch" destfile="${project.build.directory}/doc/man/man8/ccm-fetch.8.gz" />
+                      <gzip src="${project.build.directory}/doc/man/man8/quattor-fetch" destfile="${project.build.directory}/doc/man/man8/quattor-fetch.8.gz" />
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-initialise" destfile="${project.build.directory}/doc/man/man8/ccm-initialise.8.gz" />
                       <gzip src="${project.build.directory}/doc/man/man8/ccm-purge" destfile="${project.build.directory}/doc/man/man8/ccm-purge.8.gz" />
                       <gzip src="${project.build.directory}/doc/man/man8/ccm" destfile="${project.build.directory}/doc/man/man8/ccm.8.gz" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-fetch" />
+                      <delete file="${project.build.directory}/doc/man/man8/quattor-fetch" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-initialise" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm-purge" />
                       <delete file="${project.build.directory}/doc/man/man8/ccm" />

@@ -1,0 +1,13 @@
+package quattor-fetch;
+
+=pod
+
+=head1 NAME
+
+quattor-fetch - alias for C<ccm-fetch>
+
+=head1 SEE ALSO
+
+ccm-fetch(8)
+
+=cut
