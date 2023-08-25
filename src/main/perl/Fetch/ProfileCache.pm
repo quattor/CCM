@@ -238,7 +238,7 @@ sub previous
     $ret{url} = CAF::FileReader->new("$dir/profile.url", log => $self);
     chomp($ret{url}); # this actually works
 
-    $ret{profile} = CAF::FileReader->new("$dir/profile.xml", log => $self);
+    $ret{profile} = CAF::FileReader->new("$dir/profile", log => $self);
 
     return %ret;
 }
@@ -264,10 +264,12 @@ sub current
         url => CAF::FileWriter->new("$dir/profile.url", %{$self->{permission}->{file}}),
         cid => CAF::FileWriter->new("$self->{CACHE_ROOT}/$CURRENT_CID_FN",
                                     %{$self->{permission}->{file}}),
-        profile => CAF::FileWriter->new("$dir/profile.xml", %{$self->{permission}->{file}}),
+        profile => CAF::FileWriter->new("$dir/profile", %{$self->{permission}->{file}}),
         eiddata => "$dir/$EID2DATA",
         eidpath => "$dir/$PATH2EID"
     );
+
+    symlink("$dir/profile", "$dir/profile.xml");
 
     # Prepare new profile/CID to become current one
     # newline at end is important (see _read_syncfile in CacheManager)

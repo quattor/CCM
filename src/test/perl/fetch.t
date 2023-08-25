@@ -226,6 +226,7 @@ $pf = $f->retrieve($f->{PROFILE_URL}, "target/test/file-output", 0);
 isa_ok($pf, "CAF::FileReader");
 $pf->cancel();
 
+unlink("target/test/profile");
 unlink("target/test/profile.xml");
 compile_profile("pan.gz");
 $pf = $f->retrieve("$f->{PROFILE_URL}", "target/test-file-output", 0);
@@ -413,7 +414,7 @@ isa_ok($pf, "CAF::FileReader", "download retruns CAF::FileReader instance");
 my %r = $f->previous();
 like(*{$r{url}}->{filename}, qr{profile.url$},
      'Correct file read for the previous URL');
-like(*{$r{profile}}->{filename}, qr{profile.xml$},
+like(*{$r{profile}}->{filename}, qr{profile$},
      "Correct file read with the previous XML");
 ok(exists($r{cid}), "cid created");
 foreach my $i (qw(cid url profile)) {
@@ -436,6 +437,9 @@ is_deeply($make_cacheroot, [$f, "target/test/cache", {mode => 0700 }, "profile.1
 like("$r{profile}", qr{^<\?xml}, "Current profile will be written");
 is("$r{cid}", "1\n", "Correct CID will be written");
 is("$r{url}", "$f->{PROFILE_URL}\n", "Correct URL for the profile");
+
+my $legacy_profile_name = *{$r{profile}}->{filename}.".xml";
+ok(-l $legacy_profile_name, "$legacy_profile_name is a symlink");
 
 =pod
 
