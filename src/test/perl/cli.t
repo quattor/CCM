@@ -82,7 +82,7 @@ like($txt,
      qr{eid2data:\n0 => a\0c\0e\n10000000 => nlist\n20000000 => 1740877ebcb53b5132e75cff986cd705\n1 => b}m,
      "dumpdb output eid2data");
 like($txt,
-     qr{path2eid and eid2data combined:\n/ \(0\) =>\n  V: a\0c\0e\n  T: nlist\n  C: 1740877ebcb53b5132e75cff986cd705\n  D: <undef>\n/a \(1\) =>\n},
+     qr{path2eid and eid2data combined:\n/ \(0\) =>\n  V: a\0c\0e\n  T: nlist\n  C: 1740877ebcb53b5132e75cff986cd705\n/a \(1\) =>\n},
      "dumpdb ouptut combined path2eid eid2data");
 diag $txt;
 

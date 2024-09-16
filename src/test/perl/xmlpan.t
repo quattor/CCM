@@ -46,8 +46,6 @@ sub InterpretNode
             $val->{ACL} = $att->{$a};
         } elsif ($a eq 'encoding') {
             $val->{ENCODING} = $att->{$a};
-        } elsif ($a eq 'description') {
-            $val->{DESCRIPTION} = $att->{$a};
         } elsif ($a eq 'type') {
             $val->{USERTYPE} = $att->{$a};
         } else {
