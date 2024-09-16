@@ -411,7 +411,7 @@ sub ComputeChecksum
         unless (defined $value) {
             return md5_hex("_<undef>_");
         }
-        return md5_hex(encode_utf8($value));
+        return md5_hex(encode_utf8("$value\x1e$type"));
     }
 }
 
