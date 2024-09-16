@@ -34,14 +34,13 @@ foreach my $name (sort keys %map) {
 is(type_from_name('something'), UNDEFINED, "type_from_name returns UNDEFINED");
 
 is_deeply(\@EIDS_PACK,
-          [qw(VALUE TYPE CHECKSUM DESCRIPTION)],
+          [qw(VALUE TYPE CHECKSUM)],
           "EIDS_PACK array");
 
 is_deeply(encode_eids(123), {
     VALUE => pack('L', 123),
     TYPE => pack('L', 1 << 28 | 123),
     CHECKSUM => pack('L', 2 << 28 | 123),
-    DESCRIPTION => pack('L', 3 << 28 | 123),
 }, "encode_eids for id 123");
 
 is(decode_eid(encode_eids(123)->{VALUE}), 123, "decode encoded eid returns original");

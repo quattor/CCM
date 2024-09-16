@@ -36,7 +36,6 @@ use constant VALID_ATTRIBUTES => {
     CHECKSUM    => 1,
     ACL         => 1,
     ENCODING    => 1,
-    DESCRIPTION => 1,
     USERTYPE    => 1
 };
 

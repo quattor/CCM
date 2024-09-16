@@ -66,9 +66,6 @@ sub gen_dbm
     $key = 0x20000001;
     $hash{pack("L", $key)} = md5_hex("$val|$type");
 
-    # description
-    $key = 0x30000001;
-    $hash{pack("L", $key)} = "an example of string";
     untie(%hash);
 
     return (SUCCESS);
@@ -105,9 +102,6 @@ is($property->getType(), EDG::WP4::CCM::CacheManager::Element->STRING, "property
 
 # test getChecksum()
 is($property->getChecksum(), md5_hex("a string|string"), "property Element->getChecksum()");
-
-# test getDescription()
-is($property->getDescription(), "an example of string", "property Element->getDescription()");
 
 # test getValue()
 ok($property->getValue(), "property Element->getValue()");

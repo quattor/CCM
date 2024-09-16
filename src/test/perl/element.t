@@ -70,9 +70,6 @@ sub gen_dbm ($$) {
     # checksum
     $key = 0x20000001;
     $hash{pack("L", $key)} = md5_hex("$val|$type");
-    # description
-    $key = 0x30000001;
-    $hash{pack("L", $key)} = "an example of string";
 
     # value
     $key = 0x00000002;
@@ -85,15 +82,12 @@ sub gen_dbm ($$) {
     # checksum
     $key = 0x20000002;
     $hash{pack("L", $key)} = md5_hex("$val|$type");
-    # description
-    $key = 0x30000002;
-    $hash{pack("L", $key)} = "an example of list";
 
     untie(%hash);
 }
 
 my ($element, $property, $resource, $path);
-my ($type, $checksum, $description, $value);
+my ($type, $checksum, $value);
 my ($string);
 
 my ($cm, $config, $cache_dir, $profile);
@@ -156,10 +150,6 @@ is($type, EDG::WP4::CCM::CacheManager::Element->STRING, "Element->getType()" );
 # test getChecksum()
 $checksum = $element->getChecksum();
 is($checksum, md5_hex("a string|string"), "Element->getChecksum()");
-
-# test getDescription()
-$description = $element->getDescription();
-is($description, "an example of string", "Element->getDescription()");
 
 # test getValue()
 $value = $element->getValue();

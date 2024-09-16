@@ -8,7 +8,7 @@ use warnings;
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::Simple tests => 41;
+use Test::Simple tests => 40;
 use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
@@ -21,7 +21,7 @@ use EDG::WP4::CCM::Path;
 use CCMTest qw (eok make_file);
 
 my ($resource, $path, $string, $type);
-my ($checksum, $description, $value);
+my ($checksum, $value);
 
 my ($cm, $config, $cache_dir, $profile, %hash, $key, @array, $i, $name);
 
@@ -101,10 +101,6 @@ sub gen_dbm ($$) {
     $key = 0x20000001;
     $hash{pack("L",$key)} = md5_hex("$value|$type");
 
-    # description
-    $key = 0x30000001;
-    $hash{pack("L",$key)} = "an example of list";
-
     # value
     $key = 0x00000002;
     $value = "element 0";
@@ -118,10 +114,6 @@ sub gen_dbm ($$) {
     # checksum
     $key = 0x20000002;
     $hash{pack("L",$key)} = md5_hex("$key|$value");
-
-    # description
-    $key = 0x30000002;
-    $hash{pack("L",$key)} = "an example of string";
 
     # value
     $key = 0x00000003;
@@ -137,10 +129,6 @@ sub gen_dbm ($$) {
     $key = 0x20000003;
     $hash{pack("L",$key)} = md5_hex("$key|$value");
 
-    # description
-    $key = 0x30000003;
-    $hash{pack("L",$key)} = "an example of string";
-
     # value
     $key = 0x00000004;
     $value = chr(122).chr(101).chr(114).chr(111).chr(0).chr(111).chr(110).chr(101);
@@ -154,10 +142,6 @@ sub gen_dbm ($$) {
     # checksum
     $key = 0x20000004;
     $hash{pack("L",$key)} = md5_hex("$key|$value");
-
-    # description
-    $key = 0x30000004;
-    $hash{pack("L",$key)} = "an example of nlist";
 
     # value
     $key = 0x00000005;
@@ -173,10 +157,6 @@ sub gen_dbm ($$) {
     $key = 0x20000005;
     $hash{pack("L",$key)} = md5_hex("$key|$value");
 
-    # description
-    $key = 0x30000005;
-    $hash{pack("L",$key)} = "an example of string";
-
     # value
     $key = 0x00000006;
     $value = "element one";
@@ -190,10 +170,6 @@ sub gen_dbm ($$) {
     # checksum
     $key = 0x20000006;
     $hash{pack("L",$key)} = md5_hex("$key|$value");
-
-    # description
-    $key = 0x30000006;
-    $hash{pack("L",$key)} = "an example of string";
 
     untie(%hash);
 
@@ -238,10 +214,6 @@ ok($type == EDG::WP4::CCM::CacheManager::Resource->LIST, "Resource->getType()");
 # test getChecksum()
 $checksum = $resource->getChecksum();
 ok($checksum eq md5_hex(chr(48).chr(0).chr(49)."|list"), "Resource->getChecksum()");
-
-# test getDescription()
-$description = $resource->getDescription();
-ok($description eq "an example of list", "Resource->getDescription()");
 
 # test getValue()
 $value = $resource->getValue();
