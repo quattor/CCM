@@ -40,16 +40,12 @@ sub InterpretNode
     foreach my $a (keys %$att) {
         if ($a eq 'name') {
             $val->{NAME} = $att->{$a};
-        } elsif ($a eq 'derivation') {
-            $val->{DERIVATION} = $att->{$a};
         } elsif ($a eq 'checksum') {
             $val->{CHECKSUM} = $att->{$a};
         } elsif ($a eq 'acl') {
             $val->{ACL} = $att->{$a};
         } elsif ($a eq 'encoding') {
             $val->{ENCODING} = $att->{$a};
-        } elsif ($a eq 'description') {
-            $val->{DESCRIPTION} = $att->{$a};
         } elsif ($a eq 'type') {
             $val->{USERTYPE} = $att->{$a};
         } else {

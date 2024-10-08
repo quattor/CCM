@@ -471,7 +471,7 @@ sub AddPath
     # store attributes
     my $t = defined $tree->{USERTYPE} ? $tree->{USERTYPE} : $type;
     $eid2data->{$eids->{TYPE}} = $t;
-    foreach my $md (qw(DERIVATION CHECKSUM DECRIPTION)) {
+    foreach my $md (qw(CHECKSUM DECRIPTION)) {
         $eid2data->{$eids->{$md}} = $tree->{$md} if (defined $tree->{$md});
     }
 }
