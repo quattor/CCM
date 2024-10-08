@@ -44,7 +44,7 @@ Readonly::Hash our %NAME_TYPE_MAP => {
 
 # sorted names to compute pack'ed values for
 # using offset based on index in this array
-Readonly::Array our @EIDS_PACK => qw(VALUE TYPE DERIVATION CHECKSUM DESCRIPTION);
+Readonly::Array our @EIDS_PACK => qw(VALUE TYPE CHECKSUM DESCRIPTION);
 
 # DB filenames (typically in profilepath)
 Readonly our $PATH2EID => 'path2eid';
@@ -144,7 +144,7 @@ sub decode_eid
 =item encode_eids
 
 Given C<eid>, return the keys of the tie'ed DB hashref
-for C<VALUE>, C<TYPE>, C<DERIVATION>, C<CHECKSUM> and C<DESCRIPTION>
+for C<VALUE>, C<TYPE>, C<CHECKSUM> and C<DESCRIPTION>
 as used in the C<eid2data> DB.
 
 =cut
