@@ -40,8 +40,6 @@ sub InterpretNode
     foreach my $a (keys %$att) {
         if ($a eq 'name') {
             $val->{NAME} = $att->{$a};
-        } elsif ($a eq 'derivation') {
-            $val->{DERIVATION} = $att->{$a};
         } elsif ($a eq 'checksum') {
             $val->{CHECKSUM} = $att->{$a};
         } elsif ($a eq 'acl') {

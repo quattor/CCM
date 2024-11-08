@@ -31,8 +31,7 @@ sub gen_dbm ($$) {
 
     my ($cache_dir, $profile) = @_;
     my (%hash);
-    my ($key, $val, $active);
-    my ($derivation);
+    my ($key, $val, $type, $active);
 
     # remove previous cache dir
 
@@ -62,46 +61,39 @@ sub gen_dbm ($$) {
         &O_RDWR|&O_CREAT, 0644) or return();
     # value
     $key = 0x00000001;
-    $hash{pack("L", $key)} = "a string";
+    $val = "a string";
+    $hash{pack("L", $key)} = $val;
     # type
     $key = 0x10000001;
-    $hash{pack("L", $key)} = "string";
-    # derivation
-    $key = 0x20000001;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L", $key)} = $derivation;
+    $type = "string";
+    $hash{pack("L", $key)} = $type;
     # checksum
-    $key = 0x30000001;
-    $hash{pack("L", $key)} = md5_hex($derivation);
+    $key = 0x20000001;
+    $hash{pack("L", $key)} = md5_hex("$val|$type");
     # description
-    $key = 0x40000001;
+    $key = 0x30000001;
     $hash{pack("L", $key)} = "an example of string";
 
     # value
     $key = 0x00000002;
-    $hash{pack("L", $key)} = "a list";
+    $val = "a list";
+    $hash{pack("L", $key)} = $val;
     # type
     $key = 0x10000002;
-    $hash{pack("L", $key)} = "list";
-    # derivation
-    $key = 0x20000002;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L", $key)} = $derivation;
+    $type = "list";
+    $hash{pack("L", $key)} = $type;
     # checksum
-    $key = 0x30000002;
-    $hash{pack("L", $key)} = md5_hex($derivation);
+    $key = 0x20000002;
+    $hash{pack("L", $key)} = md5_hex("$val|$type");
     # description
-    $key = 0x40000002;
+    $key = 0x30000002;
     $hash{pack("L", $key)} = "an example of list";
 
     untie(%hash);
-
-    return (1);
-
 }
 
 my ($element, $property, $resource, $path);
-my ($type, $derivation, $checksum, $description, $value);
+my ($type, $checksum, $description, $value);
 my ($string);
 
 my ($cm, $config, $cache_dir, $profile);
@@ -161,14 +153,9 @@ is($string, "/path/to/property", "Element->getPath()");
 $type = $element->getType();
 is($type, EDG::WP4::CCM::CacheManager::Element->STRING, "Element->getType()" );
 
-# test getDerivation()
-$derivation = $element->getDerivation();
-is($derivation, "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
-   "Element->getDerivation()");
-
 # test getChecksum()
 $checksum = $element->getChecksum();
-is($checksum, md5_hex($derivation), "Element->getChecksum()");
+is($checksum, md5_hex("a string|string"), "Element->getChecksum()");
 
 # test getDescription()
 $description = $element->getDescription();
