@@ -31,9 +31,7 @@ EDG::WP4::CCM::CacheManager::Element - Element class
     $name = $element->getName();
     $path = $element->getPath()
     $type = $element->getType();
-    $derivation = $element->getDerivation();
     $checksum = $element->getChecksum();
-    $description = $element->getDescription();
     $value = $element->getValue();
     $boolean = $element->isType($type);
     $boolean = $element->isResource();
@@ -86,9 +84,7 @@ sub new
     $self->{EID}         = undef;
     $self->{PATH}        = undef;           # should be a Path object
     $self->{TYPE}        = undef;           # should a valid TYPE constant)
-    $self->{DERIVATION}  = undef;
     $self->{CHECKSUM}    = undef;
-    $self->{DESCRIPTION} = undef;
     $self->{VALUE}       = undef;
 
     # path can be a string or a Path object
@@ -333,18 +329,6 @@ sub getType
     return $self->{TYPE};
 }
 
-=item getDerivation()
-
-Returns the element's derivation
-
-=cut
-
-sub getDerivation
-{
-    my $self = shift;
-    return $self->{DERIVATION};
-}
-
 =item getChecksum()
 
 Returns the element's checksum (that is, MD5 digest)
@@ -355,18 +339,6 @@ sub getChecksum
 {
     my $self = shift;
     return $self->{CHECKSUM};
-}
-
-=item getDescription()
-
-Returns the element's description
-
-=cut
-
-sub getDescription
-{
-    my $self = shift;
-    return $self->{DESCRIPTION};
 }
 
 =item getValue()
@@ -660,15 +632,10 @@ sub _read_metadata
         return;
     }
 
-    foreach my $md (qw(TYPE DERIVATION CHECKSUM DESCRIPTION)) {
+    foreach my $md (qw(TYPE CHECKSUM)) {
         my $val = $hashref->{$keys->{$md}};
         if (defined($val)) {
             $self->{$md} = $val;
-        } elsif ($md eq 'DESCRIPTION' || $md eq 'DERIVATION') {
-            # metadata attribute "description" is optional
-            # TODO: metadata attribute "derivation" should not be optional
-            #       but eg none of the JSONProfile have it
-            $self->{$md} = "";
         } else {
             throw_error("failed to read element's $md eid $self->{EID}");
             return;
