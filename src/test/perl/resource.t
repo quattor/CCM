@@ -8,7 +8,7 @@ use warnings;
 use POSIX qw (getpid);
 use DB_File;
 use Digest::MD5 qw(md5_hex);
-use Test::Simple tests => 42;
+use Test::Simple tests => 41;
 use LC::Exception qw(SUCCESS throw_error);
 
 use EDG::WP4::CCM::CacheManager qw ($DATA_DN $GLOBAL_LOCK_FN
@@ -21,7 +21,7 @@ use EDG::WP4::CCM::Path;
 use CCMTest qw (eok make_file);
 
 my ($resource, $path, $string, $type);
-my ($derivation, $checksum, $description, $value);
+my ($checksum, $description, $value);
 
 my ($cm, $config, $cache_dir, $profile, %hash, $key, @array, $i, $name);
 
@@ -42,7 +42,7 @@ sub gen_dbm ($$) {
 
     my ($cache_dir, $profile) = @_;
     my (%hash);
-    my ($key, $val, $active);
+    my ($key, $val, $type, $active);
 
     # create new profile
     mkdir("$cache_dir");
@@ -56,8 +56,7 @@ sub gen_dbm ($$) {
     $active = $profile . "/active." . getpid();
     make_file("$cache_dir/$active", "1\n");
 
-    tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db",
-        &O_RDWR|&O_CREAT, 0644) or return();
+    tie(%hash, "DB_File", "${cache_dir}/${profile}/path2eid.db", &O_RDWR|&O_CREAT, 0644) or return();
 
     $key = "/path/to/list";
     $value = 0x00000001;
@@ -90,106 +89,110 @@ sub gen_dbm ($$) {
 
     # value
     $key = 0x00000001;
-    $hash{pack("L",$key)} = chr(48).chr(0).chr(49);
+    $value = chr(48).chr(0).chr(49);
+    $hash{pack("L",$key)} = $value;
+
     # type
     $key = 0x10000001;
-    $hash{pack("L",$key)} = "list";
-    # derivation
-    $key = 0x20000001;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type  = "list";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000001;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000001;
+    $hash{pack("L",$key)} = md5_hex("$value|$type");
+
     # description
-    $key = 0x40000001;
+    $key = 0x30000001;
     $hash{pack("L",$key)} = "an example of list";
 
     # value
     $key = 0x00000002;
-    $hash{pack("L",$key)} = "element 0";
+    $value = "element 0";
+    $hash{pack("L",$key)} = $value;
+
     # type
     $key = 0x10000002;
-    $hash{pack("L",$key)} = "string";
-    # derivation
-    $key = 0x20000002;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type = "string";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000002;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000002;
+    $hash{pack("L",$key)} = md5_hex("$key|$value");
+
     # description
-    $key = 0x40000002;
+    $key = 0x30000002;
     $hash{pack("L",$key)} = "an example of string";
 
     # value
     $key = 0x00000003;
-    $hash{pack("L",$key)} = "element 1";
+    $value = "element 1";
+    $hash{pack("L",$key)} = $value;
+
     # type
     $key = 0x10000003;
-    $hash{pack("L",$key)} = "string";
-    # derivation
-    $key = 0x20000003;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type = "string";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000003;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000003;
+    $hash{pack("L",$key)} = md5_hex("$key|$value");
+
     # description
-    $key = 0x40000003;
+    $key = 0x30000003;
     $hash{pack("L",$key)} = "an example of string";
 
     # value
     $key = 0x00000004;
-    $hash{pack("L",$key)} = $hash{pack("L",$key)} =
-       chr(122).chr(101).chr(114).chr(111).chr(0).chr(111).chr(110).chr(101);
+    $value = chr(122).chr(101).chr(114).chr(111).chr(0).chr(111).chr(110).chr(101);
+    $hash{pack("L",$key)} = $value;
 
     # type
     $key = 0x10000004;
-    $hash{pack("L",$key)} = "nlist";
-    # derivation
-    $key = 0x20000004;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type = "nlist";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000004;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000004;
+    $hash{pack("L",$key)} = md5_hex("$key|$value");
+
     # description
-    $key = 0x40000004;
+    $key = 0x30000004;
     $hash{pack("L",$key)} = "an example of nlist";
 
     # value
     $key = 0x00000005;
-    $hash{pack("L",$key)} = "element zero";
+    $value = "element zero";
+    $hash{pack("L",$key)} = $value;
+
     # type
     $key = 0x10000005;
-    $hash{pack("L",$key)} = "string";
-    # derivation
-    $key = 0x20000005;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type = "string";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000005;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000005;
+    $hash{pack("L",$key)} = md5_hex("$key|$value");
+
     # description
-    $key = 0x40000005;
+    $key = 0x30000005;
     $hash{pack("L",$key)} = "an example of string";
 
     # value
     $key = 0x00000006;
-    $hash{pack("L",$key)} = "element one";
+    $value = "element one";
+    $hash{pack("L",$key)} = $value;
+
     # type
     $key = 0x10000006;
-    $hash{pack("L",$key)} = "string";
-    # derivation
-    $key = 0x20000006;
-    $derivation = "lxplus.tpl,hardware.tpl,lxplust_025.tpl";
-    $hash{pack("L",$key)} = $derivation;
+    $type = "string";
+    $hash{pack("L",$key)} = $type;
+
     # checksum
-    $key = 0x30000006;
-    $hash{pack("L",$key)} = md5_hex($derivation);;
+    $key = 0x20000006;
+    $hash{pack("L",$key)} = md5_hex("$key|$value");
+
     # description
-    $key = 0x40000006;
+    $key = 0x30000006;
     $hash{pack("L",$key)} = "an example of string";
 
     untie(%hash);
@@ -232,14 +235,9 @@ ok($string eq "/path/to/list", "Resource->getPath()");
 $type = $resource->getType();
 ok($type == EDG::WP4::CCM::CacheManager::Resource->LIST, "Resource->getType()");
 
-# test getDerivation()
-$derivation = $resource->getDerivation();
-ok($derivation eq "lxplus.tpl,hardware.tpl,lxplust_025.tpl",
-   "Resource->getDerivation()");
-
 # test getChecksum()
 $checksum = $resource->getChecksum();
-ok($checksum eq md5_hex($derivation), "Resource->getChecksum()");
+ok($checksum eq md5_hex(chr(48).chr(0).chr(49)."|list"), "Resource->getChecksum()");
 
 # test getDescription()
 $description = $resource->getDescription();
@@ -355,4 +353,3 @@ ok($resource->getNextElement()->getValue() eq "element zero",
          "Resource->getNextElement() element zero");
 #ok($resource->currentElementName() eq "zero",
 #   "Resource->currentElementName()");
-

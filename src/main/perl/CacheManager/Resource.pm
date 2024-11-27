@@ -45,7 +45,7 @@ sub new
     my $self  = $class->SUPER::new(@_);
 
     # check that element it is really a resource
-    if (!$self->isResource()) {
+    if (defined $self && !$self->isResource()) {
         throw_error("element is not of type Resource");
         return ();
     }
