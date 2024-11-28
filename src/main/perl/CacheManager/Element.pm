@@ -32,7 +32,6 @@ EDG::WP4::CCM::CacheManager::Element - Element class
     $path = $element->getPath()
     $type = $element->getType();
     $checksum = $element->getChecksum();
-    $description = $element->getDescription();
     $value = $element->getValue();
     $boolean = $element->isType($type);
     $boolean = $element->isResource();
@@ -86,7 +85,6 @@ sub new
     $self->{PATH}        = undef;           # should be a Path object
     $self->{TYPE}        = undef;           # should a valid TYPE constant)
     $self->{CHECKSUM}    = undef;
-    $self->{DESCRIPTION} = undef;
     $self->{VALUE}       = undef;
 
     # path can be a string or a Path object
@@ -341,18 +339,6 @@ sub getChecksum
 {
     my $self = shift;
     return $self->{CHECKSUM};
-}
-
-=item getDescription()
-
-Returns the element's description
-
-=cut
-
-sub getDescription
-{
-    my $self = shift;
-    return $self->{DESCRIPTION};
 }
 
 =item getValue()
@@ -646,13 +632,10 @@ sub _read_metadata
         return;
     }
 
-    foreach my $md (qw(TYPE CHECKSUM DESCRIPTION)) {
+    foreach my $md (qw(TYPE CHECKSUM)) {
         my $val = $hashref->{$keys->{$md}};
         if (defined($val)) {
             $self->{$md} = $val;
-        } elsif ($md eq 'DESCRIPTION') {
-            # metadata attribute "description" is optional
-            $self->{$md} = "";
         } else {
             throw_error("failed to read element's $md eid $self->{EID}");
             return;
